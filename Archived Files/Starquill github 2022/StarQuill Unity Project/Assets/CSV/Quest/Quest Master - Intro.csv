@@ -1,0 +1,4 @@
+NPC talk,NPC forced,Narrated _ Observation,Narrated _ Serendipitous
+[greeting] [supplication] [plot] [outro],We are all doomed! [supplication] [plot] [outro],you find an old dusty tome buried in rubble and dust. It tells of [location]{trigger} and the magical power that resides there.,An eerie light flashes in the distance. You feel weak. A hallucination of a bearded monk appears and speaks to you. [plot]
+[greeting] [supplication] [plot] [promise of reward] [outro],a distraught peasant grabs hold of your leg. [supplication] [plot] [promise of reward] [outro],Runes engraved on the walls glow as you pass by. You struggle to read them_ but they mention a [quest item] of great power held at [location]{trigger}.,
+,,You see a wanted poster. it says: [plot],
