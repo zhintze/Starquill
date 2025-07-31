@@ -53,12 +53,13 @@ Supports high-volume of assets and allows future expansion into Web3 (wallet, to
 - Character Layer display system 
 - Procedural world generation  
 - Location and POI spawning logic
-- Inventory system and loot mechanics 
+- **Inventory system and loot mechanics** 
 - Simple NPCs with dialog triggers  
-- Economy and barter/trade system  
 - Basic quest/content triggering from NPC interaction 
 
 ## Future Features
+
+- **Economy and barter/trade system**
 
 - **LLM AI Integration**  
   
