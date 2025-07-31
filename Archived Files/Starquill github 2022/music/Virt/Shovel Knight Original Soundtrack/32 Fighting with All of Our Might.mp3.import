@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b7fnti7kiyviq"
+path="res://.godot/imported/32 Fighting with All of Our Might.mp3-2b89729c80792edd3d7dd68f0227c56f.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/32 Fighting with All of Our Might.mp3"
+dest_files=["res://.godot/imported/32 Fighting with All of Our Might.mp3-2b89729c80792edd3d7dd68f0227c56f.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://hmjfspxr4q5h"
+path="res://.godot/imported/31 Bucklers and Bonnets - Armorer Interior.mp3-a03f9c938459bfcdfb7826b65e7c7ebd.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/31 Bucklers and Bonnets - Armorer Interior.mp3"
+dest_files=["res://.godot/imported/31 Bucklers and Bonnets - Armorer Interior.mp3-a03f9c938459bfcdfb7826b65e7c7ebd.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

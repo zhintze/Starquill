@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://7p2sa4y02cr0"
+path="res://.godot/imported/22 Of Devious Machinations (Clockwork Tower).mp3-b360dacd6f81eb6558d36c76a9768089.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/22 Of Devious Machinations (Clockwork Tower).mp3"
+dest_files=["res://.godot/imported/22 Of Devious Machinations (Clockwork Tower).mp3-b360dacd6f81eb6558d36c76a9768089.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

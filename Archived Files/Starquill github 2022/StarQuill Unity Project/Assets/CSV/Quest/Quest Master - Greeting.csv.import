@@ -1,0 +1,15 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://7susjuqylxpg"
+valid=false
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Greeting.csv"
+
+[params]
+
+compress=true
+delimiter=0

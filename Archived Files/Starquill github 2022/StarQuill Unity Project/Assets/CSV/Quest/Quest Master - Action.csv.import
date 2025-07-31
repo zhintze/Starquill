@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bw1aun8pjmlf1"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Action.revenge death.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Action.revenge desecration.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Action.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Action.revenge death.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Action.revenge desecration.translation"]
+
+[params]
+
+compress=true
+delimiter=0

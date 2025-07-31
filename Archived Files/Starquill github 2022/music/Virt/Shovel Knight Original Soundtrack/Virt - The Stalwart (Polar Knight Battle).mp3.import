@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://d133moicwmd8v"
+path="res://.godot/imported/Virt - The Stalwart (Polar Knight Battle).mp3-65f24f3a4a0ed0461334f9aabb3cd0c0.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/Virt - The Stalwart (Polar Knight Battle).mp3"
+dest_files=["res://.godot/imported/Virt - The Stalwart (Polar Knight Battle).mp3-65f24f3a4a0ed0461334f9aabb3cd0c0.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

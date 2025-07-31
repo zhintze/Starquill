@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://d37v7qa24mn7y"
+path="res://.godot/imported/Virt - Reprise (Credits).mp3-ca1fa04f7c910a45d508d27b036eb60f.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/Virt - Reprise (Credits).mp3"
+dest_files=["res://.godot/imported/Virt - Reprise (Credits).mp3-ca1fa04f7c910a45d508d27b036eb60f.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

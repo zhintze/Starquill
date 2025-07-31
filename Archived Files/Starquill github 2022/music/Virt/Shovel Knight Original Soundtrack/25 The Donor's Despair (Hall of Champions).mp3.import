@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bqm0eikomkdcv"
+path="res://.godot/imported/25 The Donor's Despair (Hall of Champions).mp3-51d3b9e01101bb790b08eebe5d9c1c78.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/25 The Donor's Despair (Hall of Champions).mp3"
+dest_files=["res://.godot/imported/25 The Donor's Despair (Hall of Champions).mp3-51d3b9e01101bb790b08eebe5d9c1c78.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

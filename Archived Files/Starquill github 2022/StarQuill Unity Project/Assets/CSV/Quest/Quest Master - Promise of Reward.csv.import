@@ -1,0 +1,15 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bn17ey8xiusln"
+valid=false
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Promise of Reward.csv"
+
+[params]
+
+compress=true
+delimiter=0

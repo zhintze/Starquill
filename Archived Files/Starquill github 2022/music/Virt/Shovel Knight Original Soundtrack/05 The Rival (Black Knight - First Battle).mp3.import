@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dp01fbrc7yje3"
+path="res://.godot/imported/05 The Rival (Black Knight - First Battle).mp3-07fb20277d6a40c8b0766e96915547ff.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/05 The Rival (Black Knight - First Battle).mp3"
+dest_files=["res://.godot/imported/05 The Rival (Black Knight - First Battle).mp3-07fb20277d6a40c8b0766e96915547ff.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

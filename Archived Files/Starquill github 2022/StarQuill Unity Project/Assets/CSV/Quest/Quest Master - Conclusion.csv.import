@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dkjtwimaq1s0r"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Conclusion.revenge killed.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Conclusion.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Conclusion.revenge killed.translation"]
+
+[params]
+
+compress=true
+delimiter=0

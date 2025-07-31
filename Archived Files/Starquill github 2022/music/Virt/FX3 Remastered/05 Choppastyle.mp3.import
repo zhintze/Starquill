@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bi3mw2aam572q"
+path="res://.godot/imported/05 Choppastyle.mp3-47fba1cf559679349144e85aba361eec.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/FX3 Remastered/05 Choppastyle.mp3"
+dest_files=["res://.godot/imported/05 Choppastyle.mp3-47fba1cf559679349144e85aba361eec.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://25cx88v5f36t"
+path="res://.godot/imported/24 The Destroyer (Tinker Tank Battle).mp3-220736136e1767b5b3548abc7f8d5204.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/24 The Destroyer (Tinker Tank Battle).mp3"
+dest_files=["res://.godot/imported/24 The Destroyer (Tinker Tank Battle).mp3-220736136e1767b5b3548abc7f8d5204.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
