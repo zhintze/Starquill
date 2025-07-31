@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://comrgxagtl3i4"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 01.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 02.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 03.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 04.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 01.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 02.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 03.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Monster Codes.layer 04.translation"]
+
+[params]
+
+compress=true
+delimiter=0

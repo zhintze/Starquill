@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://hyg1jddkoppq"
+path="res://.godot/imported/Virt - Weapon.mp3-9ede48dfa6993905ce3dc3819b49fc1d.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/FX4/Virt - Weapon.mp3"
+dest_files=["res://.godot/imported/Virt - Weapon.mp3-9ede48dfa6993905ce3dc3819b49fc1d.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

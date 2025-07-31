@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dhq5r20silxcb"
+path="res://.godot/imported/37 A Cool Reception (The Stranded Ship).mp3-39ea1c6794b3cc5c03ffc6a93a54465b.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/37 A Cool Reception (The Stranded Ship).mp3"
+dest_files=["res://.godot/imported/37 A Cool Reception (The Stranded Ship).mp3-39ea1c6794b3cc5c03ffc6a93a54465b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

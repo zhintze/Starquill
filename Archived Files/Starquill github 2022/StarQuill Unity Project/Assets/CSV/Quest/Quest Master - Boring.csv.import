@@ -1,0 +1,15 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://crp5lcgcsgnmp"
+valid=false
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Quest/Quest Master - Boring.csv"
+
+[params]
+
+compress=true
+delimiter=0

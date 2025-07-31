@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dne4g0ja0cema"
+path="res://.godot/imported/Virt - Journey into the Rift.mp3-8cbd7492555bb11a81f37ccd50bf72e3.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/FX4/Virt - Journey into the Rift.mp3"
+dest_files=["res://.godot/imported/Virt - Journey into the Rift.mp3-8cbd7492555bb11a81f37ccd50bf72e3.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

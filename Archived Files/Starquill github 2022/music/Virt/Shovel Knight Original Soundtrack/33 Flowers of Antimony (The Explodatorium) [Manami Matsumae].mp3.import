@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cotemfvf6sdi8"
+path="res://.godot/imported/33 Flowers of Antimony (The Explodatorium) [Manami Matsumae].mp3-585bc6707676c932340fd0ca2a73f051.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/33 Flowers of Antimony (The Explodatorium) [Manami Matsumae].mp3"
+dest_files=["res://.godot/imported/33 Flowers of Antimony (The Explodatorium) [Manami Matsumae].mp3-585bc6707676c932340fd0ca2a73f051.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

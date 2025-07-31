@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ww4fon1hpp2i"
+path="res://.godot/imported/29 The Defender (Black Knight Battle).mp3-f8ae8deecb2bc6883968de8e5726579a.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/29 The Defender (Black Knight Battle).mp3"
+dest_files=["res://.godot/imported/29 The Defender (Black Knight Battle).mp3-f8ae8deecb2bc6883968de8e5726579a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

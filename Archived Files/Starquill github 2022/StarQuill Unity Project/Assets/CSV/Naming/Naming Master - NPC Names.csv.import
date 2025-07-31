@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://crespy6vn1yut"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - NPC Names.Neutral.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - NPC Names.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - NPC Names.Neutral.translation"]
+
+[params]
+
+compress=true
+delimiter=0

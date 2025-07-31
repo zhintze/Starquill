@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://wwqr6gaglkq5"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Monster Suffix.of the devil.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Monster Suffix.the haunted.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Monster Suffix.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Monster Suffix.of the devil.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Monster Suffix.the haunted.translation"]
+
+[params]
+
+compress=true
+delimiter=0

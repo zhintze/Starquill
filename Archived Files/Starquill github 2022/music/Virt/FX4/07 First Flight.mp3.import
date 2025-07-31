@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://y1hecuusc5hg"
+path="res://.godot/imported/07 First Flight.mp3-3f66c3b4002972247740af48f1f0ae46.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/FX4/07 First Flight.mp3"
+dest_files=["res://.godot/imported/07 First Flight.mp3-3f66c3b4002972247740af48f1f0ae46.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

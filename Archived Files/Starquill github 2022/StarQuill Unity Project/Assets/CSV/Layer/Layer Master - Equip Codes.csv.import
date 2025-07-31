@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dn1gi7xkak4hh"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.Layer Code.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.hidden layer numbers.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.layer color variance.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.Amount.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.Layer Code.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.hidden layer numbers.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.layer color variance.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Layer/Layer Master - Equip Codes.Amount.translation"]
+
+[params]
+
+compress=true
+delimiter=0

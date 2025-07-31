@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dg7b0krbbkdn7"
+path="res://.godot/imported/30 Courage Under Fire - Armorer Village.mp3-c0e775c65d2d32f29c13450349cc0a18.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/30 Courage Under Fire - Armorer Village.mp3"
+dest_files=["res://.godot/imported/30 Courage Under Fire - Armorer Village.mp3-c0e775c65d2d32f29c13450349cc0a18.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dnn4vwrpvf86h"
+
+[deps]
+
+files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Dungeon Names.prefix.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Dungeon Names.suffix.translation"]
+
+source_file="res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Dungeon Names.csv"
+dest_files=["res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Dungeon Names.prefix.translation", "res://Archived Files/Starquill github 2022/StarQuill Unity Project/Assets/CSV/Naming/Naming Master - Dungeon Names.suffix.translation"]
+
+[params]
+
+compress=true
+delimiter=0

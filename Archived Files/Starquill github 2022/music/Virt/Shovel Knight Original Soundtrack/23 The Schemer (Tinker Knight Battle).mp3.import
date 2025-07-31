@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cgd0bj28kvaon"
+path="res://.godot/imported/23 The Schemer (Tinker Knight Battle).mp3-f564fe722f67097dc9bf11ef3c77da49.mp3str"
+
+[deps]
+
+source_file="res://Archived Files/Starquill github 2022/music/Virt/Shovel Knight Original Soundtrack/23 The Schemer (Tinker Knight Battle).mp3"
+dest_files=["res://.godot/imported/23 The Schemer (Tinker Knight Battle).mp3-f564fe722f67097dc9bf11ef3c77da49.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
