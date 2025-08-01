@@ -25,7 +25,6 @@ Supports high-volume of assets and allows future expansion into Web3 (wallet, to
 - **Intelligence (INT)** – Reasoning, memory, and knowledge of the world. Governs logic and problem-solving  
 - **Wisdom (WIS)** – Perception, awareness, and instinct. Used to read the world and anticipate events  
 - **Charisma (CHA)** – Presence, influence, and emotional resonance. Drives interactions and persuasion  
-- **Fortune (FOR)** – Abstract representation of fate, synchronicity, and improbable success. Affects loot, events, and world alignment  
 
 ## Dice-Based Resolution
 
