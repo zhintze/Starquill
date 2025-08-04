@@ -14,7 +14,7 @@ An open-world fantasy RPG focused on exploration, looting, and emergent storytel
 
 ## Platform(s)
 
-**Windows and Linux (Desktop)**  
+**Android**  
 Supports high-volume of assets and allows future expansion into Web3 (wallet, token, NFTs).
 
 #### Character Stats (D&D-Inspired)
@@ -83,7 +83,7 @@ Supports high-volume of assets and allows future expansion into Web3 (wallet, to
 
 - Real-time combat or action-based mechanics
 
-- Mobile and Console Ports
+- Console Ports
 
 - VR Support
 
