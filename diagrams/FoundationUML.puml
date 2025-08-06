@@ -1,0 +1,225 @@
+@startuml
+
+' Interfaces
+interface Displayable {
+  +get_display_pieces(): List<DisplayPiece>
+  +get_hidden_layers(): List<int>
+}
+
+interface VerbSelectionStrategy {
+  +select_verbs(stats: Stats, context: CombatContext): List<Verb>
+}
+
+' Core Classes
+class Character {
+  +id: String
+  +name: String
+  +skin_color: Color
+  +stats: Stats
+  +species: SpeciesInstance
+  +head: Equipment
+  +torso: Equipment
+  +arms: Equipment
+  +legs: Equipment
+  +feet: Equipment
+  +misc1: Equipment
+  +misc2: Equipment
+  +misc3: Equipment
+  +misc4: Equipment
+  +base_verbs: List<Verb>
+  +get_displayables(): List<Displayable>
+  +get_display_pieces(): List<DisplayPiece>
+  +get_current_verbs(): List<Verb>
+  +get_all_equipment(): List<Equipment>
+}
+
+class Stats {
+  +str: int
+  +dex: int
+  +con: int
+  +int: int
+  +wis: int
+  +cha: int
+}
+
+class SpeciesInstance {
+  +type: String
+  +stats: Stats
+  +scaleX: float
+  +scaleY: float
+  +backArm: String
+  +legs: String
+  +body: String
+  +head: String
+  +frontArm: String
+  +isEyesStatic: bool
+  +eyes: String
+  +isNoseStatic: bool
+  +nose: String
+  +isMouthStatic: bool
+  +mouth: String
+  +isEarsStatic: bool
+  +ears: String
+  +isFacialHairStatic: bool
+  +facialHair: String
+  +isFacialDetailStatic: bool
+  +facialDetail: String
+  +hairTypes: List<String>
+  +skinColorList: SkinColorList
+  +skinVarianceMap: Map<String, String>
+  +itemRestrictions: List<String>
+  +get_display_pieces(): List<DisplayPiece>
+  +get_hidden_layers(): List<int>
+}
+
+class Species {
+  +type: String
+  +stats: Stats
+  +scaleX: float
+  +scaleY: float
+  +backArm: String
+  +legs: String
+  +body: String
+  +head: String
+  +frontArm: String
+  +isEyesStatic: bool
+  +eyes: String
+  +isNoseStatic: bool
+  +nose: String
+  +isMouthStatic: bool
+  +mouth: String
+  +isEarsStatic: bool
+  +ears: String
+  +isFacialHairStatic: bool
+  +facialHair: String
+  +isFacialDetailStatic: bool
+  +facialDetail: String
+  +hairTypes: List<String>
+  +skinColorList: SkinColorList
+  +skinVarianceMap: Map<String, String>
+  +itemRestrictions: List<String>
+}
+
+class Equipment {
+  +id: int
+  +item_type: String
+  +item_num: int
+  +layer_codes: List<int>
+  +hidden_layers: List<int>
+  +get_display_pieces(): List<DisplayPiece>
+  +validate(): bool
+}
+
+class EquipmentLoader {
+  +load_from_json(path: String): Dictionary<int, Equipment>
+  +validate(equipment: Equipment): bool
+}
+
+class SpeciesLoader {
+  +load_from_json(path: String): Dictionary<String, Species>
+  +validate(species: Species): bool
+}
+
+class CSVToJsonConverter {
+  +convert_equipment_csv_to_json(csv_path: String, json_out: String): void
+  +convert_species_csv_to_json(csv_path: String, json_out: String): void
+  +validate_row(row: Dictionary, type: String): bool
+}
+
+class DisplayPiece {
+  +image_name: String
+  +layer: int
+  +color: Color
+  +z_index: int
+}
+
+class CharacterDisplay {
+  +display(character: Character): void
+  +render_display_piece(piece: DisplayPiece): void
+  +display_pieces: List<DisplayPiece>
+}
+
+class CharacterFactory {
+  +create_character(data: Dictionary): Character
+}
+
+class EquipmentFactory {
+  +create_equipment(data: Dictionary): Equipment
+  +create_random_equipment(type: String): Equipment
+}
+
+class Verb {
+  +name: String
+  +main_stat: StatType
+  +power: int
+  +cost: int
+  +description: String
+}
+
+class VerbFactory {
+  +get_verbs_for_stat(stat: StatType): List<Verb>
+  +get_default_verbs(stats: Stats): List<Verb>
+}
+
+class VerbSelector {
+  +strategy: VerbSelectionStrategy
+  +select_verbs(stats: Stats, context: CombatContext): List<Verb>
+}
+
+class CombatContext {
+  +round: int
+  +terrain: String
+  +nearby_enemies: List<Character>
+  +status_effects: List<String>
+}
+
+class Party {
+  +members: List<Character>
+  +loose_equipment: List<Items>
+  +items: List<Items>
+  +get_all_equipment(): List<Equipment>
+
+}
+
+class Items {
+  +id: String
+  +name: String
+  +description: String
+  +use(): void
+}
+
+class Consumables {
+  +stats: Stats
+  +uses: int
+  +use(): void
+}
+
+class KeyItems {
+  +stats: Stats
+  +use(): void
+}
+
+
+' Relationships
+SpeciesInstance ..|> Displayable
+Equipment ..|> Displayable
+Character --> SpeciesInstance
+Character --> Equipment
+Character --> Verb
+Character --> DisplayPiece
+CharacterDisplay --> DisplayPiece
+VerbSelector --> VerbSelectionStrategy
+VerbSelector --> CombatContext
+VerbSelector --> Verb
+VerbFactory --> Verb
+CharacterFactory --> Character
+EquipmentFactory --> Equipment
+EquipmentLoader --> Equipment
+SpeciesLoader --> Species
+SpeciesInstance --> Species
+CSVToJsonConverter --> Equipment
+CSVToJsonConverter --> Species
+Consumables --|> Items
+KeyItems --|> Items
+
+@enduml
