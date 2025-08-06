@@ -1,14 +1,25 @@
 # Godot 4+ specific ignores
 .godot/
-/android/
+.android/
 .import/
 export.cfg
 export_presets.cfg
 mono/
+*.import
+*.mono
+
+# Godot Git Plugin (built binaries)
+addons/godot-git-plugin/bin/*.so
+addons/godot-git-plugin/bin/*.dll
+addons/godot-git-plugin/bin/*.dylib
 
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# Python bytecode
+__pycache__/
+*.pyc
 
 # Backup files
 *.tmp
