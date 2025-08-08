@@ -5,4 +5,4 @@ var stats: Stats
 var uses: int
 
 func use() -> void:
-    pass
+	pass

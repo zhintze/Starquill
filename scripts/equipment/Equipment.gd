@@ -7,8 +7,12 @@ var item_num: int
 var layer_codes: Array[int]
 var hidden_layers: Array[int]
 
+func _init() -> void:
+	layer_codes = []
+	hidden_layers = []
+
 func get_display_pieces() -> Array[DisplayPiece]:
-    return []
+	return []
 
 func validate() -> bool:
-    return true
+	return true
