@@ -6,4 +6,4 @@ var name: String
 var description: String
 
 func use() -> void:
-    pass
+	pass
