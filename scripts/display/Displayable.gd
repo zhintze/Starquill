@@ -1,8 +1,8 @@
-extends Node
+extends Resource
 class_name Displayable
 
 func get_display_pieces() -> Array[DisplayPiece]:
-    return []
+	return []
 
 func get_hidden_layers() -> Array[int]:
-    return []
+	return []

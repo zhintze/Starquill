@@ -1,8 +1,8 @@
-extends Node
+extends Resource
 class_name EquipmentLoader
 
 func load_from_json(path: String) -> Dictionary:
-    return {}
+	return {}
 
 func validate(equipment: Equipment) -> bool:
-    return true
+	return true
