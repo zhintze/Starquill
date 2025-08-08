@@ -1,2 +1,0 @@
-abduction theft,revenge death
-[npc hostile]{trigger} in [location hostile]{trigger} [action]. [quest item purpose],[npc friendly]{passive} was [action] by [npc hostile]{trigger}. Their death must be avenged.
