@@ -10,6 +10,42 @@ interface VerbSelectionStrategy {
   +select_verbs(stats: Stats, context: CombatContext): List<Verb>
 }
 
+' ===== Stats System =====
+enum StatType {
+  STR
+  DEX
+  CON
+  INT
+  WIS
+  CHA
+}
+
+class Stat {
+  +type: StatType
+  +base_value: int
+  +flat_modifiers: List<int>
+  +get_value(): int
+  +set_base_value(v: int): void
+  +add_modifier(amount: int): void
+  +remove_modifier(amount: int): void
+  +clear_modifiers(): void
+}
+
+class Stats {
+  -values: Map<StatType, Stat>
+  +get_stat(stat: StatType): Stat
+  +get_value(stat: StatType): int
+  +set_base(stat: StatType, value: int): void
+  +add_modifier(stat: StatType, amount: int): void
+}
+
+' ===== Species Color System =====
+class SkinColorList {
+  +id: String
+  +colors: List<Color>
+  +has_color(c: Color): bool
+}
+
 ' Core Classes
 class Character {
   +id: String
@@ -33,16 +69,8 @@ class Character {
   +get_all_equipment(): List<Equipment>
 }
 
-class Stats {
-  +str: int
-  +dex: int
-  +con: int
-  +int: int
-  +wis: int
-  +cha: int
-}
-
 class SpeciesInstance {
+  +base: Species
   +type: String
   +stats: Stats
   +scaleX: float
@@ -65,7 +93,7 @@ class SpeciesInstance {
   +isFacialDetailStatic: bool
   +facialDetail: String
   +hairTypes: List<String>
-  +skinColorList: SkinColorList
+  +skinColor: Color
   +skinVarianceMap: Map<String, String>
   +itemRestrictions: List<String>
   +get_display_pieces(): List<DisplayPiece>
@@ -178,7 +206,6 @@ class Party {
   +loose_equipment: List<Items>
   +items: List<Items>
   +get_all_equipment(): List<Equipment>
-
 }
 
 class Items {
@@ -199,7 +226,6 @@ class KeyItems {
   +use(): void
 }
 
-
 ' Relationships
 SpeciesInstance ..|> Displayable
 Equipment ..|> Displayable
@@ -208,6 +234,7 @@ Character --> Equipment
 Character --> Verb
 Character --> DisplayPiece
 CharacterDisplay --> DisplayPiece
+
 VerbSelector --> VerbSelectionStrategy
 VerbSelector --> CombatContext
 VerbSelector --> Verb
@@ -216,10 +243,17 @@ CharacterFactory --> Character
 EquipmentFactory --> Equipment
 EquipmentLoader --> Equipment
 SpeciesLoader --> Species
+
 SpeciesInstance --> Species
+Species --> SkinColorList
+
 CSVToJsonConverter --> Equipment
 CSVToJsonConverter --> Species
 Consumables --|> Items
 KeyItems --|> Items
+
+' Stats relations
+Stats o--> Stat
+Verb --> StatType
 
 @enduml
