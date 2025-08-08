@@ -1,4 +1,4 @@
-extends Node
+extends Resource
 class_name VerbFactory
 
 func get_verbs_for_stat(stat: StatType) -> Array[Verb]:
