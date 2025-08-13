@@ -335,4 +335,41 @@ func _extract_first_int(text: String) -> int:
 				return i_val
 	return -1
 
-	
+# =========================
+# SPECIES MODULAR PARTS CONVERTER
+# =========================
+# CSV columns (case-insensitive):
+# type : string
+# amount : int
+func convert_species_modular_parts_csv_to_json(csv_path: String, json_out_path: String) -> void:
+	var f := FileAccess.open(csv_path, FileAccess.READ)
+	if f == null:
+		push_error("csv_to_json_converter: Cannot open CSV: %s" % csv_path)
+		return
+
+	var headers: Array = _read_csv_line(f)
+	if headers.is_empty():
+		push_error("csv_to_json_converter: CSV has no header row: %s" % csv_path)
+		return
+	var idx: Dictionary = _index_headers(headers)
+
+	var rows: Array = []
+	while not f.eof_reached():
+		var line: Array = _read_csv_line(f)
+		if line.is_empty():
+			continue
+
+		var t: String = _csv_get(line, idx, "type", "")
+		var amt: int = _to_int_default(_csv_get(line, idx, "amount", ""), 0)
+
+		# Skip rows that have neither type nor amount info
+		if t == "" and amt == 0:
+			continue
+
+		rows.append({
+			"type": t,
+			"amount": amt
+		})
+
+	f.close()
+	_write_json(rows, json_out_path)

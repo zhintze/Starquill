@@ -13,4 +13,8 @@ func _ready():
 	var species_csv_in  := "res://documents/Layer Export - species.csv"   # e.g., where you keep CSVs
 	var species_json_out := "res://assets/data/species.json"
 	conv.convert_species_csv_to_json(species_csv_in, species_json_out)
+	
+	var speciesModularParts_csv_in  := "res://documents/Layer Export - speciesModularParts.csv"   # e.g., where you keep CSVs
+	var speciesModularParts_json_out := "res://assets/data/speciesModularParts.json"
+	conv.convert_species_modular_parts_csv_to_json(speciesModularParts_csv_in, speciesModularParts_json_out)
 	print("Done.")
