@@ -8,6 +8,7 @@ mono/
 *.import
 *.mono
 *.gd.uid
+*.translation
 
 # Godot Git Plugin (built binaries)
 addons/godot-git-plugin/bin/*.so

@@ -1,0 +1,68 @@
+description,Item type,Layer Code1,Layer Code2,Layer Code3,hidden layer numbers,layer color variance,modular,amount
+gloves,ar01,24,110,,,,n,16
+bracers,ar02,34,142,,,,n,20
+gauntlets,ar03,32,140,,,,n,14
+bracelet,ar04,138,,,,,n,9
+wrist jewelry,ar05,144,146,,,146,n,5
+SPECIES eyes,f01,84,,,,,n,
+SPECIES nose,f02,86,,,,,n,
+SPECIES mouth,f03,85,,,,,n,
+SPECIES ears,f04,100,,,,,n,
+SPECIES facial hair,f05,122,,,,,n,
+SPECIES facedetail,f06,87,,,,,n,
+shoes,fe01,40,,,,,n,41
+boots,fe02,44,,,,,n,69
+SPECIES hair,h01,92,,,,,n,
+SPECIES hair with hairtop,h02,92,128,,,,n,
+SPECIES hair with detail,h03,92,154,,,,n,
+SPECIES hair with detail and hairtop,h04,92,128,154,,,n,
+hat,hd01,130,,,,,n,62
+hat with detail,hd02,130,132,,,132,n,36
+large hat ,hd03,156,,,10 134 128,,n,77
+large hat with detail,hd04,156,158,,10 134 128,156,n,29
+quarter helmet no det,hd05,160,,,10 134 130 132 156 158 128 154,,n,41
+quarter helmet det,hd06,160,162,,10 134 130 132 156 158 128 154,160,n,27
+helmet no detail,hd07,160,,,10 134 130 132 156 158 128 154 96 122 123,,n,42
+helmet with detail,hd08,160,162,,10 134 130 132 156 158 128 154 96 122 123,160,n,34
+eyemask/eyepatch,hd09,90,,,,,n,11
+headband,hd10,94,,,,,n,10
+glasses,hd11,96,,,,,n,12
+tight facemask,hd12,98,,,122 123 154,,n,13
+large facemask,hd13,136,,,122 123,,n,10
+tight pants under boot,lg01,42,,,,,n,74
+large pants over boot,lg02,46,,,,,n,40
+Pauldron - single small,mc01,116,,,,,n,13
+pauldrons,mc02,26,118,,,,n,13
+weapon on back,mc03,12,,,,,n,10
+weapon on back w/ overbelt,mc04,12,72,,,72,n,5
+ring,mc05,148,,,,,n,13
+cape,mc06,8,60,,,,n,8
+large cape,mc07,6,120,,,,n,12
+scarf,mc08,80,,,,,n,9
+earring,mc09,124,,,,,n,13
+necklace,mc10,62,,,,,n,19
+amulet,mc11,68,70,,,70,n,10
+belt,mc12,56,,,,,n,36
+belt with buckle,mc13,56,58,,,58,n,36
+shirt,tr01,18,48,104,,,n,120
+shirt with breasts ,tr02,18,48,104,,,n,90
+sleeveless shirt,tr03,48,,,,,n,169
+sleeveless shirt with breasts ,tr04,48,,,,,n,85
+dress,tr05,52,,,,,n,60
+sleeve dress,tr06,20,52,106,,,n,29
+vest,tr07,54,,,,,n,63
+coat,tr08,30,66,114,,,n,56
+tabard,tr09,78,,,,,n,10
+overbelt,tr10,74,76,,,76,n,17
+light armor,tr11,22,50,108,,,n,22
+heavy armor,tr12,28,64,112,,,n,10
+hooded cloak,tr13,14,150,152,10 130 80 116 118 128 130 132 134 136 156 158 160 162,152,n,5
+sword 1 hand,w01,164,166,168,,166 168,y,23 24 28
+axe 1 hand,w02,164,166,168,,166 168,y,12 27 
+mace 1 hand,w03,164,166,168,,166 168,y,11 23 
+two hand sword,w04,164,166,168,,166 168,y,2 2 2
+two hand axe,w05,164,166,168,,166 168,y,5 13 3
+magic,w06,164,166,168,,166 168,y,5 4 5
+ranged,w07,164,166,168,,166 168,y,6 6
+shield,w08,170,,,,,n,3
+shield with detail,w09,170,172,,,172,n,3 3
