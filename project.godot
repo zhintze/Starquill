@@ -16,7 +16,15 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Bus="*res://autoload/Bus.gd"
+BusFlow="*res://autoload/bus_flow.gd"
+BusActors="*res://autoload/bus_actors.gd"
+BusCombat="*res://autoload/bus_combat.gd"
+BusInventory="*res://autoload/bus_inventory.gd"
+BusUi="*res://autoload/bus_ui.gd"
+BusSave="*res://autoload/bus_save.gd"
+BusAudio="*res://autoload/bus_audio.gd"
+SceneLoader="*res://autoload/scene_loader.gd"
+Game="*res://autoload/game.gd"
 
 [editor]
 
