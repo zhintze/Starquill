@@ -16,16 +16,14 @@ func _clear_children():
 
 func _refresh():
 	_clear_children()
-	if target == null or not target.has_method("get_display_pieces"):
+	if target == null:
 		return
 	var pieces: Array = target.get_display_pieces()
 	var hidden: Array = []
 	if target.has_method("get_hidden_layers"):
 		hidden = target.get_hidden_layers()
 
-	pieces.sort_custom(func(a, b):
-		return (a.layer < b.layer)
-	)
+	pieces.sort_custom(func(a, b): return a.layer < b.layer)
 
 	for dp in pieces:
 		if dp == null or dp is not DisplayPiece:
@@ -39,6 +37,7 @@ func _refresh():
 		spr.flip_v = dp.flip_v
 		spr.position = dp.offset
 		spr.scale = dp.scale
+		spr.z_index = dp.layer
 		add_child(spr)
 		_sprites.append(spr)
 

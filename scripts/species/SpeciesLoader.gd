@@ -4,158 +4,93 @@ class_name SpeciesLoader
 signal species_loaded(count: int)
 
 var by_name: Dictionary = {}   # name -> Species
-var all: Array = []            # Array[Species]
+var all: Array[Species] = []
 
-# ---- CONFIG ----
-const HUMAN_CSV_PATH := "res://documents/skin_colors.csv"  # rename/move your CSV to this path
+const SPECIES_JSON_DEFAULT := "res://assets/data/species.json"
+const PALETTE_CSV_PATTERN  := "res://documents/skin_color_%s.csv"  # preferred (skin_color_human.csv)
+const PALETTE_CSV_FALLBACK := "res://documents/skin_colors.csv"    # flat file; hex-per-line
+const MODULAR_PARTS_JSON   := "res://assets/data/speciesModularParts.json"
 
-# keyword(lowercase) -> SkinColorList
-var _palette_registry: Dictionary = {}
+# Cache
+static var _palette_cache: Dictionary = {}   # keyword -> ["#hex", ...]
+static var _modular_counts: Dictionary = {}  # "f01"->n, "h02"->n, plus letter totals "h"->sum
 
-static func _has_property(o: Object, prop: String) -> bool:
-	for p in o.get_property_list():
-		if typeof(p) == TYPE_DICTIONARY and p.has("name") and p["name"] == prop:
-			return true
-	return false
+func _ready() -> void:
+	if all.is_empty():
+		load_from_json(SPECIES_JSON_DEFAULT)
 
-static func _set_if_present(o: Object, prop: String, val) -> void:
-	if _has_property(o, prop):
-		o.set(prop, val)
-
-static func _assign_palette_if_present(s: Object, scl: Resource) -> void:
-	var candidates := [
-		"skinColorList",
-		"skin_color_list",
-		"skin_palette",
-		"skinPalette"
-	]
-	for prop in candidates:
-		if _has_property(s, prop):
-			s.set(prop, scl)
-			return
-
-# -------- SkinColorList helpers --------
-
-func _string_to_color(hex_like: String) -> Color:
-	var t: String = hex_like.strip_edges()
-	if t.begins_with("#"):
-		t = t.substr(1, t.length() - 1)
-	return Color.html(t)
-
-func _make_skin_color_list(id_str: String, hexes: Array) -> SkinColorList:
-	var scl := SkinColorList.new()
-	scl.id = id_str
-	for h in hexes:
-		if typeof(h) == TYPE_STRING:
-			var hs: String = (h as String).strip_edges()
-			if not hs.is_empty():
-				var c := _string_to_color(hs)
-				scl.colors.append(c)
-	return scl
-
-func _duplicate_skin_color_list(src: SkinColorList, new_id: String = "") -> SkinColorList:
-	var scl := SkinColorList.new()
-	scl.id = (new_id if new_id != "" else src.id)
-	for c in src.colors:
-		scl.colors.append(c)
-	return scl
-
-func _load_human_palette_from_csv(path: String) -> void:
-	var scl := SkinColorList.new()
-	scl.id = "human"
-
-	if not FileAccess.file_exists(path):
-		push_warning("SpeciesLoader: Human CSV not found at %s; using empty palette." % path)
-	else:
-		var f := FileAccess.open(path, FileAccess.READ)
-		if f == null:
-			push_warning("SpeciesLoader: Cannot open CSV at %s; using empty palette." % path)
-		else:
-			while not f.eof_reached():
-				var line: String = f.get_line().strip_edges()
-				if line.is_empty():
-					continue
-				# Accept either "hex" header or id,hex rows; prefer last column as color token
-				var token: String = line
-				if "," in line:
-					var parts := line.split(",", false)
-					if parts.size() >= 2:
-						token = (parts[parts.size() - 1] as String).strip_edges()
-					else:
-						token = (parts[0] as String).strip_edges()
-				if token.begins_with("#"):
-					token = token.substr(1, token.length() - 1)
-				var lower := token.to_lower()
-				if lower == "hex" or lower == "color" or lower == "colour":
-					continue
-				var c := Color.html(token)
-				scl.colors.append(c)
-
-	# Store only lowercase key
-	_palette_registry["human"] = scl
-
-func _ensure_default_palettes_loaded() -> void:
-	if _palette_registry.is_empty():
-		_load_human_palette_from_csv(HUMAN_CSV_PATH)
-
-# --------------------------------------
+# ---------------- Public API ----------------
 
 func load_from_json(path: String) -> void:
 	by_name.clear()
 	all.clear()
 
-	_ensure_default_palettes_loaded()
+	if not FileAccess.file_exists(path):
+		push_error("SpeciesLoader: Missing " + path)
+		return
+
+	# modular counts on first load
+	if _modular_counts.is_empty():
+		_load_modular_counts()
 
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
-		push_error("SpeciesLoader: Cannot open %s" % path)
+		push_error("SpeciesLoader: Cannot open " + path)
 		return
 
-	var text := f.get_as_text()
-	var root = JSON.parse_string(text)
+	var root = JSON.parse_string(f.get_as_text())
 	if typeof(root) != TYPE_ARRAY:
 		push_error("SpeciesLoader: Root must be an array in %s" % path)
 		return
 
-	for entry in root:
-		if typeof(entry) != TYPE_DICTIONARY:
+	for row in root:
+		if typeof(row) != TYPE_DICTIONARY:
 			continue
-
 		var s := Species.new()
-		for k in entry.keys():
-			_set_if_present(s, k, entry[k])
+		s.name = String(row.get("name", ""))
 
-		# Resolve skin_color -> SkinColorList (array of hexes OR keyword)
-		if entry.has("skin_color"):
-			var val = entry["skin_color"]
-			if typeof(val) == TYPE_ARRAY:
-				var scl := _make_skin_color_list("inline_%s" % (entry.get("name", "unnamed")), val)
-				_assign_palette_if_present(s, scl)
-			elif typeof(val) == TYPE_STRING:
-				var key_str: String = String(val).strip_edges()
-				var key_lc: String = key_str.to_lower()
-				if _palette_registry.has(key_lc):
-					var cloned := _duplicate_skin_color_list(
-						_palette_registry[key_lc],
-						"%s_%s" % [key_lc, entry.get("name", "")]
-					)
-					_assign_palette_if_present(s, cloned)
-				else:
-					push_warning("SpeciesLoader: Unknown skin_color keyword '%s' for '%s' — leaving palette unset." % [key_str, entry.get("name", "")])
+		s.backArm = String(row.get("backArm", ""))
+		s.body = String(row.get("body", ""))
+		s.ears = String(row.get("ears", ""))
+		s.eyes = String(row.get("eyes", ""))
+		s.facialDetail = String(row.get("facialDetail", ""))
+		s.facialHair = String(row.get("facialHair", ""))
+		s.frontArm = String(row.get("frontArm", ""))
+		s.hair = row.get("hair", null)              # may be String or Array
+		s.head = String(row.get("head", ""))
+		s.legs = String(row.get("legs", ""))
+		s.mouth = String(row.get("mouth", ""))
+		s.nose = String(row.get("nose", ""))
 
-		# name key
-		var nm := ""
-		if _has_property(s, "name") and typeof(s.name) == TYPE_STRING:
-			nm = s.name
+		var obp: Array = row.get("otherBodyParts", [])
+		s.otherBodyParts = PackedStringArray(obp)
 
-		if nm != "":
-			by_name[nm] = s
-		all.append(s)
+		var ir: Array = row.get("itemRestrictions", [])
+		s.itemRestrictions = PackedStringArray(ir)
+
+		var sc: Array = row.get("skin_color", [])
+		s.skin_color = PackedStringArray(sc)
+
+		var svh: Array = row.get("skinVariance_hex", [])
+		s.skinVariance_hex = PackedStringArray(svh)
+
+		var svi: Array = row.get("skinVariance_indices", [])
+		s.skinVariance_indices = PackedInt32Array(svi)
+
+		s.x_scale = float(row.get("x_scale", 1.0))
+		s.y_scale = float(row.get("y_scale", 1.0))
+
+		if s.name != "":
+			by_name[s.name] = s
+			all.append(s)
 
 	emit_signal("species_loaded", all.size())
 
-func create_random_instance(species_name: String) -> SpeciesInstance:
-	var s: Species = by_name.get(species_name, null)
+func get_species(name: String) -> Species:
+	return by_name.get(name, null)
+
+func create_instance(species_name: String) -> SpeciesInstance:
+	var s := get_species(species_name)
 	if s == null:
 		push_error("SpeciesLoader: Unknown species '%s'" % species_name)
 		return null
@@ -170,3 +105,90 @@ func create_random_instance_from_index(idx: int) -> SpeciesInstance:
 	var inst := SpeciesInstance.new()
 	inst.from_species(all[idx])
 	return inst
+
+# Palettes -------------------------------------------------------------
+
+static func get_palette(keyword: String) -> Array:
+	var key := keyword.to_lower()
+	if _palette_cache.has(key):
+		return _palette_cache[key]
+	var path := PALETTE_CSV_PATTERN % key
+	var arr: Array = []
+	if FileAccess.file_exists(path):
+		arr = _read_palette_csv(path)
+	elif FileAccess.file_exists(PALETTE_CSV_FALLBACK):
+		arr = _read_palette_csv(PALETTE_CSV_FALLBACK)
+	else:
+		push_warning("SpeciesLoader: Palette CSV not found: %s or %s" % [path, PALETTE_CSV_FALLBACK])
+	_palette_cache[key] = arr
+	return arr
+
+static func _read_palette_csv(path: String) -> Array:
+	var out: Array = []
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return out
+	while not f.eof_reached():
+		var line := f.get_line().strip_edges()
+		if line == "" or line.begins_with("#") or line.begins_with("//"):
+			continue
+		for token in line.split(","):
+			var t := String(token).strip_edges()
+			if t == "" or t.to_lower() in ["hex","color","col","palette"]:
+				continue
+			var norm := _normalize_hex(t)
+			if norm != "":
+				out.append(norm)
+	return out
+
+static func _normalize_hex(s: String) -> String:
+	var t := s.strip_edges()
+	if t == "":
+		return ""
+	if t.begins_with("0x") or t.begins_with("0X"):
+		t = t.substr(2)
+	if not t.begins_with("#"):
+		t = "#" + t
+	if t.length() == 4 or t.length() == 5:
+		var r := t[1]; var g := t[2]; var b := t[3]
+		if t.length() == 4: return "#" + r + r + g + g + b + b
+		var a := t[4]; return "#" + r + r + g + g + b + b + a + a
+	if t.length() == 7 or t.length() == 9:
+		return t
+	push_warning("SpeciesLoader: Ignoring invalid hex '%s'" % s)
+	return ""
+
+# Modular counts -------------------------------------------------------
+
+static func _load_modular_counts() -> void:
+	if not _modular_counts.is_empty():
+		return
+	if not FileAccess.file_exists(MODULAR_PARTS_JSON):
+		push_warning("SpeciesLoader: Missing " + MODULAR_PARTS_JSON)
+		return
+	var f := FileAccess.open(MODULAR_PARTS_JSON, FileAccess.READ)
+	if f == null:
+		return
+	var root = JSON.parse_string(f.get_as_text())
+	if typeof(root) == TYPE_ARRAY:
+		for rec in root:
+			if typeof(rec) != TYPE_DICTIONARY: continue
+			var typ := String(rec.get("type",""))
+			var amt := int(rec.get("amount", 0))
+			if typ != "" and amt > 0:
+				_modular_counts[typ] = amt
+				var letter := typ.substr(0,1)
+				_modular_counts[letter] = int(_modular_counts.get(letter, 0)) + amt
+
+static func pick_modular_image_num(type_code: String) -> String:
+	_load_modular_counts()
+	var n := 0
+	if _modular_counts.has(type_code):
+		n = int(_modular_counts[type_code])
+	else:
+		n = int(_modular_counts.get(type_code.substr(0,1), 0))
+	if n <= 0: n = 1
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var choice := 1 + (rng.randi() % n)
+	return "%04d" % choice

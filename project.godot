@@ -27,6 +27,7 @@ BusAudio="*res://autoload/bus_audio.gd"
 SceneLoader="*res://autoload/scene_loader.gd"
 Game="*res://autoload/game.gd"
 species_loader="*res://scripts/species/SpeciesLoader.gd"
+species_display_builder="*res://scripts/species/SpeciesDisplayBuilder.gd"
 
 [editor]
 

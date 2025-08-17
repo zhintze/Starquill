@@ -9,13 +9,15 @@ class_name DisplayPiece
 @export var flip_h: bool = false
 @export var flip_v: bool = false
 
-static func from_path(path: String, layer: int, modulate: Color = Color.WHITE, offset := Vector2.ZERO, scale := Vector2.ONE, flip_h := false, flip_v := false) -> DisplayPiece:
+static func make(tex: Texture2D, layer: int, col: Color = Color(1,1,1,1)) -> DisplayPiece:
 	var dp := DisplayPiece.new()
 	dp.layer = layer
-	dp.texture = load(path) as Texture2D
-	dp.modulate = modulate
-	dp.offset = offset
-	dp.scale = scale
-	dp.flip_h = flip_h
-	dp.flip_v = flip_v
+	dp.texture = tex
+	dp.modulate = col
 	return dp
+
+static func from_path(path: String, layer: int, col: Color = Color(1,1,1,1)) -> DisplayPiece:
+	var tex := load(path) as Texture2D
+	if tex == null:
+		return null
+	return make(tex, layer, col)
