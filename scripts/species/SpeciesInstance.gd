@@ -1,120 +1,127 @@
 extends Resource
 class_name SpeciesInstance
 
-var base: Species
+@export var base: Species
 
-# Concrete values chosen/copied from base:
-var name: String = ""
-var backArm := ""
-var body := ""
-var ears := ""
-var eyes := ""
-var facialDetail := ""
-var facialHair := ""
-var frontArm := ""
-var head := ""
-var legs := ""
-var mouth := ""
-var nose := ""
+@export var species_id: String = ""
 
-var hair := ""                     # chosen from array if available
-var otherBodyParts: Array = []     # copied
-var itemRestrictions: Array = []   # copied
-var skinVariance_hex := ""         # chosen
-var skinVariance_indices = null    # chosen (int or null)
-var skin_color := ""               # chosen (may be symbolic like "human")
+# Concrete, chosen values (strings)
+@export var backArm: String = ""
+@export var body: String = ""
+@export var ears: String = ""
+@export var eyes: String = ""
+@export var facialDetail: String = ""
+@export var facialHair: String = ""
+@export var frontArm: String = ""
+@export var hair: String = ""          # chosen type code or "" (not an array)
+@export var head: String = ""
+@export var legs: String = ""
+@export var mouth: String = ""
+@export var nose: String = ""
 
-var x_scale: float = 1.0
-var y_scale: float = 1.0
+# Lists (use packed arrays so JSON → Resource assignment is type-clean)
+@export var otherBodyParts: PackedStringArray = PackedStringArray()
+@export var itemRestrictions: PackedStringArray = PackedStringArray()
+
+# Scale
+@export var x_scale: float = 1.0
+@export var y_scale: float = 1.0
+
+# Colors
+@export var skinColor: Color = Color(1,1,1,1)
+@export var skinVarianceMap: Dictionary = {}      # layer:int -> Color
+
+# Modular image numbers chosen for this instance, e.g. { "f01": "0023" }
+@export var modular_image_nums: Dictionary = {}
 
 var _rng := RandomNumberGenerator.new()
 
-static func _has_property(o: Object, prop: String) -> bool:
-	for p in o.get_property_list():
-		if typeof(p) == TYPE_DICTIONARY and p.has("name") and p["name"] == prop:
-			return true
-	return false
-
-static func _get_if_present(o: Object, prop: String, default_value = null):
-	if _has_property(o, prop):
-		return o.get(prop)
-	return default_value
-
-func _pick(arr: Array):
-	if arr.is_empty():
-		return null
-	return arr[_rng.randi_range(0, arr.size() - 1)]
-
-func _str_or_empty(v) -> String:
-	if typeof(v) == TYPE_STRING:
-		return v
-	return ""
+func _ready() -> void:
+	_rng.randomize()
 
 func from_species(s: Species) -> void:
 	base = s
-	_rng.randomize()
+	species_id = s.name
 
-	# Scalars/strings (copy-through if present)
-	var tmp
-	tmp = _get_if_present(s, "name", "");           name = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "backArm", "");        backArm = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "body", "");           body = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "ears", "");           ears = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "eyes", "");           eyes = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "facialDetail", "");   facialDetail = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "facialHair", "");     facialHair = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "frontArm", "");       frontArm = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "head", "");           head = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "legs", "");           legs = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "mouth", "");          mouth = _str_or_empty(tmp)
-	tmp = _get_if_present(s, "nose", "");           nose = _str_or_empty(tmp)
+	# Copy scale
+	x_scale = s.x_scale
+	y_scale = s.y_scale
 
-	# Arrays (randomize if present; keep empty/null if not)
-	var _hair = _get_if_present(s, "hair", [])
-	if typeof(_hair) == TYPE_ARRAY and not _hair.is_empty():
-		hair = _pick(_hair)
-	else:
-		hair = ""
+	# Pick/copy strings
+	backArm = String(s.backArm)
+	body = String(s.body)
+	ears = _pick_string_or_first(s.ears)
+	eyes = _pick_string_or_first(s.eyes)
+	facialDetail = _pick_string_or_first(s.facialDetail)
+	facialHair = _pick_string_or_first(s.facialHair)
+	frontArm = String(s.frontArm)
+	hair = _pick_string_from_variant(s.hair)
+	head = String(s.head)
+	legs = String(s.legs)
+	mouth = _pick_string_or_first(s.mouth)
+	nose = _pick_string_or_first(s.nose)
 
-	var _obp = _get_if_present(s, "otherBodyParts", [])
-	if typeof(_obp) == TYPE_ARRAY:
-		otherBodyParts = _obp.duplicate()
-	else:
-		otherBodyParts = []
+	# Lists (packed→packed; no cast needed)
+	otherBodyParts = s.otherBodyParts
+	itemRestrictions = s.itemRestrictions
 
-	var _restr = _get_if_present(s, "itemRestrictions", [])
-	if typeof(_restr) == TYPE_ARRAY:
-		itemRestrictions = _restr.duplicate()
-	else:
-		itemRestrictions = []
+	# Resolve colors
+	_resolve_skin_colors(s)
 
-	var _sv_hex = _get_if_present(s, "skinVariance_hex", [])
-	if typeof(_sv_hex) == TYPE_ARRAY and not _sv_hex.is_empty():
-		skinVariance_hex = _pick(_sv_hex)
-	else:
-		skinVariance_hex = ""
+	# Freeze modular image numbers now
+	for code in _present_modular_codes():
+		modular_image_nums[code] = SpeciesLoader.pick_modular_image_num(code)
 
-	var _sv_idx = _get_if_present(s, "skinVariance_indices", [])
-	if typeof(_sv_idx) == TYPE_ARRAY and not _sv_idx.is_empty():
-		skinVariance_indices = _pick(_sv_idx)
-	else:
-		skinVariance_indices = null
+# ---------- helpers ----------
 
-	var _skin = _get_if_present(s, "skin_color", [])
-	if typeof(_skin) == TYPE_ARRAY and not _skin.is_empty():
-		skin_color = _pick(_skin)
-	else:
-		skin_color = ""
+func _present_modular_codes() -> Array[String]:
+	var out: Array[String] = []
+	for v in [ears, eyes, facialDetail, facialHair, hair, mouth, nose]:
+		if v != "" and not _is_static_code(v):
+			out.append(v)
+	return out
 
-	# Scales (copy if present; otherwise defaults)
-	var sx = _get_if_present(s, "x_scale", 1.0)
-	if typeof(sx) in [TYPE_FLOAT, TYPE_INT]:
-		x_scale = float(sx)
-	else:
-		x_scale = 1.0
+func _is_static_code(v: String) -> bool:
+	var re := RegEx.new(); re.compile("^\\d{4}-\\d{3}$")
+	return re.search(v) != null
 
-	var sy = _get_if_present(s, "y_scale", 1.0)
-	if typeof(sy) in [TYPE_FLOAT, TYPE_INT]:
-		y_scale = float(sy)
-	else:
-		y_scale = 1.0
+func _pick_string_from_variant(v: Variant) -> String:
+	match typeof(v):
+		TYPE_STRING:
+			return String(v)
+		TYPE_ARRAY:
+			var a: Array = v
+			if a.is_empty(): return ""
+			return String(a[_rng.randi() % a.size()])
+		_:
+			return ""
+
+func _pick_string_or_first(v: String) -> String:
+	return String(v)
+
+func _resolve_skin_colors(s: Species) -> void:
+	# 1) Variance override
+	if s.skinVariance_hex.size() > 0 and s.skinVariance_indices.size() > 0:
+		var hexes := s.skinVariance_hex
+		var chosen_hex := String(hexes[int(_rng.randi() % hexes.size())])
+		var col := _safe_color(chosen_hex)
+		for layer in s.skinVariance_indices:
+			skinVarianceMap[int(layer)] = col
+	# 2) Base skin color (palette or explicit hex list)
+	if s.skin_color.size() > 0:
+		var key := String(s.skin_color[0])
+		var chosen_col := Color(1,1,1,1)
+		if key.begins_with("#"):
+			var hex := String(s.skin_color[int(_rng.randi() % s.skin_color.size())])
+			chosen_col = _safe_color(hex)
+		else:
+			var palette := SpeciesLoader.get_palette(key)
+			if palette.size() > 0:
+				var hex2 := String(palette[int(_rng.randi() % palette.size())])
+				chosen_col = _safe_color(hex2)
+		skinColor = chosen_col
+
+func _safe_color(hex: String) -> Color:
+	if not hex.begins_with("#"):
+		hex = "#" + hex
+	return Color(hex)

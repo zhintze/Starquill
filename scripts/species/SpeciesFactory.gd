@@ -1,25 +1,19 @@
 extends Node
 class_name SpeciesFactory
 
-# Map part-id to texture path
-func _part_path(id: String) -> String:
-	# Adjust to your folder layout & prefixes
-	# e.g., "0001-038" -> "res://art/parts/0001/0001-038.png"
-	if id == "" or id == null:
-		return ""
-	# simple default: flat folder with exact filenames
-	return "res://art/parts/%s.png" % id
-
-func create_instance(species_name: String) -> SpeciesInstance:
-	if not SpeciesLoader.by_name.has(species_name):
+# Return a ready-to-render displayable for CharacterDisplay
+func create_displayable(species_name: String) -> SpeciesDisplayable:
+	var s := species_display_builder.get_species(species_name)
+	if s == null:
 		push_error("SpeciesFactory: unknown species '%s'" % species_name)
 		return null
-	var inst := SpeciesInstance.new()
-	inst.from_species(SpeciesLoader.by_name[species_name])
-	return inst
+	var si := species_display_builder.freeze_species_to_instance(s)
+	return SpeciesDisplayable.new(si)
 
-func create_displayable(species_name: String):
-	var inst := create_instance(species_name)
-	if inst == null:
+# If you only need the frozen data (e.g., save to disk)
+func create_instance(species_name: String) -> SpeciesInstance:
+	var s := species_display_builder.get_species(species_name)
+	if s == null:
+		push_error("SpeciesFactory: unknown species '%s'" % species_name)
 		return null
-	return SpeciesDisplayable.new(inst, func(id): return _part_path(id))
+	return species_display_builder.freeze_species_to_instance(s)

@@ -2,7 +2,7 @@
 extends Node
 
 signal encounter_started(encounter_id: String, party_ids: Array, enemy_ids: Array)
-signal turn_started(encounter_id: String, actor_id: String, round: int)
+signal turn_started(encounter_id: String, actor_id: String, round_num: int)
 signal verb_selected(encounter_id: String, actor_id: String, verb_id: String, targets: Array)
 signal action_resolved(encounter_id: String, actor_id: String, verb_id: String, result: Dictionary)
 signal damage_applied(encounter_id: String, target_id: String, amount: float, damage_type: String)
@@ -13,8 +13,8 @@ signal encounter_ended(encounter_id: String, victory: bool, summary: Dictionary)
 func emit_encounter_started(encounter_id: String, party_ids: Array, enemy_ids: Array) -> void:
 	encounter_started.emit(encounter_id, party_ids, enemy_ids)
 
-func emit_turn_started(encounter_id: String, actor_id: String, round: int) -> void:
-	turn_started.emit(encounter_id, actor_id, round)
+func emit_turn_started(encounter_id: String, actor_id: String, round_num: int) -> void:
+	turn_started.emit(encounter_id, actor_id, round_num)
 
 func select_verb(encounter_id: String, actor_id: String, verb_id: String, targets: Array) -> void:
 	verb_selected.emit(encounter_id, actor_id, verb_id, targets)
