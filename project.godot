@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Starquill"
-run/main_scene="uid://b0ffnp31iunb6"
+run/main_scene="uid://drq7m22alyebb"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -26,6 +26,7 @@ BusSave="*res://autoload/bus_save.gd"
 BusAudio="*res://autoload/bus_audio.gd"
 SceneLoader="*res://autoload/scene_loader.gd"
 Game="*res://autoload/game.gd"
+species_loader="*res://scripts/species/SpeciesLoader.gd"
 
 [editor]
 

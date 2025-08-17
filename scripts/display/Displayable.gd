@@ -1,8 +1,7 @@
 extends Resource
 class_name Displayable
 
-func get_display_pieces() -> Array[DisplayPiece]:
+func get_display_pieces() -> Array:        # Array[DisplayPiece]
 	return []
-
-func get_hidden_layers() -> Array[int]:
+func get_hidden_layers() -> Array:         # Array[int]
 	return []
