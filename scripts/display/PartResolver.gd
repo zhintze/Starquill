@@ -21,7 +21,7 @@ func _load_atlas_index() -> void:
 	if f == null:
 		push_warning("PartResolver: cannot open atlas index: %s" % atlas_index_path)
 		return
-	var root := JSON.parse_string(f.get_as_text())
+	var root := JSON.parse_string(f.get_as_text()) as Dictionary
 	if typeof(root) != TYPE_DICTIONARY:
 		push_warning("PartResolver: bad atlas index JSON")
 		return
