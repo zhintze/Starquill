@@ -1,0 +1,143 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' ——— Interfaces ———
+interface Displayable {
+  +get_display_pieces()
+  +get_hidden_layers()
+}
+
+interface VerbSelectionStrategy {
+  +select_verbs(stats: Stats, context: CombatContext)
+}
+
+' ——— Stats ———
+enum StatType {
+  STR
+  DEX
+  CON
+  INT
+  WIS
+  CHA
+}
+
+class Stat {
+  +type: StatType
+  +base_value: int
+  +flat_modifiers: List<int>
+  +get_value(): int
+  +set_base_value(v: int): void
+  +add_modifier(amount: int): void
+  +remove_modifier(amount: int): void
+  +clear_modifiers(): void
+}
+
+class Stats {
+  -values: Map<StatType, Stat>
+  +get_stat(stat: StatType): Stat
+  +get_value(stat: StatType): int
+  +set_base(stat: StatType, value: int): void
+  +add_modifier(stat: StatType, amount: int): void
+}
+
+' ——— Display primitives ———
+class DisplayPiece {
+  +layer: int
+  +texture: Texture2D
+  +modulate: Color
+  +offset: Vector2
+  +scale: Vector2
+  +flip_h: bool
+  +flip_v: bool
+  +make(tex: Texture2D, layer: int, col: Color): DisplayPiece
+}
+
+class CharacterDisplay {
+  +set_target(d: Displayable): void
+  +refresh(): void
+  -_sprites: List<Sprite2D>
+}
+
+' ——— Species pipeline types (summarized) ———
+class Species
+class SpeciesInstance
+class SpeciesLoader
+class SpeciesDisplayable
+
+SpeciesDisplayable ..|> Displayable
+CharacterDisplay --> Displayable
+
+' ——— Equipment ———
+class Equipment {
+  +id: int
+  +item_type: String
+  +item_num: int
+  +layer_codes: List<int>
+  +hidden_layers: List<int>
+  +get_display_pieces()
+  +validate(): bool
+}
+Equipment ..|> Displayable
+
+class EquipmentFactory {
+  +create_equipment(data: Dictionary): Equipment
+  +create_random_equipment(type: String): Equipment
+}
+
+class EquipmentLoader {
+  +load_from_json(path: String): Map<int, Equipment>
+  +validate(e: Equipment): bool
+}
+
+' ——— Character & verbs ———
+class Character {
+  +id: String
+  +name: String
+  +stats: Stats
+  +species: SpeciesInstance
+  +equipment_slots: Map<String, Equipment>
+  +base_verbs: List<Verb>
+  +get_displayables()
+  +get_display_pieces()
+  +get_current_verbs()
+  +get_all_equipment(): List<Equipment>
+}
+
+class Verb {
+  +name: String
+  +main_stat: StatType
+  +power: int
+  +cost: int
+  +description: String
+}
+
+class VerbFactory {
+  +get_verbs_for_stat(stat: StatType): List<Verb>
+  +get_default_verbs(stats: Stats): List<Verb>
+}
+
+class VerbSelector {
+  +strategy: VerbSelectionStrategy
+  +select_verbs(stats: Stats, context: CombatContext)
+}
+
+class CombatContext {
+  +round_num: int
+  +terrain: String
+  +nearby_enemies: List<Character>
+  +status_effects: List<String>
+}
+
+' ——— Relationships ———
+Character --> SpeciesInstance
+Character --> Equipment
+Character --> Verb
+
+EquipmentFactory --> Equipment
+EquipmentLoader  --> Equipment
+
+Stats o--> Stat
+Verb   --> StatType
+VerbSelector --> VerbSelectionStrategy
+VerbSelector --> CombatContext
+@enduml
