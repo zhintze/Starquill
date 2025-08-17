@@ -1,0 +1,106 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+interface Displayable {
+  +get_display_pieces(): DisplayPiece[]
+  +get_hidden_layers(): int[]
+}
+
+class DisplayPiece {
+  +layer: int
+  +texture: Texture2D
+  +modulate: Color
+  +offset: Vector2
+  +scale: Vector2
+  +flip_h: bool
+  +flip_v: bool
+  +make(tex: Texture2D, layer: int, col: Color): DisplayPiece
+}
+
+class Species {
+  +name: String
+  +backArm: String
+  +body: String
+  +ears: String
+  +eyes: String
+  +facialDetail: String
+  +facialHair: String
+  +frontArm: String
+  +hair: Variant            ' String or Array[String]
+  +head: String
+  +legs: String
+  +mouth: String
+  +nose: String
+  +otherBodyParts: PackedStringArray
+  +itemRestrictions: PackedStringArray
+  +skin_color: PackedStringArray        ' ["human"] or ["#hex",...]
+  +skinVariance_hex: PackedStringArray  ' overrides palette
+  +skinVariance_indices: PackedInt32Array
+  +x_scale: float
+  +y_scale: float
+}
+
+class SpeciesInstance {
+  +base: Species
+  +species_id: String
+  +backArm: String
+  +body: String
+  +ears: String
+  +eyes: String
+  +facialDetail: String
+  +facialHair: String
+  +frontArm: String
+  +hair: String
+  +head: String
+  +legs: String
+  +mouth: String
+  +nose: String
+  +otherBodyParts: PackedStringArray
+  +itemRestrictions: PackedStringArray
+  +x_scale: float
+  +y_scale: float
+  +skinColor: Color
+  +skinVarianceMap: Map<int, Color>
+  +modular_image_nums: Map<String,String> ' "f01"->"0023"
+  +from_species(s: Species): void
+}
+
+class SpeciesLoader {
+  +by_name: Map<String, Species>
+  +all: Species[]
+  +load_from_json(path: String): void
+  +get_species(name: String): Species
+  +create_instance(name: String): SpeciesInstance
+  +create_random_instance_from_index(i: int): SpeciesInstance
+  --
+  {static} +get_palette(keyword: String): String[]    ' CSV: res://documents/skin_color_%s.csv
+  {static} +pick_modular_image_num(type_code: String): String ' "####"
+}
+
+class SpeciesDisplayBuilder {
+  {static} +freeze_species_to_instance(sp: Species): SpeciesInstance
+  {static} +build_display_pieces(si: SpeciesInstance): DisplayPiece[]
+  --
+  ..conventions..
+  ..STATIC: {ImageNum}-{Layer}.png..
+  ..MODULAR: {Type}-{ImageNum}-{Layer}.png..
+}
+
+class SpeciesDisplayable implements Displayable {
+  -inst: SpeciesInstance
+  +get_display_pieces(): DisplayPiece[]
+  +get_hidden_layers(): int[]
+}
+
+class CharacterDisplay {
+  +set_target(d: Displayable): void
+  +refresh(): void
+  -_sprites: Sprite2D[]
+}
+
+' Relationships
+SpeciesInstance --> Species
+SpeciesDisplayable o--> SpeciesInstance
+SpeciesDisplayBuilder ..> SpeciesLoader : uses {static}\nget_palette(), pick_modular_image_num()
+CharacterDisplay --> Displayable
+@enduml
