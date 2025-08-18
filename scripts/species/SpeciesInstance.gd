@@ -36,6 +36,10 @@ class_name SpeciesInstance
 
 var _rng := RandomNumberGenerator.new()
 
+# Render/build-time data
+var parts: Dictionary = {}                  # String -> Dictionary describing part
+var skin_modulate_by_layer: Dictionary = {} # int -> Color
+
 func _ready() -> void:
 	_rng.randomize()
 

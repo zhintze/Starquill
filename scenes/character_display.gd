@@ -1,3 +1,4 @@
+# res://scenes/display/CharacterDisplay.gd
 extends Control
 class_name CharacterDisplay
 
@@ -18,7 +19,7 @@ func set_species_instance(si: SpeciesInstance) -> void:
 	_redraw()
 
 func _redraw() -> void:
-	# Example: name label for smoke test
+	# quick smoke test—replace with your actual rendering
 	if has_node("%NameLabel"):
 		var label := %NameLabel as Label
 		if _target and _target.instance:
@@ -27,4 +28,3 @@ func _redraw() -> void:
 			label.text = String(_character.species.species_id)
 		elif _si:
 			label.text = String(_si.species_id)
-	# TODO: call your real render path using SpeciesDisplayBuilder.build_display_pieces(...)
