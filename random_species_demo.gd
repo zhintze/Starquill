@@ -2,32 +2,42 @@
 extends Node2D
 
 const SPECIES_JSON_PATH := "res://assets/data/species.json"
-
 var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	_rng.randomize()
 
-	# Ensure species are loaded
-	if species_loader.all.is_empty():
-		species_loader.load_from_json(SPECIES_JSON_PATH)
+	# Ensure species are loaded (defensive)
+	if species_loader.size() == 0:
+		if FileAccess.file_exists(SPECIES_JSON_PATH):
+			species_loader.load_from_json(SPECIES_JSON_PATH)
+			print("After JSON load: count=", species_loader.size(), " ids=", species_loader.by_id.keys())
+		else:
+			print("JSON missing:", SPECIES_JSON_PATH, " → trying folder fallback…")
+			species_loader.load_from_dir("res://data/species")
+			print("After DIR load: count=", species_loader.size(), " ids=", species_loader.by_id.keys())
 
-	if species_loader.all.is_empty():
-		push_error("RandomSpeciesDemo: No species loaded.")
+	if species_loader.size() == 0:
+		push_error("RandomSpeciesDemo: No species loaded; nothing to render.")
 		return
 
-	# Pick a random species and create a frozen instance
-	var idx := _rng.randi_range(0, species_loader.all.size() - 1)
-	var inst: SpeciesInstance = species_loader.create_random_instance_from_index(idx)
+	# Prefer a *known* id; fall back to random to ensure visuals
+	var target_id := "human"
+	var inst: SpeciesInstance = null
+	var s := species_loader.get_by_id(target_id)
+	if s == null:
+		push_warning("Target id '%s' not found. Falling back to random." % target_id)
+		inst = species_loader.create_random_instance_from_index(_rng.randi_range(0, species_loader.size() - 1))
+	else:
+		inst = species_loader.create_instance_from_species(s)
+
 	if inst == null:
-		push_error("RandomSpeciesDemo: Failed to create random instance.")
+		push_error("RandomSpeciesDemo: Failed to create instance.")
 		return
 
-	# Wrap in displayable and attach to a CharacterDisplay node
 	var displayable := SpeciesDisplayable.new(inst)
 	var cd := CharacterDisplay.new()
 	add_child(cd)
 	cd.position = get_viewport_rect().size / 2.0
 	cd.set_target(displayable)
-
 	print("Rendered species:", inst.species_id)
