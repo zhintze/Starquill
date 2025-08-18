@@ -1,3 +1,4 @@
+# res://scripts/demo/random_species_demo.gd
 extends Node2D
 
 const SPECIES_JSON_PATH := "res://assets/data/species.json"
@@ -7,7 +8,7 @@ var _rng := RandomNumberGenerator.new()
 func _ready() -> void:
 	_rng.randomize()
 
-	# Ensure species are loaded (harmless if already loaded)
+	# Ensure species are loaded
 	if species_loader.all.is_empty():
 		species_loader.load_from_json(SPECIES_JSON_PATH)
 
@@ -22,6 +23,7 @@ func _ready() -> void:
 		push_error("RandomSpeciesDemo: Failed to create random instance.")
 		return
 
+	# Wrap in displayable and attach to a CharacterDisplay node
 	var displayable := SpeciesDisplayable.new(inst)
 	var cd := CharacterDisplay.new()
 	add_child(cd)
