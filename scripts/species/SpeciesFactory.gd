@@ -10,16 +10,25 @@ static func list_species_keys() -> Array[String]:
 	out.sort()
 	return out
 
-static func create_instance(species_name: String) -> SpeciesInstance:
-	var sp: Species = _find_species_by_name(species_name)
-	if sp == null:
-		push_error("SpeciesFactory: unknown species '%s'" % species_name)
+static func create_instance(species_id: String) -> SpeciesInstance:
+	var s: Species = species_loader.get_by_id(species_id)
+	if s == null:
+		var known := PackedStringArray()
+		for k in species_loader.by_id.keys():
+			known.append(String(k))
+		push_error("SpeciesFactory: unknown species '%s'. Known: [%s]" % [
+			species_id, ", ".join(known)
+		])
 		return null
-	return SpeciesDisplayBuilder.freeze_species_to_instance(sp) as SpeciesInstance
+	var inst := SpeciesInstance.new()
+	inst.from_species(s)
+	return inst
 
-static func create_displayable(species_name: String) -> SpeciesDisplayable:
-	var si: SpeciesInstance = create_instance(species_name)
-	return null if si == null else SpeciesDisplayable.new(si)
+static func create_displayable(species_id: String) -> SpeciesDisplayable:
+	var inst := create_instance(species_id)
+	if inst == null:
+		return null
+	return SpeciesDisplayable.new(inst)
 
 static func _find_species_by_name(name: String) -> Species:
 	for candidate in species_loader.all:
