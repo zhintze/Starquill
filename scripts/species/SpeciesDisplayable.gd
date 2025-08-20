@@ -59,9 +59,8 @@ func get_display_pieces() -> Array:
 
 	# 3) Other body parts if any (treat as static with increasing layers)
 	if inst.otherBodyParts.size() > 0:
-		var base_layer := 80
-		for i in inst.otherBodyParts.size():
-			_add_static_explicit(pieces, inst.otherBodyParts[i], base_layer + i, tint_for_layer)
+		for id in inst.otherBodyParts:
+			_add_static(pieces, id, tint_for_layer)
 
 	# Ensure z order (z == layer)
 	pieces.sort_custom(func(a, b): return a.layer < b.layer)
@@ -74,10 +73,14 @@ func _add_static(pieces: Array, code: String, tint_for_layer: Dictionary) -> voi
 	var re := RegEx.new(); re.compile("^(\\d{4})-(\\d{3})$")
 	var m := re.search(code)
 	if m == null:
-		return   # not static
+		return
 	var img_num := m.get_string(1)
 	var layer := int(m.get_string(2))
+	# NEW: honor hidden layers
+	if hidden_layers.has(layer):
+		return
 	_add_static_explicit(pieces, img_num + "-" + ("%03d" % layer), layer, tint_for_layer)
+
 
 func _add_static_explicit(pieces: Array, id: String, layer: int, tint_for_layer: Dictionary) -> void:
 	var path := "%s/%s.png" % [SPECIES_IMG_DIR, id]
@@ -99,6 +102,8 @@ func _add_modular(pieces: Array, type_code: String, tint_for_layer: Dictionary) 
 		inst.modular_image_nums[type_code] = img_num
 
 	for layer in LAYERS[type_code]:
+		if hidden_layers.has(int(layer)):
+			continue
 		var path := "%s/%s-%s-%03d.png" % [SPECIES_IMG_DIR, type_code, img_num, int(layer)]
 		if not ResourceLoader.exists(path):
 			push_warning("Missing texture: " + path)
