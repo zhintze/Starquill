@@ -1,10 +1,40 @@
 [gd_scene load_steps=2 format=3 uid="uid://cbcw6n0q8qe40"]
 
-[ext_resource type="Script" uid="uid://d1twas3dn8grl" path="res://scenes/character_display.gd" id="1_ai4ej"]
+[sub_resource type="GDScript" id="GDScript_268yh"]
+script/source = "# res://scenes/display/CharacterDisplay.gd
+extends Control
+
+var _target: SpeciesDisplayable
+var _character: Character
+var _si: SpeciesInstance
+
+func set_target(d: SpeciesDisplayable) -> void:
+	_target = d
+	_redraw()
+
+func set_character(c: Character) -> void:
+	_character = c
+	_redraw()
+
+func set_species_instance(si: SpeciesInstance) -> void:
+	_si = si
+	_redraw()
+
+func _redraw() -> void:
+	# quick smoke test—replace with your actual rendering
+	if has_node(\"%NameLabel\"):
+		var label := %NameLabel as Label
+		if _target and _target.instance:
+			label.text = String(_target.instance.species_id)
+		elif _character and _character.species:
+			label.text = String(_character.species.species_id)
+		elif _si:
+			label.text = String(_si.species_id)
+"
 
 [node name="Control" type="Control"]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
-script = ExtResource("1_ai4ej")
+script = SubResource("GDScript_268yh")
