@@ -1,6 +1,10 @@
 extends Node
 class_name SpeciesDisplayBuilder
 
+const DEBUG_MISSING_ASSETS: bool = true
+const DEBUG_TRACE_BUILD: bool = true
+
+
 const SPECIES_JSON := "res://assets/data/species.json"
 const MODULAR_PARTS_JSON := "res://assets/data/speciesModularParts.json"
 
@@ -23,6 +27,13 @@ func get_species(name: String) -> Species:
 func list_species_names() -> Array[String]:
 	_ensure_loaded()
 	return _species_names.duplicate()
+	
+	
+static func _log_missing_asset(part_key: String, id: String, layer: int, path: String, reason: String) -> void:
+	if not DEBUG_MISSING_ASSETS:
+		return
+	push_warning("[MISSING ASSET] part=%s id=%s layer=%d path=%s reason=%s" % [part_key, id, layer, path, reason])
+
 
 # --- load once ---
 func _ensure_loaded() -> void:
@@ -113,24 +124,29 @@ static func build_display_pieces(si: SpeciesInstance) -> Array[DisplayPiece]:
 	var pieces: Array[DisplayPiece] = []
 	for key in si.parts.keys():
 		var p: Dictionary = si.parts[key]
-		var kind := String(p.get("kind", ""))
+		var kind: String = String(p.get("kind", ""))
 		match kind:
 			"static":
-				var image_num := String(p.get("image_num", "0001"))
+				var image_num: String = String(p.get("image_num", "0001"))
 				var layer: int = int(p.get("layer", 0))
-				var tex_path := "res://assets/images/species/%s-%03d.png" % [image_num, layer]
-				_try_add_piece(pieces, tex_path, layer, si.skin_modulate_by_layer)
+				var id: String = "%s-%03d" % [image_num, layer]
+				if DEBUG_TRACE_BUILD: print("[BUILD] static key=", key, " id=", id, " layer=", layer)
+				_try_add_piece_by_id(pieces, id, layer, si.skin_modulate_by_layer, key)
 			"modular":
-				var type_code := String(p.get("type", ""))
-				var image_num := String(p.get("image_num", "0001"))
+				var type_code: String = String(p.get("type", ""))
+				var image_num: String = String(p.get("image_num", ""))
 				var layers: Array = p.get("layers", [])
 				for layer_val in layers:
 					var layer: int = int(layer_val)
-					var tex_path := "res://assets/images/species/%s-%s-%03d.png" % [type_code, image_num, layer]
-					_try_add_piece(pieces, tex_path, layer, si.skin_modulate_by_layer)
+					var id: String = "%s-%s-%03d" % [type_code, image_num, layer]
+					if DEBUG_TRACE_BUILD: print("[BUILD] modular key=", key, " id=", id, " layer=", layer)
+					_try_add_piece_by_id(pieces, id, layer, si.skin_modulate_by_layer, key)
 			_:
 				push_warning("SpeciesDisplayBuilder: Unknown part kind %s for key %s" % [kind, key])
 	return pieces
+
+
+
 
 static func _set_part(si: SpeciesInstance, key: String, v: Variant) -> void:
 	if typeof(v) == TYPE_STRING:
@@ -178,26 +194,10 @@ static func _set_modular(si: SpeciesInstance, key: String, v: Variant) -> void:
 
 # If SpeciesLoader provides counts/palette, use that
 static func _pick_modular_image_num(type_code: String) -> String:
-	# Prefer SpeciesLoader if present (your SpeciesInstance already uses it)
-	if Engine.has_singleton("SpeciesLoader"):
-		var n: int = 0
-		# If you have a direct "get_modular_count(type_code)" use that here.
-		# Otherwise keep the JSON-based fallback below.
-		# n = SpeciesLoader.get_modular_count(type_code)
-		if n > 0:
-			var choice := 1 + (randi() % n)
-			return "%04d" % choice
-
-	# Fallback: JSON counts
 	var counts := _load_modular_counts()
-	var n := 0
-	if counts.has(type_code):
-		n = int(counts[type_code])
-	else:
-		var letter := type_code.substr(0, 1)
-		n = int(counts.get(letter, 0))
+	var n := int(counts.get(type_code, 0))
 	if n <= 0:
-		push_warning("No count for modular type %s; defaulting to 1" % type_code)
+		# Final fallback if counts missing
 		n = 1
 	var choice := 1 + (randi() % n)
 	return "%04d" % choice
@@ -207,18 +207,32 @@ static func _load_modular_counts() -> Dictionary:
 	if not FileAccess.file_exists(MODULAR_PARTS_JSON):
 		push_warning("Missing modular counts: " + MODULAR_PARTS_JSON)
 		return counts
+
 	var f := FileAccess.open(MODULAR_PARTS_JSON, FileAccess.READ)
-	if f == null: return counts
-	var data : = JSON.parse_string(f.get_as_text()) as Dictionary
-	if typeof(data) == TYPE_DICTIONARY:
-		for k in data.keys(): counts[k] = int(data[k])
-	elif typeof(data) == TYPE_ARRAY:
-		var re := RegEx.new(); re.compile("^([a-z])(\\d+)$")
-		for s in data:
-			if typeof(s) != TYPE_STRING: continue
-			var m := re.search(s)
-			if m: counts[m.get_string(1)] = int(m.get_string(2))
+	if f == null:
+		return counts
+
+	var data: Variant = JSON.parse_string(f.get_as_text())
+	if data == null:
+		return counts
+
+	match typeof(data):
+		TYPE_DICTIONARY:
+			for k in (data as Dictionary).keys():
+				counts[String(k)] = int((data as Dictionary)[k])
+		TYPE_ARRAY:
+			for e in (data as Array):
+				if typeof(e) == TYPE_DICTIONARY and e.has("type") and e.has("amount"):
+					counts[String(e["type"])] = int(e["amount"])
+				elif typeof(e) == TYPE_STRING:
+					# legacy fallback like "f03" with unknown amount -> 1
+					counts[String(e)] = 1
+		_:
+			pass
+
 	return counts
+
+
 
 # Build skin_modulate_by_layer from instance fields (not Species)
 static func _compute_skin_modulates_from_instance(si: SpeciesInstance) -> Dictionary:
@@ -233,15 +247,34 @@ static func _compute_skin_modulates_from_instance(si: SpeciesInstance) -> Dictio
 		map[int(layer)] = si.skinColor
 	return map
 
-static func _try_add_piece(pieces: Array, path: String, layer: int, mod_by_layer: Dictionary) -> void:
+static func _try_add_piece_by_id(
+	pieces: Array[DisplayPiece],
+	id: String,
+	layer: int,
+	mod_by_layer: Dictionary,
+	part_key: String
+) -> void:
+	var path: String = "res://assets/images/species/%s.png" % id
+
 	if not ResourceLoader.exists(path):
-		push_warning("Missing texture: " + path); return
-	var tex := load(path)
+		_log_missing_asset(part_key, id, layer, path, "ResourceLoader.exists == false")
+		return
+
+	var tex: Texture2D = load(path) as Texture2D
 	if tex == null:
-		push_warning("Failed to load texture: " + path); return
-	var v = mod_by_layer.get(layer, Color(1,1,1,1))
-	var col: Color = v if typeof(v) == TYPE_COLOR else Color(1,1,1,1)
+		_log_missing_asset(part_key, id, layer, path, "load() returned null")
+		return
+
+	var col: Color = Color(1,1,1,1)
+	if mod_by_layer.has(layer):
+		var v: Variant = mod_by_layer[layer]
+		if typeof(v) == TYPE_COLOR:
+			col = v
+
+	if DEBUG_TRACE_BUILD:
+		print("[ADD] part=", part_key, " id=", id, " layer=", layer, " ok")
 	pieces.append(DisplayPiece.make(tex, layer, col))
+
 	
 	
 static func _parse_layer_from_id(id: String) -> int:
