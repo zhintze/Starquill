@@ -1,40 +1,28 @@
 [gd_scene load_steps=2 format=3 uid="uid://cbcw6n0q8qe40"]
 
-[sub_resource type="GDScript" id="GDScript_268yh"]
-script/source = "# res://scenes/display/CharacterDisplay.gd
-extends Control
+[ext_resource type="Script" uid="uid://b76oxxtfxcwx1" path="res://scripts/display/CharacterDisplay.gd" id="1_cdp"]
 
-var _target: SpeciesDisplayable
-var _character: Character
-var _si: SpeciesInstance
-
-func set_target(d: SpeciesDisplayable) -> void:
-	_target = d
-	_redraw()
-
-func set_character(c: Character) -> void:
-	_character = c
-	_redraw()
-
-func set_species_instance(si: SpeciesInstance) -> void:
-	_si = si
-	_redraw()
-
-func _redraw() -> void:
-	# quick smoke test—replace with your actual rendering
-	if has_node(\"%NameLabel\"):
-		var label := %NameLabel as Label
-		if _target and _target.instance:
-			label.text = String(_target.instance.species_id)
-		elif _character and _character.species:
-			label.text = String(_character.species.species_id)
-		elif _si:
-			label.text = String(_si.species_id)
-"
-
-[node name="Control" type="Control"]
+[node name="CharacterDisplay" type="Control"]
+custom_minimum_size = Vector2(180, 220)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-script = SubResource("GDScript_268yh")
+offset_left = 36.0
+offset_top = 48.0
+offset_right = 216.0
+offset_bottom = 268.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_cdp")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "—"
+horizontal_alignment = 1
+vertical_alignment = 1
