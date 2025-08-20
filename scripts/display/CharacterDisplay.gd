@@ -56,35 +56,32 @@ func _ensure_layer_root() -> Control:
 	return n
 
 func _apply_pieces(pieces: Array) -> void:
-	# Ensure enough pooled nodes
+	# ensure pool size
 	while _piece_nodes.size() < pieces.size():
 		var tr := TextureRect.new()
 		tr.name = "piece_%d" % _piece_nodes.size()
 		tr.stretch_mode = TextureRect.STRETCH_SCALE
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer_root.add_child(tr)
-		_fill_parent(tr)  # <— instead of set_anchors_and_margins_preset
+		_fill_parent(tr)
 		_piece_nodes.append(tr)
 
-
-	# Update visible nodes
+	# apply in order; sibling index controls stacking (later index draws on top)
 	for i in pieces.size():
-		var p = pieces[i]
+		var p := pieces[i] as DisplayPiece
 		var tr := _piece_nodes[i]
-		var tex := _dp_tex(p)
-		if tex == null:
-			tr.visible = false
+		tr.visible = p.texture != null
+		if not tr.visible:
 			continue
-		tr.texture = tex
-		tr.modulate = _dp_color(p)
-		tr.z_index = _dp_layer(p)
-		tr.visible = true
+		tr.texture = p.texture
+		tr.modulate = p.modulate
+		tr.z_as_relative = true
+		tr.z_index = 0
+		layer_root.move_child(tr, i)
 
-	# Hide the rest (keep pooled)
+	# hide the rest
 	for i in range(pieces.size(), _piece_nodes.size()):
 		_piece_nodes[i].visible = false
-
-	_last_piece_count = pieces.size()
 
 func _hide_all_pieces() -> void:
 	for n in _piece_nodes:

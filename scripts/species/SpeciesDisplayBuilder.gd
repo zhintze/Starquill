@@ -82,6 +82,7 @@ func _make_species(name: String, data: Dictionary) -> Species:
 	# Optional arrays we’re not using yet
 	# s.itemRestrictions = data.get("itemRestrictions", []) as Array
 	# s.otherBodyParts = data.get("otherBodyParts", []) as Array
+	
 	return s
 
 # ================== existing code you already had ==================
@@ -129,7 +130,6 @@ static func build_display_pieces(si: SpeciesInstance) -> Array[DisplayPiece]:
 					_try_add_piece(pieces, tex_path, layer, si.skin_modulate_by_layer)
 			_:
 				push_warning("SpeciesDisplayBuilder: Unknown part kind %s for key %s" % [kind, key])
-	pieces.sort_custom(func(a, b): return a.layer < b.layer)
 	return pieces
 
 static func _set_part(si: SpeciesInstance, key: String, v: Variant) -> void:
@@ -242,3 +242,15 @@ static func _try_add_piece(pieces: Array, path: String, layer: int, mod_by_layer
 	var v = mod_by_layer.get(layer, Color(1,1,1,1))
 	var col: Color = v if typeof(v) == TYPE_COLOR else Color(1,1,1,1)
 	pieces.append(DisplayPiece.make(tex, layer, col))
+	
+	
+static func _parse_layer_from_id(id: String) -> int:
+	# Accepts "0014-002", "0014-134", or even paths like ".../0014-134.png"
+	var base := id.get_file()
+	if base == "":  # if it's not a path, use the id directly
+		base = id
+	base = base.get_basename()  # strip extension if present
+	var parts := base.split("-", false)
+	if parts.size() >= 2 and parts[-1].is_valid_int():
+		return int(parts[-1])
+	return 0
