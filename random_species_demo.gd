@@ -2,6 +2,8 @@
 extends Node2D
 
 const SPECIES_JSON_PATH := "res://assets/data/species.json"
+const CHARACTER_DISPLAY_SCENE := preload("res://scenes/CharacterDisplay.tscn")
+
 var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -21,7 +23,7 @@ func _ready() -> void:
 		push_error("RandomSpeciesDemo: No species loaded; nothing to render.")
 		return
 
-	# Prefer a *known* id; fall back to random to ensure visuals
+	# Prefer a known id; fall back to random so we always render something
 	var target_id := "human"
 	var inst: SpeciesInstance = null
 	var s := species_loader.get_by_id(target_id)
@@ -35,9 +37,14 @@ func _ready() -> void:
 		push_error("RandomSpeciesDemo: Failed to create instance.")
 		return
 
-	var displayable := SpeciesDisplayable.new(inst)
-	var cd := CharacterDisplay.new()
-	add_child(cd)
-	cd.position = get_viewport_rect().size / 2.0
-	cd.set_target(displayable)
-	print("Rendered species:", inst.species_id)
+	# Build a Character from the instance (new constructor path)
+	#var ch: Character = CharacterFactory.create_from_species_instance(inst)
+
+	# Instantiate the scene (NOT .new()) so child nodes exist
+	#var cd := CHARACTER_DISPLAY_SCENE.instantiate() as CharacterDisplay
+	#add_child(cd)
+	# Place it roughly center; adjust as needed
+	#cd.position = get_viewport_rect().size / 2.0
+	# Bind via the new API
+	#cd.set_character(ch)
+	#print("Rendered species:", inst.species_id)

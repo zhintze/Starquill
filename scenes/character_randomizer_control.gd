@@ -8,15 +8,21 @@ class_name CharacterRandomizerControl
 const NUM_CHARACTERS: int = 8
 const CHARACTER_DISPLAY_SCENE := preload("res://scenes/CharacterDisplay.tscn")
 
+var _displays: Array[CharacterDisplay] = []
+var _characters: Array[Character] = []
+
 func _ready() -> void:
 	_populate_species_option()
-	if species_option.item_count > 0 and species_option.selected < 0:
-		species_option.select(0)  # ensure a valid selection
+	if species_option.item_count > 13: #start with human selected if available
+		species_option.select(13)
+	elif species_option.item_count > 0 and species_option.selected < 0:
+		species_option.select(0)
 
 	species_option.item_selected.connect(_on_species_changed)
 	randomize_btn.pressed.connect(_on_randomize_pressed)
 
-	_refresh_all_with_current_species()
+	_ensure_displays()
+	_roll_all(_current_species_key())
 
 func _populate_species_option() -> void:
 	species_option.clear()
@@ -27,39 +33,37 @@ func _populate_species_option() -> void:
 
 func _current_species_key() -> String:
 	var keys: Array = species_option.get_meta("keys") as Array
-	if keys.is_empty():
-		return ""
+	if keys.is_empty(): return ""
 	var idx := species_option.get_selected_id()
 	if idx < 0 or idx >= keys.size():
 		idx = 0
 	return String(keys[idx])
 
 func _on_species_changed(_index: int) -> void:
-	_refresh_all_with_current_species()
+	_roll_all(_current_species_key())
 
 func _on_randomize_pressed() -> void:
-	_refresh_all_with_current_species()
+	_roll_all(_current_species_key())
 
-func _refresh_all_with_current_species() -> void:
-	var species_key := _current_species_key()
+func _ensure_displays() -> void:
+	if _displays.size() == NUM_CHARACTERS:
+		return
+	for child in grid.get_children():
+		child.queue_free()
+	_displays.clear()
+	for _i in NUM_CHARACTERS:
+		var d := CHARACTER_DISPLAY_SCENE.instantiate() as CharacterDisplay
+		grid.add_child(d)
+		_displays.append(d)
+
+func _roll_all(species_key: String) -> void:
 	if species_key == "":
 		push_warning("No species available to populate.")
 		return
 
-	for child in grid.get_children():
-		child.queue_free()
-
-	for _i in NUM_CHARACTERS:
-		# 1) Instantiate and add to tree first so @onready vars are valid.
-		var display := CHARACTER_DISPLAY_SCENE.instantiate() as CharacterDisplay
-		grid.add_child(display)
-
-		# 2) Build data and set it (now safe because display is in the tree).
-		var disp := SpeciesFactory.create_displayable(species_key)
-		var si   := SpeciesFactory.create_instance(species_key)
-		var ch   := CharacterFactory.create_from_species_instance(si)
-
-		# Prefer one canonical setter. Use whichever your CharacterDisplay implements.
-		display.set_species_instance(si)
-		# or: display.set_target(disp)
-		# or: display.set_character(ch)
+	_characters.clear()
+	_characters.resize(NUM_CHARACTERS)
+	for i in NUM_CHARACTERS:
+		var ch := CharacterFactory.create_random_for_species_key(species_key)
+		_characters[i] = ch
+		_displays[i].set_character(ch)  # bind (no re-instantiation)
