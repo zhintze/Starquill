@@ -7,6 +7,7 @@ var _si: SpeciesInstance
 
 func set_target(d: SpeciesDisplayable) -> void:
 	_target = d
+	print("CD.set_target:", _target)
 	_redraw()
 
 func set_character(c: Character) -> void:
