@@ -6,7 +6,11 @@ class_name CharacterRandomizerControl
 @onready var grid: GridContainer         = $MarginContainer/VBoxContainer/DisplayGrid
 
 const NUM_CHARACTERS: int = 8
-const CHARACTER_DISPLAY_SCENE := preload("res://scenes/CharacterDisplay.tscn")
+
+const DEBUG_DISPLAYS := true
+const CHARACTER_DISPLAY_SCENE_DEBUG := preload("res://scenes/CharacterDisplayDebug.tscn")
+const CHARACTER_DISPLAY_SCENE_BASE := preload("res://scenes/CharacterDisplay.tscn")
+const CHARACTER_DISPLAY_SCENE := CHARACTER_DISPLAY_SCENE_DEBUG if DEBUG_DISPLAYS else CHARACTER_DISPLAY_SCENE_BASE
 
 var _displays: Array[CharacterDisplay] = []
 var _characters: Array[Character] = []
