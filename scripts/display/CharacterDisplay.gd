@@ -1,62 +1,134 @@
 extends Control
 class_name CharacterDisplay
 
-# Allow overriding in the editor if the hierarchy changes.
 @export var name_label_path: NodePath = ^"NameLabel"
 
-var name_label: Label
+@onready var name_label: Label = get_node_or_null(name_label_path)
+@onready var layer_root: Control = _ensure_layer_root()
 
-var _target: SpeciesDisplayable
 var _character: Character
-var _si: SpeciesInstance
-
-func _ready() -> void:
-	_resolve_name_label()
-	if name_label:
-		name_label.text = "Test Tile"  # sanity check
-	else:
-		# Hard stop so we notice the setup issue fast
-		push_error("CharacterDisplay: Label not found. Set 'name_label_path' or add a child named 'NameLabel'.")
-		return
-	_redraw()
-
-func _resolve_name_label() -> void:
-	if name_label and is_instance_valid(name_label):
-		return
-	# First: try the provided path
-	if name_label_path != NodePath():
-		name_label = get_node_or_null(name_label_path) as Label
-		if name_label:
-			return
-	# Second: try a recursive search by name (works if it's under Panel, etc.)
-	name_label = find_child("NameLabel", true, false) as Label
-
-func set_target(d: SpeciesDisplayable) -> void:
-	_target = d
-	_schedule_redraw()
+var _piece_nodes: Array[TextureRect] = []
+var _last_piece_count: int = 0
 
 func set_character(c: Character) -> void:
+	if _character and _character.model_changed.is_connected(_on_model_changed):
+		_character.model_changed.disconnect(_on_model_changed)
 	_character = c
-	_schedule_redraw()
+	if _character:
+		_character.model_changed.connect(_on_model_changed)
+	_redraw()
 
-func set_species_instance(si: SpeciesInstance) -> void:
-	_si = si
-	_schedule_redraw()
+func _on_model_changed() -> void:
+	_redraw()
 
-func _schedule_redraw() -> void:
-	if is_node_ready():
-		call_deferred("_redraw")  # ensure @onready + children resolved
-	else:
-		call_deferred("_redraw")
+func _ready() -> void:
+	if name_label:
+		name_label.text = ""
+	_redraw()
 
 func _redraw() -> void:
-	_resolve_name_label()
-	if not name_label:
+	if _character == null or _character.species == null:
+		_hide_all_pieces()
+		if name_label: name_label.text = ""
 		return
 
-	if _target and _target.instance:
-		name_label.text = str(_target.instance.species_id)
-	elif _character and _character.species:
-		name_label.text = str(_character.species.species_id)
-	elif _si:
-		name_label.text = str(_si.species_id)
+	# Label: show something human-friendly
+	if name_label:
+		name_label.text = _character.display_name if _character.display_name != "" \
+						  else String(_character.species.species_id)
+
+	# Build display pieces from the species instance
+	var disp := SpeciesDisplayable.new(_character.species)
+	var pieces: Array = disp.get_display_pieces()  # Array[DisplayPiece]
+
+	_apply_pieces(pieces)
+
+# ---------- internal ----------
+
+func _ensure_layer_root() -> Control:
+	var n := get_node_or_null("LayerRoot") as Control
+	if n: return n
+	n = Control.new()
+	n.name = "LayerRoot"
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(n)
+	_fill_parent(n)  # <— instead of set_anchors_and_margins_preset
+	return n
+
+func _apply_pieces(pieces: Array) -> void:
+	# Ensure enough pooled nodes
+	while _piece_nodes.size() < pieces.size():
+		var tr := TextureRect.new()
+		tr.name = "piece_%d" % _piece_nodes.size()
+		tr.stretch_mode = TextureRect.STRETCH_SCALE
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer_root.add_child(tr)
+		_fill_parent(tr)  # <— instead of set_anchors_and_margins_preset
+		_piece_nodes.append(tr)
+
+
+	# Update visible nodes
+	for i in pieces.size():
+		var p = pieces[i]
+		var tr := _piece_nodes[i]
+		var tex := _dp_tex(p)
+		if tex == null:
+			tr.visible = false
+			continue
+		tr.texture = tex
+		tr.modulate = _dp_color(p)
+		tr.z_index = _dp_layer(p)
+		tr.visible = true
+
+	# Hide the rest (keep pooled)
+	for i in range(pieces.size(), _piece_nodes.size()):
+		_piece_nodes[i].visible = false
+
+	_last_piece_count = pieces.size()
+
+func _hide_all_pieces() -> void:
+	for n in _piece_nodes:
+		n.visible = false
+
+# ---------- DisplayPiece helpers ----------
+# Adjust these if your DisplayPiece has different shape/names.
+
+func _dp_tex(p) -> Texture2D:
+	# Expected: p.tex : Texture2D  OR  p.texture : Texture2D  OR p.path : String
+	if p is Dictionary:
+		if p.has("tex"): return p["tex"]
+		if p.has("texture"): return p["texture"]
+		if p.has("path"): return load(String(p["path"])) as Texture2D
+		return null
+	# Resource/object: try common fields
+	if "tex" in p: return p.tex   # if implemented
+	if "texture" in p: return p.texture
+	if "path" in p: return load(String(p.path)) as Texture2D
+	return null
+
+func _dp_layer(p) -> int:
+	if p is Dictionary:
+		return int(p.get("layer", p.get("z", 0)))
+	if "layer" in p: return int(p.layer)
+	if "z" in p: return int(p.z)
+	return 0
+
+func _dp_color(p) -> Color:
+	if p is Dictionary:
+		var v = p.get("col", p.get("color", p.get("modulate", Color(1,1,1,1))))
+		return (v as Color)
+	if "col" in p: return p.col
+	if "color" in p: return p.color
+	if "modulate" in p: return p.modulate
+	return Color(1,1,1,1)
+	
+# Add this helper anywhere in CharacterDisplay.gd
+func _fill_parent(ctrl: Control) -> void:
+	ctrl.anchor_left = 0.0
+	ctrl.anchor_top = 0.0
+	ctrl.anchor_right = 1.0
+	ctrl.anchor_bottom = 1.0
+	ctrl.offset_left = 0.0
+	ctrl.offset_top = 0.0
+	ctrl.offset_right = 0.0
+	ctrl.offset_bottom = 0.0
