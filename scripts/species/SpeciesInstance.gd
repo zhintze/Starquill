@@ -97,7 +97,7 @@ func _select_hair(v: Variant) -> String:
 		var arr: Array = v as Array
 		if arr.is_empty():
 			return ""
-		# weighted pick across groups by available amounts
+		# weighted pick across groups by available amounts (fair chance across all images)
 		var groups: Array[String] = []
 		var weights: Array[int] = []
 		var total := 0
@@ -138,20 +138,35 @@ func _present_modular_codes() -> Array[String]:
 	return out
 
 func _choose_skin_colors(s: Species) -> void:
-	# Choose base skin color
+	# Choose base skin color from either a keyword CSV palette or direct hex list.
 	var chosen_col := Color(1,1,1,1)
-	if s.skin_color.size() > 0:
-		# If entries look like a named palette (e.g., "human"), ask loader for palette
-		var first := String(s.skin_color[0])
-		if first.length() > 0 and not first.begins_with("#") and not first.to_lower().begins_with("0x"):
-			var pal: PackedStringArray = SpeciesLoader.get_palette(first)
-			if pal.size() > 0:
-				var hex := String(pal[int(_rng.randi() % pal.size())])
+
+	var sc := s.skin_color
+	if sc.size() > 0:
+		var first := String(sc[0]).strip_edges()
+		var looks_like_hex := first.begins_with("#") or first.to_lower().begins_with("0x") or _is_plain_hex(first)
+
+		if sc.size() == 1 and not looks_like_hex:
+			# Treat as keyword -> load palette CSV
+			var colors := SkinColorList.get_colors(first)
+			if colors.size() > 0:
+				var hex := String(colors[int(_rng.randi() % colors.size())])
 				chosen_col = _safe_color(hex)
-		# Otherwise, treat as literal hex pool
-		if chosen_col == Color(1,1,1,1):
-			var hex2 := String(s.skin_color[int(_rng.randi() % s.skin_color.size())])
-			chosen_col = _safe_color(hex2)
+			else:
+				# Fallback: treat as hex anyway (will prefix # if needed)
+				chosen_col = _safe_color(first)
+		else:
+			# Treat as list of hexes and pick one
+			var pool := PackedStringArray()
+			for v in sc:
+				var h := String(v).strip_edges()
+				if h == "":
+					continue
+				pool.append(h)
+			if pool.size() > 0:
+				var hex2 := String(pool[int(_rng.randi() % pool.size())])
+				chosen_col = _safe_color(hex2)
+
 	skinColor = chosen_col
 
 	# variance indices + choose one variance hex if available
@@ -171,6 +186,19 @@ func _safe_color(hex: String) -> Color:
 	if not t.begins_with("#") and not t.to_lower().begins_with("0x"):
 		t = "#" + t
 	return Color(t)
+
+func _is_plain_hex(s: String) -> bool:
+	# Accept length 3 or 6 hex without #/0x
+	var n := s.length()
+	if n != 3 and n != 6:
+		return false
+	for i in n:
+		var ch := s[i]
+		var c := ch.to_lower()
+		var ok := (c >= "0" and c <= "9") or (c >= "a" and c <= "f")
+		if not ok:
+			return false
+	return true
 
 # ===== utilities =====
 static func _load_counts() -> void:
