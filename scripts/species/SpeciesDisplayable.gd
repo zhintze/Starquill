@@ -1,114 +1,137 @@
 extends Resource
 class_name SpeciesDisplayable
 
+const SPECIES_IMG_DIR := "res://assets/images/species"
+
 var inst: SpeciesInstance   # frozen instance
-var hidden_layers: Array[int] = []
 
 func _init(si: SpeciesInstance) -> void:
 	inst = si
 
 func get_hidden_layers() -> Array:
-	return hidden_layers
+	# Species does not use hidden layers; equipment will.
+	return []
 
-# Fixed schema for SPECIES layers
+# ===== Layer map for modular group types =====
+# Add new group types here; the right side lists all layers that group renders on.
 const LAYERS := {
+	# Face groups
 	"f01": [84],          # eyes
 	"f02": [86],          # nose
 	"f03": [85],          # mouth
 	"f04": [100],         # ears
-	"f05": [122],         # facial hair
-	"f06": [87],          # face detail
-	"h01": [92],          # hair
-	"h02": [92, 128],     # hair + hairtop
-	"h03": [92, 154],     # hair + detail
-	"h04": [92, 128, 154] # hair + detail + hairtop
+	"f05": [122],         # facialHair
+	"f06": [87],          # facialDetail
+
+	# Hair groups (front/back overlays)
+	"h01": [92],
+	"h02": [92, 128],
+	"h03": [92, 154],
+	"h04": [92, 128, 154],
+
+	# Dwarf/gnome variants (mirror of f** families)
+	"d02": [86],
+	"d04": [100],
+	"d05": [122],
+	"d06": [87],
+	"g02": [86],
+
+	# Skeleton families
+	"s01": [82],   # head
+	"s02": [84],   # eyes
+	"s03": [86],   # nose
+	"s04": [87]    # facialDetail
 }
-
-# Species image folder
-const SPECIES_IMG_DIR := "res://assets/images/species"
-
-# Which layers get the base skin tint (when variance not overriding)
-const SKIN_LAYERS := [16, 37, 38, 82, 102]
 
 func get_display_pieces() -> Array:
 	var pieces: Array[DisplayPiece] = []
-	var tint_base := inst.skinColor
 
-	# Apply variance override per-layer (wins over base tint)
-	var tint_for_layer: Dictionary = {}
-	for layer in SKIN_LAYERS:
-		tint_for_layer[layer] = tint_base
-	for k in inst.skinVarianceMap.keys():
-		tint_for_layer[int(k)] = inst.skinVarianceMap[k]
+	var base_skin: Color = inst.skinColor
+	var variance_col: Color = inst.get_skin_variance_color()
+	var variance_indices := inst.skinVariance_indices
 
-	# 1) Static parts (####-###)
-	_add_static(pieces, inst.backArm, tint_for_layer)
-	_add_static(pieces, inst.body, tint_for_layer)
-	_add_static(pieces, inst.frontArm, tint_for_layer)
-	_add_static(pieces, inst.head, tint_for_layer)
-	_add_static(pieces, inst.legs, tint_for_layer)
+	# Core parts — order doesn't matter; we will sort by layer at the end.
+	_add_field("backArm", inst.backArm, pieces, base_skin, variance_col, variance_indices)
+	_add_field("body", inst.body, pieces, base_skin, variance_col, variance_indices)
+	_add_field("legs", inst.legs, pieces, base_skin, variance_col, variance_indices)
+	_add_field("head", inst.head, pieces, base_skin, variance_col, variance_indices)
 
-	# 2) Modular parts (f**, h**)
-	_add_modular(pieces, inst.eyes, tint_for_layer)
-	_add_modular(pieces, inst.nose, tint_for_layer)
-	_add_modular(pieces, inst.mouth, tint_for_layer)
-	_add_modular(pieces, inst.ears, tint_for_layer)
-	_add_modular(pieces, inst.facialHair, tint_for_layer)
-	_add_modular(pieces, inst.facialDetail, tint_for_layer)
-	_add_modular(pieces, inst.hair, tint_for_layer)
+	_add_field("ears", inst.ears, pieces, base_skin, variance_col, variance_indices)
+	_add_field("eyes", inst.eyes, pieces, base_skin, variance_col, variance_indices)
+	_add_field("nose", inst.nose, pieces, base_skin, variance_col, variance_indices)
+	_add_field("mouth", inst.mouth, pieces, base_skin, variance_col, variance_indices)
+	_add_field("facialHair", inst.facialHair, pieces, base_skin, variance_col, variance_indices)
+	_add_field("facialDetail", inst.facialDetail, pieces, base_skin, variance_col, variance_indices)
 
-	# 3) Other body parts if any (treat as static with increasing layers)
-	if inst.otherBodyParts.size() > 0:
-		for id in inst.otherBodyParts:
-			_add_static(pieces, id, tint_for_layer)
+	_add_field("hair", inst.hair, pieces, base_skin, variance_col, variance_indices)
 
-	# Ensure z order (z == layer)
-	pieces.sort_custom(func(a, b): return a.layer < b.layer)
+	# Other body parts list: currently static, but future-proof for modular.
+	for token in inst.otherBodyParts:
+		_add_field("otherBodyParts", String(token), pieces, base_skin, variance_col, variance_indices)
+
+	_add_field("frontArm", inst.frontArm, pieces, base_skin, variance_col, variance_indices)
+
+	# Sort final list by layer
+	pieces.sort_custom(func(a, b): return int(a.layer) < int(b.layer))
 	return pieces
 
-# ---------------- helpers ----------------
+func _add_field(field_name: String, token: String, pieces: Array, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array) -> void:
+	var parsed := ImageId.parse(token)
+	match parsed.get("kind", ImageId.Kind.INVALID):
+		ImageId.Kind.EMPTY:
+			return  # intentionally empty, no warning
+		ImageId.Kind.INVALID:
+			push_warning("SpeciesDisplayable: invalid id '%s' for %s" % [token, field_name])
+			return
+		ImageId.Kind.STATIC:
+			var image_num: String = parsed["imageNum"]
+			var layer: int = int(parsed["layer"])
+			var id_str := ImageId.to_static_id(image_num, layer)
+			var path := "%s/%s.png" % [SPECIES_IMG_DIR, id_str]
+			_append_piece(path, layer, field_name, base_skin, variance_col, variance_indices, pieces)
+			return
+		ImageId.Kind.MODULAR_FULL:
+			var group: String = parsed["groupType"]
+			var image_num2: String = parsed["imageNum"]
+			var layer2: int = int(parsed["layer"])
+			var id_str2 := ImageId.to_modular_id(group, image_num2, layer2)
+			var path2 := "%s/%s.png" % [SPECIES_IMG_DIR, id_str2]
+			_append_piece(path2, layer2, field_name, base_skin, variance_col, variance_indices, pieces)
+			return
+		ImageId.Kind.MODULAR_GROUP_ONLY:
+			var type_code: String = parsed["groupType"]
+			if not LAYERS.has(type_code):
+				push_warning("SpeciesDisplayable: unknown modular type '%s' for %s" % [type_code, field_name])
+				return
+			var img_num: String = String(inst.modular_image_nums.get(type_code, ""))
+			if img_num == "":
+				img_num = SpeciesLoader.pick_modular_image_num(type_code)
+				if img_num == "":
+					push_warning("SpeciesDisplayable: cannot pick image number for type '%s'" % type_code)
+					return
+				inst.modular_image_nums[type_code] = img_num
+			for layer3 in LAYERS[type_code]:
+				var id3 := ImageId.to_modular_id(type_code, img_num, int(layer3))
+				var path3 := "%s/%s.png" % [SPECIES_IMG_DIR, id3]
+				_append_piece(path3, int(layer3), field_name, base_skin, variance_col, variance_indices, pieces)
+			return
 
-func _add_static(pieces: Array, code: String, tint_for_layer: Dictionary) -> void:
-	if code == "": return
-	var re := RegEx.new(); re.compile("^(\\d{4})-(\\d{3})$")
-	var m := re.search(code)
-	if m == null:
-		return
-	var img_num := m.get_string(1)
-	var layer := int(m.get_string(2))
-	# NEW: honor hidden layers
-	if hidden_layers.has(layer):
-		return
-	_add_static_explicit(pieces, img_num + "-" + ("%03d" % layer), layer, tint_for_layer)
-
-
-func _add_static_explicit(pieces: Array, id: String, layer: int, tint_for_layer: Dictionary) -> void:
-	var path := "%s/%s.png" % [SPECIES_IMG_DIR, id]
+func _append_piece(path: String, layer: int, field_name: String, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array, pieces: Array) -> void:
 	if not ResourceLoader.exists(path):
 		push_warning("Missing texture: " + path)
 		return
-	var col: Color = (tint_for_layer.get(layer, Color(1,1,1,1)) as Color)
-	var dp := DisplayPiece.from_path(path, layer, col)
+	var tint := _tint_for(field_name, layer, base_skin, variance_col, variance_indices)
+	var dp := DisplayPiece.from_path(path, int(layer), tint)
 	if dp != null:
 		pieces.append(dp)
 
-func _add_modular(pieces: Array, type_code: String, tint_for_layer: Dictionary) -> void:
-	if type_code == "" or not LAYERS.has(type_code):
-		return
-	# retrieve or pick a 4-digit image number
-	var img_num: String = String(inst.modular_image_nums.get(type_code, ""))
-	if img_num == "":
-		img_num = SpeciesLoader.pick_modular_image_num(type_code)
-		inst.modular_image_nums[type_code] = img_num
-
-	for layer in LAYERS[type_code]:
-		if hidden_layers.has(int(layer)):
-			continue
-		var path := "%s/%s-%s-%03d.png" % [SPECIES_IMG_DIR, type_code, img_num, int(layer)]
-		if not ResourceLoader.exists(path):
-			push_warning("Missing texture: " + path)
-			continue
-		var col: Color = (tint_for_layer.get(int(layer), Color(1,1,1,1)) as Color)
-		var dp := DisplayPiece.from_path(path, int(layer), col)
-		if dp != null:
-			pieces.append(dp)
+func _tint_for(field_name: String, layer: int, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array) -> Color:
+	# Hair/eyes are never skin-tinted. Facial hair should follow hair color (same rule).
+	if field_name == "hair" or field_name == "eyes" or field_name == "facialHair":
+		return Color(1,1,1,1)
+	# Variance overrides base on specific layers
+	for i in range(variance_indices.size()):
+		if int(variance_indices[i]) == int(layer):
+			return variance_col
+	# Default: tint with base skin color for all other species pieces
+	return base_skin
