@@ -38,6 +38,9 @@ var _skinVariance_color: Color = Color(1,1,1,1)  # chosen single variance color,
 #   for fields with multiple group options (e.g., hair), remember which group was picked
 @export var modular_group_choice: Dictionary = {}   # { "hair": "h02" }
 
+@export var x_scale: float = 1.0
+@export var y_scale: float = 1.0
+
 var _rng := RandomNumberGenerator.new()
 
 func from_species(s: Species) -> void:
