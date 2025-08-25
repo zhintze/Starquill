@@ -1,4 +1,7 @@
-# File: res://scripts/boot/DataBoot.gd
+## data_boot.gd
+## Orchestrates startup tasks: attempts JSON load (ordered candidates), 
+## then directory scan if needed; logs registry state
+
 extends Node
 
 # Point to your editable config. If null, built-in defaults are used.

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b85b44j6w52se"]
 
-[ext_resource type="Script" uid="uid://8m8q2t0ppoty" path="res://autoload/DataBoot.gd" id="1_bq0a7"]
+[ext_resource type="Script" uid="uid://bnywov70t0e1i" path="res://autoload/data_boot.gd" id="1_bq0a7"]
 
 [node name="Boot" type="Node2D"]
 script = ExtResource("1_bq0a7")

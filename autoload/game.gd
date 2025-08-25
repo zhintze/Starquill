@@ -1,4 +1,6 @@
-## Game.gd — thin façade for common flows
+## game.gd
+## Entry points start_new_game() and go_to_next_level(), 
+## delegating to SceneLoader and audio bus
 extends Node
 
 func start_new_game(level_id: String, scene: PackedScene) -> void:
