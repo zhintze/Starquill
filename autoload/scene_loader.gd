@@ -1,4 +1,7 @@
-## SceneLoader.gd — persistent scene/level swapping; emits BusFlow signals
+## scene_loader.gd
+## Keeps the currently active level’s root; 
+## removes/queues free, then instantiates new scene; 
+## emits level_will_change, level_unloaded, level_loaded.
 extends Node
 
 var _current_level_id: String = ""

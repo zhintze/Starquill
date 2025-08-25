@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://drq7m22alyebb"]
 
-[ext_resource type="Script" uid="uid://badtsu6wbsk3i" path="res://random_species_demo.gd" id="1_vb0qd"]
-[ext_resource type="Script" uid="uid://d2cowe0t633mx" path="res://scenes/character_randomizer_control.gd" id="2_8i1rt"]
+[ext_resource type="Script" uid="uid://7u4f0dnspohj" path="res://scripts/util/random_species_demo.gd" id="1_vb0qd"]
+[ext_resource type="Script" uid="uid://d2cowe0t633mx" path="res://scripts/util/character_randomizer_control.gd" id="2_8i1rt"]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_vb0qd")
