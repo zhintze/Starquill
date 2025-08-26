@@ -183,10 +183,9 @@ static func get_palette(palette_ref: String) -> PackedStringArray:
 				return from_override
 
 	var candidates := [
-		"res://documents/palettes/%s.csv" % palette_ref,
-		"res://documents/%s.csv" % palette_ref,
-		"res://documents/skin_colors_%s.csv" % palette_ref,
-		"res://documents/skin_colors.csv"
+		"res://documents/color_%s.csv" % palette_ref,
+		"res://documents/skin_color_skin_%s.csv" % palette_ref,
+		"res://documents/color_main.csv"
 	]
 	for p in candidates:
 		if FileAccess.file_exists(p):

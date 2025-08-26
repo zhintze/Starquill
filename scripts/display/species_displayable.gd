@@ -1,4 +1,5 @@
 extends Resource
+class_name SpeciesDisplayable
 
 const SPECIES_IMG_DIR := "res://assets/images/species"
 

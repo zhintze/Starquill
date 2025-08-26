@@ -13,7 +13,7 @@ static func get_colors(keyword: String) -> PackedStringArray:
 	if _cache.has(key):
 		return _cache[key]
 
-	var path := "%s/skin_color_%s.csv" % [DOCS_DIR, key]
+	var path := "%s/color_skin_%s.csv" % [DOCS_DIR, key]
 	if not FileAccess.file_exists(path):
 		# Not found -> empty list; caller will gracefully fall back.
 		_cache[key] = PackedStringArray()
