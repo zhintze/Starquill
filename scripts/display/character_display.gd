@@ -56,8 +56,8 @@ func _redraw() -> void:
 		_apply_bottom_center_anchor()
 		return
 
-	var disp := SpeciesDisplayable.new(_character.species)
-	var pieces: Array[DisplayPiece] = disp.get_display_pieces()
+	# Ask the Character for the fully merged, sorted list (species + equipment)
+	var pieces: Array[DisplayPiece] = _character.get_display_pieces()
 
 	if DEBUG_SHOW_COUNTS:
 		var null_tex := 0

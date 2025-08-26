@@ -135,3 +135,24 @@ func _tint_for(field_name: String, layer: int, base_skin: Color, variance_col: C
 			return variance_col
 	# Default: tint with base skin color for all other species pieces
 	return base_skin
+
+
+func build_pieces_with_hidden(hidden_layers: PackedInt32Array) -> Array[DisplayPiece]:
+	var pieces: Array[DisplayPiece] = build_pieces()
+	if hidden_layers.is_empty():
+		return pieces
+	var hidden := {}
+	for h in hidden_layers:
+		hidden[int(h)] = true
+	var keep = func(p: DisplayPiece) -> bool:
+		return not hidden.has(int(p.layer))
+	return pieces.filter(keep)
+	
+func build_pieces() -> Array[DisplayPiece]:
+	# Assumes you already have logic that iterates modular groups and base parts.
+	# If you already have equivalent code under a different name, either rename it to this
+	# or have this call your internal builder.
+	var pieces: Array[DisplayPiece] = []
+	# TODO: populate 'pieces' using your existing per-layer path construction.
+	# This call site exists to keep Character.get_display_pieces() simple.
+	return pieces
