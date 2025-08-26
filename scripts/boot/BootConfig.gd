@@ -23,6 +23,5 @@ class_name BootConfig
 # ===== Optional: palette sanity (won’t block, just logs) =====
 # If set, verify at least one of these exists; otherwise warn and rely on fallback palette.
 @export var palette_csv_candidates: PackedStringArray = [
-	"res://documents/skin_colors.csv",
-	"res://documents/palettes/human.csv"
+	"res://documents/color_main.csv"
 ]

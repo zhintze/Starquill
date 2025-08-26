@@ -27,7 +27,7 @@ BusAudio="*res://autoload/bus_audio.gd"
 SceneLoader="*res://autoload/scene_loader.gd"
 Game="*res://autoload/game.gd"
 species_loader="*res://scripts/species/species_loader.gd"
-species_display_builder="*res://scripts/species/species_display_builder.gd"
+species_display_builder="*res://scripts/display/species_display_builder.gd"
 data_boot="*res://autoload/data_boot.gd"
 equipment_catalog="*res://scripts/equipment/equipment_catalog.gd"
 
