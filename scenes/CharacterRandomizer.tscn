@@ -38,6 +38,10 @@ layout_mode = 2
 layout_mode = 2
 text = "Randomize All"
 
+[node name="EquipRandomButton" type="Button" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Equip Random"
+
 [node name="DisplayGrid" type="GridContainer" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3

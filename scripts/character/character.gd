@@ -9,17 +9,27 @@ var skin_color: Color
 var stats: Stats
 var species: SpeciesInstance
 
-var head: Equipment
-var torso: Equipment
-var arms: Equipment
-var legs: Equipment
-var feet: Equipment
-var misc1: Equipment
-var misc2: Equipment
-var misc3: Equipment
-var misc4: Equipment
+# Equipment slots (instances, not defs)
+@export var head:  EquipmentInstance
+@export var torso: EquipmentInstance
+@export var arms:  EquipmentInstance
+@export var legs:  EquipmentInstance
+@export var feet:  EquipmentInstance
+@export var misc1: EquipmentInstance
+@export var misc2: EquipmentInstance
+@export var misc3: EquipmentInstance
+@export var misc4: EquipmentInstance
 
+# Colors applied to equipment layers that are marked as color-variant in equipment.json
+# key: layer_code (int) -> Color
+var equipment_layer_colors: Dictionary = {}
+
+# Optional gameplay
 var base_verbs: Array[Verb]
+
+# ---- Palette config ----
+const COLOR_PALETTE_PATH: String = "res://assets/data/color_main.csv"
+static var _palette_cache: PackedColorArray = PackedColorArray()
 
 func _init() -> void:
 	base_verbs = []
@@ -30,7 +40,7 @@ func _init() -> void:
 func _on_stats_changed() -> void:
 	emit_signal("model_changed")
 
-# Species set (optional: forward species.stats if present)
+# Species set (optional: forward species.stats changes)
 func set_species(s: SpeciesInstance) -> void:
 	if species and species.stats:
 		if species.stats.changed.is_connected(_on_stats_changed):
@@ -40,10 +50,10 @@ func set_species(s: SpeciesInstance) -> void:
 		species.stats.changed.connect(_on_stats_changed)
 	emit_signal("model_changed")
 
-
 enum EquipSlot { HEAD, TORSO, ARMS, LEGS, FEET, MISC1, MISC2, MISC3, MISC4 }
 
-func set_equipment(slot: int, e: Equipment) -> void:
+# Back-compat: explicit slot set/get using instances
+func set_equipment(slot: int, e: EquipmentInstance) -> void:
 	match slot:
 		EquipSlot.HEAD:  head = e
 		EquipSlot.TORSO: torso = e
@@ -55,9 +65,11 @@ func set_equipment(slot: int, e: Equipment) -> void:
 		EquipSlot.MISC3: misc3 = e
 		EquipSlot.MISC4: misc4 = e
 		_: return
+	_assign_colors_for_equipment_variants()
+	_recalc_stats()
 	emit_signal("model_changed")
 
-func get_equipment(slot: int) -> Equipment:
+func get_equipment(slot: int) -> EquipmentInstance:
 	match slot:
 		EquipSlot.HEAD:  return head
 		EquipSlot.TORSO: return torso
@@ -69,15 +81,206 @@ func get_equipment(slot: int) -> Equipment:
 		EquipSlot.MISC3: return misc3
 		EquipSlot.MISC4: return misc4
 		_: return null
-		
-#Dangerous placeholder - needs to put equipment into party inventory
+
+# Safer API for controllers: route by item_type with misc overflow
+func equip_instance(ei: EquipmentInstance) -> bool:
+	if ei == null:
+		return false
+	var slot_name: String = EquipmentCatalog.slot_for_item_type(ei.item_type)
+	match slot_name:
+		"head":
+			if head == null: head = ei
+			else: return _equip_misc_overflow(ei)
+		"torso":
+			if torso == null: torso = ei
+			else: return _equip_misc_overflow(ei)
+		"arms":
+			if arms == null: arms = ei
+			else: return _equip_misc_overflow(ei)
+		"legs":
+			if legs == null: legs = ei
+			else: return _equip_misc_overflow(ei)
+		"feet":
+			if feet == null: feet = ei
+			else: return _equip_misc_overflow(ei)
+		"misc":
+			return _equip_misc_overflow(ei)
+		_:
+			return _equip_misc_overflow(ei)
+	_assign_colors_for_equipment_variants()
+	_recalc_stats()
+	emit_signal("model_changed")
+	return true
+
+func _equip_misc_overflow(ei: EquipmentInstance) -> bool:
+	if misc1 == null: misc1 = ei
+	elif misc2 == null: misc2 = ei
+	elif misc3 == null: misc3 = ei
+	elif misc4 == null: misc4 = ei
+	else:
+		return false
+	_assign_colors_for_equipment_variants()
+	_recalc_stats()
+	emit_signal("model_changed")
+	return true
+
+# NOTE: placeholder — later move items to Party inventory
 func unequip(slot: int) -> void:
 	set_equipment(slot, null)
 
-func get_all_equipment() -> Array[Equipment]:
-	var all := [head, torso, arms, legs, feet, misc1, misc2, misc3, misc4]
-	return all.filter(func(e): return e != null)
+func clear_equipment() -> void:
+	head = null; torso = null; arms = null
+	legs = null; feet = null
+	misc1 = null; misc2 = null; misc3 = null; misc4 = null
+	equipment_layer_colors.clear()
+	_recalc_stats()
+	emit_signal("model_changed")
 
-# Stub — return pieces built from species + equipment
+func get_all_equipment_instances() -> Array[EquipmentInstance]:
+	var out: Array[EquipmentInstance] = []
+	if head: out.append(head)
+	if torso: out.append(torso)
+	if arms: out.append(arms)
+	if legs: out.append(legs)
+	if feet: out.append(feet)
+	for m in [misc1, misc2, misc3, misc4]:
+		if m: out.append(m)
+	return out
+
+# ---------------- Stats recompute ----------------
+func _recalc_stats() -> void:
+	if stats == null:
+		stats = Stats.new()
+	else:
+		# reset to a clean Stats each time (no base_stats in this variant)
+		stats = Stats.new()
+
+	for ei in get_all_equipment_instances():
+		if ei and ei.stats:
+			stats.add(ei.stats)
+
+# --------------- Display pieces merge ---------------
 func get_display_pieces() -> Array[DisplayPiece]:
-	return []
+	_assign_colors_for_equipment_variants()
+
+	# (1) Equipment → pieces + hidden species layers
+	var equip_res: EquipmentDisplayBuilder.EquipmentDisplayResult = EquipmentDisplayBuilder.build_for_character(self)
+	var equip_pieces: Array[DisplayPiece] = equip_res.pieces
+	var hidden: PackedInt32Array = equip_res.hidden_species_layers
+
+	# Apply color-variance tints to equipment pieces (CharacterDisplay reads 'modulate')
+	if not equipment_layer_colors.is_empty():
+		for i in equip_pieces.size():
+			var dp: DisplayPiece = equip_pieces[i]
+			var layer_i: int = int(dp.layer)
+			if equipment_layer_colors.has(layer_i):
+				var tint_col: Color = equipment_layer_colors[layer_i]
+				dp.modulate = (dp.modulate * tint_col) if dp.modulate != Color(1,1,1,1) else tint_col
+				equip_pieces[i] = dp
+
+	# (2) Species via your proven method, then filter hidden locally
+	var sp_disp := SpeciesDisplayable.new(species)
+	var species_pieces: Array[DisplayPiece] = sp_disp.get_display_pieces()
+
+	if not hidden.is_empty():
+		var hidden_set := {}
+		for h in hidden:
+			hidden_set[int(h)] = true
+		var keep = func(p: DisplayPiece) -> bool:
+			return not hidden_set.has(int(p.layer))
+		species_pieces = species_pieces.filter(keep)
+
+	# (3) Merge + sort by layer
+	var all_pieces: Array[DisplayPiece] = []
+	all_pieces.append_array(species_pieces)
+	all_pieces.append_array(equip_pieces)
+
+	var cmp = func(a: DisplayPiece, b: DisplayPiece) -> bool:
+		return a.layer < b.layer
+	all_pieces.sort_custom(cmp)
+
+	# Debug (remove later): show counts and a peek at hidden list
+	print("[Character] species=", species_pieces.size(), " equip=", equip_pieces.size(), " hidden=", hidden.size(), " total=", all_pieces.size())
+	return all_pieces
+
+# --------------- Color palette + assignment ---------------
+func _assign_colors_for_equipment_variants() -> void:
+	# Build a set of all layers that need color variance from equipped items
+	var needed: Dictionary = {} # layer(int) -> true
+	for ei in get_all_equipment_instances():
+		var cat: EquipmentCatalog.CatalogItem = equipment_catalog.by_type.get(ei.item_type, null) as EquipmentCatalog.CatalogItem
+		if cat == null:
+			continue
+		for layer_code in cat.layer_color_variance:
+			needed[int(layer_code)] = true
+
+	# Ensure we have a palette
+	var palette: PackedColorArray = _get_color_palette()
+	if palette.is_empty():
+		return
+
+	# Assign any missing colors (stable-ish pick per layer id)
+	for k in needed.keys():
+		var layer_i: int = int(k)
+		if equipment_layer_colors.has(layer_i):
+			continue
+		var idx: int = absi(layer_i) % max(1, palette.size())
+		var col: Color = palette[idx]
+		equipment_layer_colors[layer_i] = col
+
+	# Remove colors for layers no longer needed
+	var to_remove: Array = []
+	for layer_key in equipment_layer_colors.keys():
+		if not needed.has(int(layer_key)):
+			to_remove.append(layer_key)
+	for rk in to_remove:
+		equipment_layer_colors.erase(rk)
+
+static func _get_color_palette() -> PackedColorArray:
+	if not _palette_cache.is_empty():
+		return _palette_cache
+	var out := PackedColorArray()
+	if not FileAccess.file_exists(COLOR_PALETTE_PATH):
+		return out
+	var f := FileAccess.open(COLOR_PALETTE_PATH, FileAccess.READ)
+	if f == null:
+		return out
+	while not f.eof_reached():
+		var line := f.get_line().strip_edges()
+		if line == "" or line.begins_with("#"):
+			continue
+		var parts := line.split(",", false)
+		# Accept either HEX or CSV rgb[a]
+		if parts.size() == 1:
+			# HEX like #RRGGBB or RRGGBB
+			var hex := parts[0]
+			if not hex.begins_with("#"):
+				hex = "#" + hex
+			var c := Color(hex)
+			out.append(c)
+		elif parts.size() >= 3:
+			# r,g,b[,a] in 0-255 or 0-1
+			var r := _parse_color_component(parts[0])
+			var g := _parse_color_component(parts[1])
+			var b := _parse_color_component(parts[2])
+			var a := 1.0
+			if parts.size() >= 4:
+				a = _parse_color_component(parts[3])
+			var c2 := Color(r, g, b, a)
+			out.append(c2)
+	# cache
+	_palette_cache = out
+	return _palette_cache
+
+static func _parse_color_component(sv: String) -> float:
+	var s := sv.strip_edges()
+	# Try int 0..255 first
+	if s.is_valid_int():
+		var iv := int(s)
+		return clamp(float(iv) / 255.0, 0.0, 1.0)
+	# Then float 0..1
+	if s.is_valid_float():
+		var fv := float(s)
+		return clamp(fv, 0.0, 1.0)
+	# Fallback
+	return 0.0
