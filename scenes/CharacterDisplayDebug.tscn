@@ -1,5 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://difr6kq42utyj"]
+[gd_scene load_steps=3 format=3 uid="uid://difr6kq42utyj"]
 
 [ext_resource type="PackedScene" uid="uid://cbcw6n0q8qe40" path="res://scenes/CharacterDisplay.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://dbb4ahvu6gckg" path="res://scripts/display/character_display_debug.gd" id="2_h4j0j"]
 
 [node name="CharacterDisplay" instance=ExtResource("1_base")]
+script = ExtResource("2_h4j0j")
