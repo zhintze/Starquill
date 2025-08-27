@@ -4,6 +4,8 @@ class_name EquipmentFactory
 
 var _main_palette: PackedStringArray = PackedStringArray()
 
+const PALETTE_PATH: String = "res://documents/color_main.csv" # <-- point this at your 1k-color file
+
 func _ready() -> void:
 	randomize()
 	_main_palette = _load_palette()
@@ -71,13 +73,61 @@ func equip_random_set(ch: Character, extras: int = 4) -> void:
 # Must return hex strings like "RRGGBB" or "#RRGGBB".
 # -------------------------------
 func _load_palette() -> PackedStringArray:
-	var out := PackedStringArray()
-	# TODO: swap with your CSV loader (e.g., res://documents/color_main.csv)
-	# Temporary sensible defaults to prove the pipeline:
-	out.push_back("E8D8C3") # light leather
-	out.push_back("5A4632") # dark leather
-	out.push_back("7B3F00") # brown
-	out.push_back("4A6FA5") # steel-blue cloth
-	out.push_back("8F1D1D") # deep red
-	out.push_back("356859") # teal
+	var out: PackedStringArray = PackedStringArray()
+
+	if not FileAccess.file_exists(PALETTE_PATH):
+		push_warning("[EquipmentFactory] palette file not found: " + PALETTE_PATH + " (using tiny fallback)")
+		out.push_back("E8D8C3")
+		out.push_back("5A4632")
+		out.push_back("7B3F00")
+		out.push_back("4A6FA5")
+		out.push_back("8F1D1D")
+		out.push_back("356859")
+		return out
+
+	var f: FileAccess = FileAccess.open(PALETTE_PATH, FileAccess.READ)
+	if f == null:
+		push_warning("[EquipmentFactory] failed to open: " + PALETTE_PATH)
+		return out
+
+	while not f.eof_reached():
+		var line: String = f.get_line().strip_edges()
+		if line == "" or line.begins_with("#"):
+			continue
+
+		var token: String = ""
+
+		if line.find(",") >= 0:
+			# CSV-style "r,g,b[,a]"
+			var parts: PackedStringArray = line.split(",", false)
+			if parts.size() >= 3:
+				var r: int = clamp(int(parts[0].strip_edges()), 0, 255)
+				var g: int = clamp(int(parts[1].strip_edges()), 0, 255)
+				var b: int = clamp(int(parts[2].strip_edges()), 0, 255)
+				token = "%02X%02X%02X" % [r, g, b]  # store as RRGGBB
+		else:
+			token = line
+
+		# Normalize: remove leading '#', upper-case
+		if token.begins_with("#"):
+			token = token.substr(1)
+		token = token.to_upper()
+
+		# Accept 6 or 8 hex chars; keep as 6 (ignore alpha) for now
+		if token.length() == 8:
+			token = token.substr(0, 6)
+		if token.length() == 6 and _is_hex(token):
+			out.push_back(token)
+
+	f.close()
 	return out
+
+
+
+func _is_hex(s: String) -> bool:
+	for i in s.length():
+		var ch := s[i]
+		var ok := (ch >= '0' and ch <= '9') or (ch >= 'A' and ch <= 'F')
+		if not ok:
+			return false
+	return true
