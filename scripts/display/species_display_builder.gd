@@ -121,6 +121,13 @@ static func freeze_species_to_instance(sp: Species) -> SpeciesInstance:
 	return si
 
 static func build_display_pieces(si: SpeciesInstance) -> Array[DisplayPiece]:
+	const HAIR_L1 := 92
+	const HAIR_L2 := 128
+	const HAIR_L3 := 154
+	const LAYER_FACIAL_HAIR := 122
+	const LAYER_EYES := 84
+	const LAYER_FACIAL_DETAIL := 87
+
 	var pieces: Array[DisplayPiece] = []
 	for key in si.parts.keys():
 		var p: Dictionary = si.parts[key]
@@ -131,7 +138,7 @@ static func build_display_pieces(si: SpeciesInstance) -> Array[DisplayPiece]:
 				var layer: int = int(p.get("layer", 0))
 				var id: String = "%s-%03d" % [image_num, layer]
 				if DEBUG_TRACE_BUILD: print("[BUILD] static key=", key, " id=", id, " layer=", layer)
-				_try_add_piece_by_id(pieces, id, layer, si.skin_modulate_by_layer, key)
+				_try_add_piece_by_id(pieces, id, layer,si, si.skin_modulate_by_layer, key)
 			"modular":
 				var type_code: String = String(p.get("type", ""))
 				var image_num: String = String(p.get("image_num", ""))
@@ -140,7 +147,7 @@ static func build_display_pieces(si: SpeciesInstance) -> Array[DisplayPiece]:
 					var layer: int = int(layer_val)
 					var id: String = "%s-%s-%03d" % [type_code, image_num, layer]
 					if DEBUG_TRACE_BUILD: print("[BUILD] modular key=", key, " id=", id, " layer=", layer)
-					_try_add_piece_by_id(pieces, id, layer, si.skin_modulate_by_layer, key)
+					_try_add_piece_by_id(pieces, id, layer,si, si.skin_modulate_by_layer, key)
 			_:
 				push_warning("SpeciesDisplayBuilder: Unknown part kind %s for key %s" % [kind, key])
 	return pieces
@@ -251,6 +258,7 @@ static func _try_add_piece_by_id(
 	pieces: Array[DisplayPiece],
 	id: String,
 	layer: int,
+	si: SpeciesInstance,
 	mod_by_layer: Dictionary,
 	part_key: String
 ) -> void:
@@ -273,6 +281,8 @@ static func _try_add_piece_by_id(
 
 	if DEBUG_TRACE_BUILD:
 		print("[ADD] part=", part_key, " id=", id, " layer=", layer, " ok")
+		
+	# Apply category tints (hair/eyes/facial detail) from instance
 	pieces.append(DisplayPiece.make(tex, layer, col))
 
 	
