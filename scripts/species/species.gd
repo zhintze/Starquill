@@ -25,6 +25,12 @@ class_name Species
 @export var skinVariance_hex: PackedStringArray = PackedStringArray()    # overrides palette if non-empty
 @export var skinVariance_indices: PackedInt32Array = PackedInt32Array()  # layers to tint with variance
 
+# New: category color defaults/keywords (mirror skin_color behavior)
+@export var hair_color: PackedStringArray = PackedStringArray()           # e.g. ["default"] or ["dark"] or ["#6a6a6a", "#796a5c"]
+@export var eyes_color: PackedStringArray = PackedStringArray()           # e.g. ["default"] or ["blue"]
+@export var facialDetail_color: PackedStringArray = PackedStringArray()   # e.g. ["default"] or ["freckles"]
+
+
 # Global scale applied to CharacterDisplay root
 @export var x_scale: float = 1.0
 @export var y_scale: float = 1.0

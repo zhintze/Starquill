@@ -6,12 +6,14 @@ class EquipmentDisplayResult:
 	var hidden_species_layers: PackedInt32Array = PackedInt32Array()
 
 static func build_for_character(ch: Character) -> EquipmentDisplayResult:
+	print("[EquipBuilder] ch=", ch, " has=", ch.get_all_equipment_instances().size())
 	var res := EquipmentDisplayResult.new()
 	if ch == null:
 		return res
 
 	var insts: Array[EquipmentInstance] = ch.get_all_equipment_instances()
 	for ei in insts:
+		print("[EquipBuilder] instance type=", ei.item_type, " num=", ei.item_num)
 		if ei == null:
 			continue
 
@@ -20,13 +22,13 @@ static func build_for_character(ch: Character) -> EquipmentDisplayResult:
 			push_warning("EquipBuilder: unknown item_type '%s' on instance" % ei.item_type)
 			continue
 
-		# accumulate species layers to hide (we never hide equipment layers)
+		# Accumulate species layers to hide (we never hide equipment layers)
 		for h in cat.hidden_layers:
-			res.hidden_species_layers.append(h)
+			res.hidden_species_layers.append(int(h))
 
 		# Files follow: res://assets/images/equipment/{code}-{4 digits}-{3 digits}.png
 		# Example: tr07-0032-054.png   (code=item_type, item_num padded to 4, layer_code padded to 3)
-		var code: String = ei.item_type  # keep case as in JSON; use .to_lower() if assets are lowercase
+		var code: String = ei.item_type
 		var num4: int = int(ei.item_num)
 
 		for layer_code in cat.layer_codes:
@@ -34,11 +36,17 @@ static func build_for_character(ch: Character) -> EquipmentDisplayResult:
 			var path := "res://assets/images/equipment/%s-%04d-%03d.png" % [code, num4, layer3]
 
 			# Use FileAccess to avoid import-db edge cases; warn if missing
+			print("[EquipBuilder] PATH TRY: ", path)
 			if not FileAccess.file_exists(path):
 				push_warning("EquipBuilder: texture not found: %s" % path)
 				continue
 
-			var dp := DisplayPiece.from_path(path, layer3, Color(1,1,1,1))
+			
+
+			# Determine tint: variance override, else base_color
+			var tint: Color = ei.tint_for_layer(layer_code)
+
+			var dp := DisplayPiece.from_path(path, layer3, tint)
 			if dp != null:
 				res.pieces.append(dp)
 
