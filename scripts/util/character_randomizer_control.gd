@@ -7,8 +7,6 @@ class_name CharacterRandomizerControl
 @onready var equip_random_btn: Button    = $MarginContainer/VBoxContainer/HBoxContainer/EquipRandomButton
 
 const NUM_CHARACTERS: int = 8
-
-# Always use the debug display scene (adjust path if yours differs)
 const DISPLAY_SCENE_PATH: String = "res://scenes/CharacterDisplayDebug.tscn"
 
 var _display_scene: PackedScene
@@ -24,8 +22,8 @@ func _ready() -> void:
 		return
 
 	_ensure_equipment_catalog_loaded()
-
 	_populate_species_option()
+
 	if species_option.item_count > 13:
 		species_option.select(13)
 	elif species_option.item_count > 0 and species_option.selected < 0:
@@ -41,7 +39,7 @@ func _ready() -> void:
 	_roll_all(_current_species_key())
 
 # ---------------------------------------------------------
-# Equipment randomizer
+# Equipment randomizer (delegates to EquipmentFactory)
 # ---------------------------------------------------------
 
 func _ensure_equipment_catalog_loaded() -> void:
@@ -63,59 +61,11 @@ func _on_equip_random_pressed() -> void:
 		if c == null:
 			continue
 		var before := c.get_all_equipment_instances().size()
-		_equip_random_set(c)
+		equipment_factory.equip_random_set(c, 4)  # <-- singleton, not the class
 		var after := c.get_all_equipment_instances().size()
 		if after > before:
 			changed_count += 1
 	print("[EquipRandom] changed=", changed_count, "/", _characters.size())
-
-# Pick a random equipment instance from a slot prefix bucket, e.g. "hd","tr","ar","lg","fe","mc"
-func _rand_from_bucket(prefix: String) -> EquipmentInstance:
-	var bucket_any: Variant = equipment_catalog.by_slot_prefix.get(prefix, [])
-	if bucket_any == null:
-		print("[EquipRandom] bucket missing: ", prefix)
-		return null
-	var bucket: Array = bucket_any as Array
-	if bucket.is_empty():
-		print("[EquipRandom] bucket empty: ", prefix)
-		return null
-
-	var idx: int = randi() % bucket.size()
-	var cat: EquipmentCatalog.CatalogItem = bucket[idx] as EquipmentCatalog.CatalogItem
-	if cat == null:
-		print("[EquipRandom] cast failed for prefix: ", prefix)
-		return null
-
-	var ei := EquipmentInstance.new()
-	ei.item_type = cat.item_type
-	var amt: int = max(1, cat.amount)
-	ei.item_num = (randi() % amt) + 1
-	return ei
-
-func _equip_random_set(ch: Character) -> void:
-	if ch == null:
-		return
-
-	ch.clear_equipment()
-
-	# main slots
-	var head := _rand_from_bucket("hd")
-	var torso := _rand_from_bucket("tr")
-	var arms := _rand_from_bucket("ar")
-	var legs := _rand_from_bucket("lg")
-	var feet := _rand_from_bucket("fe")
-
-	for ei in [head, torso, arms, legs, feet]:
-		if ei != null:
-			ch.equip_instance(ei)
-
-	# overflow misc — try up to 4 more (can include extra hats, etc.)
-	var pick_pool: Array[String] = ["mc", "hd", "tr", "ar", "lg", "fe"]
-	for i in 4:
-		var pref: String = pick_pool[randi() % pick_pool.size()]
-		var extra := _rand_from_bucket(pref)
-		if extra != null:
-			ch.equip_instance(extra)
 
 # ---------------------------------------------------------
 # Species / grid population
@@ -171,7 +121,7 @@ func _roll_all(species_key: String) -> void:
 	for i in NUM_CHARACTERS:
 		var ch := CharacterFactory.create_random_for_species_key(species_key)
 		_characters[i] = ch
-		_displays[i].set_character(ch)  # bind (no re-instantiation)
+		_displays[i].set_character(ch)
 
 func _on_species_changed(_index: int) -> void:
 	_roll_all(_current_species_key())

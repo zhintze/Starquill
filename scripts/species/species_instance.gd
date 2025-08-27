@@ -7,10 +7,8 @@ static var __mod_counts_cache: Dictionary = {}
 const MODULAR_PARTS_JSON := "res://assets/data/speciesModularParts.json"
 
 # ---------- Color CSV constants ----------
-const HAIR_COLOR_CSV_PATH: String = "res://documents/color_main.csv"
-const FACIAL_HAIR_COLOR_CSV_PATH: String = "res://documents/color_main.csv" # reserved; facial hair inherits head hair
-const EYES_COLOR_CSV_PATH: String = "res://documents/color_main.csv"
-const FACIAL_DETAIL_COLOR_CSV_PATH: String = "res://documents/color_main.csv"
+const COLOR_MAIN_CSV: String = "res://documents/color_main.csv"  # the “default” palette
+
 
 
 # ---------- Persistent colors (new) ----------
@@ -89,16 +87,14 @@ func from_species(s: Species) -> void:
 				modular_image_nums[code] = chosen
 
 	# Randomize and persist per-instance category colors (facial hair inherits hair)
-	_assign_category_colors()
+	# New: category colors like skin_color (facialHair inherits hairColor)
+	hairColor = _choose_category_color("hair", s.hair_color, Color(1,1,1,1))
+	eyesColor = _choose_category_color("eyes", s.eyes_color, Color(1,1,1,1))
+	facialDetailColor = _choose_category_color("facialDetail", s.facialDetail_color, Color(1,1,1,1))
+
 	# skin tints
 	_choose_skin_colors(s)
 	
-func _assign_category_colors() -> void:
-	hairColor = _pick_color_from_csv(HAIR_COLOR_CSV_PATH, Color(1, 1, 1, 1))
-	eyesColor = _pick_color_from_csv(EYES_COLOR_CSV_PATH, Color(1, 1, 1, 1))
-	facialDetailColor = _pick_color_from_csv(FACIAL_DETAIL_COLOR_CSV_PATH, Color(1, 1, 1, 1))
-	# facial hair uses hairColor by rule (no separate field)
-	print("hair=", hairColor, " eyes=", eyesColor, " facialDetail=", facialDetailColor)
 
 
 func _pick_color_from_csv(path: String, fallback: Color) -> Color:
@@ -230,6 +226,10 @@ func _safe_color(hex: String) -> Color:
 	if not t.begins_with("#") and not t.to_lower().begins_with("0x"):
 		t = "#" + t
 	return Color(t)
+	
+func _looks_like_hex(s: String) -> bool:
+	var t := s.strip_edges()
+	return t.begins_with("#") or t.to_lower().begins_with("0x") or _is_plain_hex(t)
 
 func _is_plain_hex(s: String) -> bool:
 	# Accept length 3 or 6 hex without #/0x
@@ -243,6 +243,29 @@ func _is_plain_hex(s: String) -> bool:
 		if not ok:
 			return false
 	return true
+	
+func _load_keyword_palette_for_category(cat: String, keyword: String) -> Array[Color]:
+	# cat ∈ {"hair","eyes","facialDetail"}
+	var path := ""
+	if keyword == "default":
+		path = COLOR_MAIN_CSV
+	else:
+		match cat:
+			"hair":
+				path = "res://documents/color_hair_%s.csv" % keyword
+			"eyes":
+				path = "res://documents/color_eyes_%s.csv" % keyword
+			"facialDetail":
+				path = "res://documents/color_facialDetail_%s.csv" % keyword
+			_:
+				path = COLOR_MAIN_CSV
+
+	if not FileAccess.file_exists(path):
+		push_warning("SpeciesInstance: palette CSV not found for %s='%s' → %s. Falling back to default." % [cat, keyword, path])
+		path = COLOR_MAIN_CSV
+
+	return ColorList.load_palette_from_csv(path)
+
 
 # ===== utilities =====
 static func _load_counts() -> void:
@@ -265,3 +288,31 @@ static func _load_counts() -> void:
 static func _get_modular_count(code: String) -> int:
 	_load_counts()
 	return int(__mod_counts_cache.get(String(code).to_lower(), 0))
+	
+func _choose_category_color(cat: String, arr: PackedStringArray, fallback: Color) -> Color:
+	# If Species provided explicit hex list, pick from that.
+	if arr.size() > 0:
+		var first := String(arr[0]).strip_edges()
+		var looks_hex := _looks_like_hex(first)
+		if looks_hex:
+			# treat entire array as hex list
+			var pool: Array[String] = []
+			for h in arr:
+				var hs := String(h).strip_edges()
+				if _looks_like_hex(hs):
+					pool.append(hs)
+			if pool.size() > 0:
+				var pick := pool[int(_rng.randi() % pool.size())]
+				return _safe_color(pick)
+		else:
+			# treat first entry as keyword
+			var kw := first.to_lower()
+			var pal := _load_keyword_palette_for_category(cat, kw)
+			if pal.size() > 0:
+				return pal[int(_rng.randi() % pal.size())]
+
+	# Fallback to default main CSV
+	var pal2 := ColorList.load_palette_from_csv(COLOR_MAIN_CSV)
+	if pal2.size() > 0:
+		return pal2[int(_rng.randi() % pal2.size())]
+	return fallback

@@ -46,7 +46,7 @@ const LAYERS := {
 func get_display_pieces() -> Array:
 	var pieces: Array[DisplayPiece] = []
 
-	var base_skin: Color = inst.skinColor
+	var selected_color: Color = inst.skinColor
 	var base_hair: Color = inst.hairColor
 	var base_eyes: Color = inst.eyesColor
 	var base_facialDetail: Color = inst.facialDetailColor
@@ -55,15 +55,15 @@ func get_display_pieces() -> Array:
 	var variance_indices := inst.skinVariance_indices
 
 	# Core parts — order doesn't matter; we will sort by layer at the end.
-	_add_field("backArm", inst.backArm, pieces, base_skin, variance_col, variance_indices)
-	_add_field("body", inst.body, pieces, base_skin, variance_col, variance_indices)
-	_add_field("legs", inst.legs, pieces, base_skin, variance_col, variance_indices)
-	_add_field("head", inst.head, pieces, base_skin, variance_col, variance_indices)
+	_add_field("backArm", inst.backArm, pieces, selected_color, variance_col, variance_indices)
+	_add_field("body", inst.body, pieces, selected_color, variance_col, variance_indices)
+	_add_field("legs", inst.legs, pieces, selected_color, variance_col, variance_indices)
+	_add_field("head", inst.head, pieces, selected_color, variance_col, variance_indices)
 
-	_add_field("ears", inst.ears, pieces, base_skin, variance_col, variance_indices)
+	_add_field("ears", inst.ears, pieces, selected_color, variance_col, variance_indices)
 	_add_field("eyes", inst.eyes, pieces, base_eyes, variance_col, variance_indices)
-	_add_field("nose", inst.nose, pieces, base_skin, variance_col, variance_indices)
-	_add_field("mouth", inst.mouth, pieces, base_skin, variance_col, variance_indices)
+	_add_field("nose", inst.nose, pieces, selected_color, variance_col, variance_indices)
+	_add_field("mouth", inst.mouth, pieces, selected_color, variance_col, variance_indices)
 	_add_field("facialHair", inst.facialHair, pieces, base_hair, variance_col, variance_indices)
 	_add_field("facialDetail", inst.facialDetail, pieces, base_facialDetail, variance_col, variance_indices)
 
@@ -71,15 +71,15 @@ func get_display_pieces() -> Array:
 
 	# Other body parts list: currently static, but future-proof for modular.
 	for token in inst.otherBodyParts:
-		_add_field("otherBodyParts", String(token), pieces, base_skin, variance_col, variance_indices)
+		_add_field("otherBodyParts", String(token), pieces, selected_color, variance_col, variance_indices)
 
-	_add_field("frontArm", inst.frontArm, pieces, base_skin, variance_col, variance_indices)
+	_add_field("frontArm", inst.frontArm, pieces, selected_color, variance_col, variance_indices)
 
 	# Sort final list by layer
 	pieces.sort_custom(func(a, b): return int(a.layer) < int(b.layer))
 	return pieces
 
-func _add_field(field_name: String, token: String, pieces: Array, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array) -> void:
+func _add_field(field_name: String, token: String, pieces: Array, selected_color: Color, variance_col: Color, variance_indices: PackedInt32Array) -> void:
 	var parsed := ImageId.parse(token)
 	match parsed.get("kind", ImageId.Kind.INVALID):
 		ImageId.Kind.EMPTY:
@@ -92,7 +92,7 @@ func _add_field(field_name: String, token: String, pieces: Array, base_skin: Col
 			var layer: int = int(parsed["layer"])
 			var id_str := ImageId.to_static_id(image_num, layer)
 			var path := "%s/%s.png" % [SPECIES_IMG_DIR, id_str]
-			_append_piece(path, layer, field_name, base_skin, variance_col, variance_indices, pieces)
+			_append_piece(path, layer, field_name, selected_color, variance_col, variance_indices, pieces)
 			return
 		ImageId.Kind.MODULAR_FULL:
 			var group: String = parsed["groupType"]
@@ -100,7 +100,7 @@ func _add_field(field_name: String, token: String, pieces: Array, base_skin: Col
 			var layer2: int = int(parsed["layer"])
 			var id_str2 := ImageId.to_modular_id(group, image_num2, layer2)
 			var path2 := "%s/%s.png" % [SPECIES_IMG_DIR, id_str2]
-			_append_piece(path2, layer2, field_name, base_skin, variance_col, variance_indices, pieces)
+			_append_piece(path2, layer2, field_name, selected_color, variance_col, variance_indices, pieces)
 			return
 		ImageId.Kind.MODULAR_GROUP_ONLY:
 			var type_code: String = parsed["groupType"]
@@ -117,28 +117,39 @@ func _add_field(field_name: String, token: String, pieces: Array, base_skin: Col
 			for layer3 in LAYERS[type_code]:
 				var id3 := ImageId.to_modular_id(type_code, img_num, int(layer3))
 				var path3 := "%s/%s.png" % [SPECIES_IMG_DIR, id3]
-				_append_piece(path3, int(layer3), field_name, base_skin, variance_col, variance_indices, pieces)
+				_append_piece(path3, int(layer3), field_name, selected_color, variance_col, variance_indices, pieces)
 			return
 
-func _append_piece(path: String, layer: int, field_name: String, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array, pieces: Array) -> void:
+func _append_piece(path: String, layer: int, field_name: String, selected_color: Color, variance_col: Color, variance_indices: PackedInt32Array, pieces: Array) -> void:
 	if not ResourceLoader.exists(path):
 		push_warning("Missing texture: " + path)
 		return
-	var tint := _tint_for(field_name, layer, base_skin, variance_col, variance_indices)
+	var tint := _tint_for(field_name, layer, selected_color, variance_col, variance_indices)
 	var dp := DisplayPiece.from_path(path, int(layer), tint)
 	if dp != null:
 		pieces.append(dp)
 
-func _tint_for(field_name: String, layer: int, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array) -> Color:
-	# Hair/eyes are never skin-tinted. Facial hair should follow hair color (same rule).
-	if field_name == "hair" or field_name == "eyes" or field_name == "facialHair" or field_name == "facialDetail":
-		return base_skin
-	# Variance overrides base on specific layers
+func _tint_for(field_name: String, layer: int, selected_color: Color, variance_col: Color, variance_indices: PackedInt32Array) -> Color:
+	# Hair/eyes are never skin-tinted. Facial hair follows hair color (no variance).
+	if field_name == "hair" or field_name == "eyes" or field_name == "facialHair":
+		return selected_color
+
+	# Facial detail: allow variance override when layer is marked (e.g., 87)
+	if field_name == "facialDetail":
+		for i in range(variance_indices.size()):
+			if int(variance_indices[i]) == int(layer):   # facial detail is layer 87
+				return variance_col
+		# no variance on this layer → use its base (passed-in) facialDetail color
+		return selected_color
+
+	# All other parts: variance can override base on specific layers
 	for i in range(variance_indices.size()):
 		if int(variance_indices[i]) == int(layer):
 			return variance_col
-	# Default: tint with base skin color for all other species pieces
-	return base_skin
+
+	# Default: use provided base color (for non-variance layers)
+	return selected_color
+
 
 
 func build_pieces_with_hidden(hidden_layers: PackedInt32Array) -> Array[DisplayPiece]:
