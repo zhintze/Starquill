@@ -6,6 +6,18 @@ class_name SpeciesInstance
 static var __mod_counts_cache: Dictionary = {}
 const MODULAR_PARTS_JSON := "res://assets/data/speciesModularParts.json"
 
+# ---------- Color CSV constants ----------
+const HAIR_COLOR_CSV_PATH: String = "res://documents/color_main.csv"
+const FACIAL_HAIR_COLOR_CSV_PATH: String = "res://documents/color_main.csv" # reserved; facial hair inherits head hair
+const EYES_COLOR_CSV_PATH: String = "res://documents/color_main.csv"
+const FACIAL_DETAIL_COLOR_CSV_PATH: String = "res://documents/color_main.csv"
+
+
+# ---------- Persistent colors (new) ----------
+var hairColor: Color = Color(1, 1, 1, 1)         # facial hair inherits this
+var eyesColor: Color = Color(1, 1, 1, 1)
+var facialDetailColor: Color = Color(1, 1, 1, 1)
+
 @export var base: Species
 @export var species_id: String = ""
 
@@ -76,9 +88,38 @@ func from_species(s: Species) -> void:
 			else:
 				modular_image_nums[code] = chosen
 
+	# Randomize and persist per-instance category colors (facial hair inherits hair)
+	_assign_category_colors()
 	# skin tints
 	_choose_skin_colors(s)
+	
+func _assign_category_colors() -> void:
+	hairColor = _pick_color_from_csv(HAIR_COLOR_CSV_PATH, Color(1, 1, 1, 1))
+	eyesColor = _pick_color_from_csv(EYES_COLOR_CSV_PATH, Color(1, 1, 1, 1))
+	facialDetailColor = _pick_color_from_csv(FACIAL_DETAIL_COLOR_CSV_PATH, Color(1, 1, 1, 1))
+	# facial hair uses hairColor by rule (no separate field)
+	print("hair=", hairColor, " eyes=", eyesColor, " facialDetail=", facialDetailColor)
 
+
+func _pick_color_from_csv(path: String, fallback: Color) -> Color:
+	if not FileAccess.file_exists(path):
+		push_warning("SpeciesInstance: palette CSV not found: %s" % path)
+		return fallback
+
+	var palette: Array = ColorList.load_palette_from_csv(path)
+	if palette.is_empty():
+		push_warning("SpeciesInstance: palette empty from %s" % path)
+		return fallback
+
+	var v: Variant = palette[_rng.randi_range(0, palette.size() - 1)]
+	if v is Color:
+		return v
+	elif v is String:
+		return _safe_color(v)
+	else:
+		push_warning("SpeciesInstance: non-color palette entry (%s) in %s" % [typeof(v), path])
+		return fallback
+	
 func _as_string(v: Variant) -> String:
 	if typeof(v) == TYPE_STRING:
 		return String(v)

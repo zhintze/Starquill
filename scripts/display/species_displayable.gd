@@ -47,6 +47,10 @@ func get_display_pieces() -> Array:
 	var pieces: Array[DisplayPiece] = []
 
 	var base_skin: Color = inst.skinColor
+	var base_hair: Color = inst.hairColor
+	var base_eyes: Color = inst.eyesColor
+	var base_facialDetail: Color = inst.facialDetailColor
+
 	var variance_col: Color = inst.get_skin_variance_color()
 	var variance_indices := inst.skinVariance_indices
 
@@ -57,13 +61,13 @@ func get_display_pieces() -> Array:
 	_add_field("head", inst.head, pieces, base_skin, variance_col, variance_indices)
 
 	_add_field("ears", inst.ears, pieces, base_skin, variance_col, variance_indices)
-	_add_field("eyes", inst.eyes, pieces, base_skin, variance_col, variance_indices)
+	_add_field("eyes", inst.eyes, pieces, base_eyes, variance_col, variance_indices)
 	_add_field("nose", inst.nose, pieces, base_skin, variance_col, variance_indices)
 	_add_field("mouth", inst.mouth, pieces, base_skin, variance_col, variance_indices)
-	_add_field("facialHair", inst.facialHair, pieces, base_skin, variance_col, variance_indices)
-	_add_field("facialDetail", inst.facialDetail, pieces, base_skin, variance_col, variance_indices)
+	_add_field("facialHair", inst.facialHair, pieces, base_hair, variance_col, variance_indices)
+	_add_field("facialDetail", inst.facialDetail, pieces, base_facialDetail, variance_col, variance_indices)
 
-	_add_field("hair", inst.hair, pieces, base_skin, variance_col, variance_indices)
+	_add_field("hair", inst.hair, pieces, base_hair, variance_col, variance_indices)
 
 	# Other body parts list: currently static, but future-proof for modular.
 	for token in inst.otherBodyParts:
@@ -127,8 +131,8 @@ func _append_piece(path: String, layer: int, field_name: String, base_skin: Colo
 
 func _tint_for(field_name: String, layer: int, base_skin: Color, variance_col: Color, variance_indices: PackedInt32Array) -> Color:
 	# Hair/eyes are never skin-tinted. Facial hair should follow hair color (same rule).
-	if field_name == "hair" or field_name == "eyes" or field_name == "facialHair":
-		return Color(1,1,1,1)
+	if field_name == "hair" or field_name == "eyes" or field_name == "facialHair" or field_name == "facialDetail":
+		return base_skin
 	# Variance overrides base on specific layers
 	for i in range(variance_indices.size()):
 		if int(variance_indices[i]) == int(layer):
