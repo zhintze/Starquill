@@ -34,10 +34,7 @@ func _initialize_default_config() -> void:
 			"res://assets/data/equipment/",
 			"res://data/equipment/"
 		],
-		"color_palettes_path": "res://assets/data/color_palettes.json",
-		"palette_csv_candidates": [
-			"res://documents/color_main.csv"
-		]
+		"color_palettes_path": "res://assets/data/color_palettes.json"
 	},
 	"scene_paths": {
 		"default_target": "res://scenes/CharacterRandomizer.tscn"
@@ -166,14 +163,13 @@ func _task_load_species() -> bool:
 	return not fail_fast
 
 func _task_verify_palette_hint() -> bool:
-	# Non-blocking sanity check: warn if no palette CSV is present.
-	var palette_csv_candidates = get_data_paths("palette_csv_candidates")
+	# Non-blocking sanity check: warn if no palette JSON is present.
+	var palette_path = get_data_path("color_palettes_path")
 	
-	for p in palette_csv_candidates:
-		if FileAccess.file_exists(p):
-			print("Palette CSV detected: ", p)
-			return true
-	push_warning("ConfigManager: No palette CSV found in candidates; SpeciesLoader will use fallback defaults.")
+	if FileAccess.file_exists(palette_path):
+		print("Color palettes JSON detected: ", palette_path)
+		return true
+	push_warning("ConfigManager: No color palettes JSON found; ColorManager will use fallback defaults.")
 	return true  # never blocks
 
 # -------------------------

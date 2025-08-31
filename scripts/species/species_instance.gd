@@ -7,7 +7,7 @@ static var __mod_counts_cache: Dictionary = {}
 const MODULAR_PARTS_JSON := "res://assets/data/speciesModularParts.json"
 
 # ---------- Color CSV constants ----------
-const COLOR_MAIN_CSV: String = "res://documents/color_main.csv"  # the “default” palette
+# Removed: now uses ColorManager singleton instead of direct CSV access
 
 
 
@@ -252,26 +252,30 @@ func _is_plain_hex(s: String) -> bool:
 	return true
 	
 func _load_keyword_palette_for_category(cat: String, keyword: String) -> Array[Color]:
-	# cat ∈ {"hair","eyes","facialDetail"}
-	var path := ""
+	# Use ColorManager to get palettes from JSON
+	var palette_name := "main"  # default palette
+	
 	if keyword == "default":
-		path = COLOR_MAIN_CSV
+		palette_name = "main"
 	else:
+		# Try specific palette names based on category and keyword
 		match cat:
 			"hair":
-				path = "res://documents/color_hair_%s.csv" % keyword
-			"eyes":
-				path = "res://documents/color_eyes_%s.csv" % keyword
+				palette_name = "hair_%s" % keyword
+			"eyes": 
+				palette_name = "eyes_%s" % keyword
 			"facialDetail":
-				path = "res://documents/color_facialDetail_%s.csv" % keyword
+				palette_name = "facialDetail_%s" % keyword
 			_:
-				path = COLOR_MAIN_CSV
-
-	if not FileAccess.file_exists(path):
-		push_warning("SpeciesInstance: palette CSV not found for %s='%s' → %s. Falling back to default." % [cat, keyword, path])
-		path = COLOR_MAIN_CSV
-
-	return ColorList.load_palette_from_csv(path)
+				palette_name = "main"
+	
+	# Get palette from ColorManager
+	var colors = ColorManager.get_palette(palette_name)
+	if colors.is_empty():
+		push_warning("SpeciesInstance: palette '%s' not found in ColorManager. Falling back to main palette." % palette_name)
+		colors = ColorManager.get_palette("main")
+	
+	return colors
 
 
 # ===== utilities =====
@@ -318,8 +322,8 @@ func _choose_category_color(cat: String, arr: PackedStringArray, fallback: Color
 			if pal.size() > 0:
 				return pal[int(_rng.randi() % pal.size())]
 
-	# Fallback to default main CSV
-	var pal2 := ColorList.load_palette_from_csv(COLOR_MAIN_CSV)
+	# Fallback to main palette from ColorManager
+	var pal2 := ColorManager.get_palette("main")
 	if pal2.size() > 0:
 		return pal2[int(_rng.randi() % pal2.size())]
 	return fallback
