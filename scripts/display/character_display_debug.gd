@@ -134,10 +134,18 @@ func _refresh_list_contents() -> void:
 		if p.texture and p.texture.resource_path != "":
 			path = _trim_path(p.texture.resource_path)
 		var key := "%s|%d" % [path, int(p.layer)]
-		if species_only.has(key):
+		
+		# Classify based on texture path directory (more reliable than key matching)
+		if path.begins_with("species/"):
 			species_list.append(p)
-		else:
+		elif path.begins_with("equipment/"):
 			equip_list.append(p)
+		else:
+			# Fallback to original key-based detection for unknown paths
+			if species_only.has(key):
+				species_list.append(p)
+			else:
+				equip_list.append(p)
 
 	# Sort each bucket by layer ascending
 	var cmp = func(a: DisplayPiece, b: DisplayPiece) -> bool:

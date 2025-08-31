@@ -9,15 +9,15 @@ class_name DisplayPiece
 @export var flip_h: bool = false
 @export var flip_v: bool = false
 
-static func make(tex: Texture2D, layer: int, col: Color) -> DisplayPiece:
+static func make(tex: Texture2D, layer_value: int, col: Color) -> DisplayPiece:
 	var dp := DisplayPiece.new()
-	dp.layer = layer
+	dp.layer = layer_value
 	dp.texture = tex
 	dp.modulate = col
 	return dp
 
-static func from_path(path: String, layer: int, col: Color) -> DisplayPiece:
+static func from_path(path: String, layer_value: int, col: Color) -> DisplayPiece:
 	var tex := load(path) as Texture2D
 	if tex == null:
 		return null
-	return make(tex, layer, col)
+	return make(tex, layer_value, col)
