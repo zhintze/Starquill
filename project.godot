@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+ConfigManager="*res://scripts/core/config_manager.gd"
 BusFlow="*res://autoload/bus_flow.gd"
 BusActors="*res://autoload/bus_actors.gd"
 BusCombat="*res://autoload/bus_combat.gd"
@@ -28,7 +29,6 @@ SceneLoader="*res://autoload/scene_loader.gd"
 Game="*res://autoload/game.gd"
 species_loader="*res://scripts/species/species_loader.gd"
 species_display_builder="*res://scripts/display/species_display_builder.gd"
-data_boot="*res://autoload/data_boot.gd"
 equipment_catalog="*res://scripts/equipment/equipment_catalog.gd"
 equipment_loader="*res://scripts/equipment/equipment_loader.gd"
 equipment_factory="*res://scripts/equipment/equipment_factory.gd"
