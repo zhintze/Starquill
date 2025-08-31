@@ -42,9 +42,45 @@ text = "Randomize All"
 layout_mode = 2
 text = "Equip Random"
 
+[node name="EquipSearchContainer" type="VBoxContainer" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="SearchLabel" type="Label" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/HBoxContainer/EquipSearchContainer"]
+layout_mode = 2
+text = "Equipment Search"
+
+[node name="SearchBar" type="LineEdit" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/HBoxContainer/EquipSearchContainer"]
+layout_mode = 2
+placeholder_text = "Search equipment (e.g. hd01-0001)"
+
+[node name="SelectedEquipmentContainer" type="VBoxContainer" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SelectedLabel" type="Label" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/SelectedEquipmentContainer"]
+layout_mode = 2
+text = "Forced Equipment:"
+
+[node name="NoSelectionLabel" type="Label" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/SelectedEquipmentContainer"]
+modulate = Color(0.7, 0.7, 0.7, 1)
+layout_mode = 2
+text = "(none selected)"
+
+[node name="SelectedItems" type="FlowContainer" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/SelectedEquipmentContainer"]
+layout_mode = 2
+
 [node name="DisplayGrid" type="GridContainer" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 20
 columns = 4
+
+[node name="SearchResults" type="ItemList" parent="CharacterRandomizer (Control)"]
+visible = false
+z_index = 100
+custom_minimum_size = Vector2(200, 100)
+layout_mode = 0
+offset_left = 400.0
+offset_top = 50.0
+offset_right = 600.0
+offset_bottom = 150.0
