@@ -29,14 +29,7 @@ func create_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int = -1) 
 
 # Create a random EquipmentInstance from a slot prefix (e.g., "hd","tr","ar","lg","fe","mc","w").
 func create_random_from_prefix(prefix: String) -> EquipmentInstance:
-	if equipment_catalog == null:
-		push_error("EquipmentFactory: equipment_catalog autoload missing.")
-		return null
-
-	var bucket_any: Variant = equipment_catalog.by_slot_prefix.get(prefix, [])
-	if bucket_any == null:
-		return null
-	var bucket: Array = bucket_any as Array
+	var bucket: Array = StarquillData.get_equipment_by_slot_prefix(prefix)
 	if bucket.is_empty():
 		return null
 
