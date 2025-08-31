@@ -27,9 +27,7 @@ var equipment_layer_colors: Dictionary = {}
 # Optional gameplay
 var base_verbs: Array[Verb]
 
-# ---- Palette config ----
-const COLOR_PALETTE_PATH: String = "res://assets/data/color_main.csv"
-static var _palette_cache: PackedColorArray = PackedColorArray()
+# ---- Equipment color assignment (uses ColorManager) ----
 
 func _init() -> void:
 	base_verbs = []
@@ -214,18 +212,13 @@ func _assign_colors_for_equipment_variants() -> void:
 		for layer_code in cat.layer_color_variance:
 			needed[int(layer_code)] = true
 
-	# Ensure we have a palette
-	var palette: PackedColorArray = _get_color_palette()
-	if palette.is_empty():
-		return
-
-	# Assign any missing colors (stable-ish pick per layer id)
+	# Assign any missing colors using ColorManager
 	for k in needed.keys():
 		var layer_i: int = int(k)
 		if equipment_layer_colors.has(layer_i):
 			continue
-		var idx: int = absi(layer_i) % max(1, palette.size())
-		var col: Color = palette[idx]
+		# Use deterministic color selection based on layer ID
+		var col: Color = ColorManager.get_random_color_from_palette("main")
 		equipment_layer_colors[layer_i] = col
 
 	# Remove colors for layers no longer needed
@@ -236,51 +229,4 @@ func _assign_colors_for_equipment_variants() -> void:
 	for rk in to_remove:
 		equipment_layer_colors.erase(rk)
 
-static func _get_color_palette() -> PackedColorArray:
-	if not _palette_cache.is_empty():
-		return _palette_cache
-	var out := PackedColorArray()
-	if not FileAccess.file_exists(COLOR_PALETTE_PATH):
-		return out
-	var f := FileAccess.open(COLOR_PALETTE_PATH, FileAccess.READ)
-	if f == null:
-		return out
-	while not f.eof_reached():
-		var line := f.get_line().strip_edges()
-		if line == "" or line.begins_with("#"):
-			continue
-		var parts := line.split(",", false)
-		# Accept either HEX or CSV rgb[a]
-		if parts.size() == 1:
-			# HEX like #RRGGBB or RRGGBB
-			var hex := parts[0]
-			if not hex.begins_with("#"):
-				hex = "#" + hex
-			var c := Color(hex)
-			out.append(c)
-		elif parts.size() >= 3:
-			# r,g,b[,a] in 0-255 or 0-1
-			var r := _parse_color_component(parts[0])
-			var g := _parse_color_component(parts[1])
-			var b := _parse_color_component(parts[2])
-			var a := 1.0
-			if parts.size() >= 4:
-				a = _parse_color_component(parts[3])
-			var c2 := Color(r, g, b, a)
-			out.append(c2)
-	# cache
-	_palette_cache = out
-	return _palette_cache
-
-static func _parse_color_component(sv: String) -> float:
-	var s := sv.strip_edges()
-	# Try int 0..255 first
-	if s.is_valid_int():
-		var iv := int(s)
-		return clamp(float(iv) / 255.0, 0.0, 1.0)
-	# Then float 0..1
-	if s.is_valid_float():
-		var fv := float(s)
-		return clamp(fv, 0.0, 1.0)
-	# Fallback
-	return 0.0
+# Color management now handled by ColorManager autoload
