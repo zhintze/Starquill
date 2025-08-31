@@ -109,7 +109,7 @@ func _add_field(field_name: String, token: String, pieces: Array, selected_color
 				return
 			var img_num: String = String(inst.modular_image_nums.get(type_code, ""))
 			if img_num == "":
-				img_num = SpeciesLoader.pick_modular_image_num(type_code)
+				img_num = StarquillData.pick_modular_image_num(type_code)
 				if img_num == "":
 					push_warning("SpeciesDisplayable: cannot pick image number for type '%s'" % type_code)
 					return

@@ -43,17 +43,15 @@ func _ready() -> void:
 # ---------------------------------------------------------
 
 func _ensure_equipment_catalog_loaded() -> void:
-	# Autoload 'equipment_catalog' should exist
-	if equipment_catalog == null:
-		push_error("[Equip] equipment_catalog autoload not found.")
-		return
-	# Load once from json if empty
-	if equipment_catalog.all.is_empty():
-		equipment_catalog.load_from_json("res://assets/data/equipment.json")
-		if equipment_catalog.all.is_empty():
+	# Equipment is loaded by ConfigManager during initialization
+	# StarquillData is available as autoload
+	if StarquillData.get_equipment_count() == 0:
+		# Try to load equipment data as fallback
+		StarquillData.load_equipment_catalog_from_json("res://assets/data/equipment.json")
+		if StarquillData.get_equipment_count() == 0:
 			push_warning("[Equip] equipment.json failed to load or is empty.")
 		else:
-			print("[Equip] Loaded items: ", equipment_catalog.all.size())
+			print("[Equip] Loaded items: ", StarquillData.get_equipment_count())
 
 func _on_equip_random_pressed() -> void:
 	var changed_count: int = 0

@@ -128,7 +128,7 @@ func _initialize_application() -> void:
 	# ok_all = ok_all and _task_load_items()
 
 	# If nothing loaded at all, shout loudly
-	if species_loader.size() == 0:
+	if StarquillData.get_species_count() == 0:
 		push_error("ConfigManager: Species registry is empty after boot tasks. Check paths or JSON schema.")
 		# You can choose to bail here or still launch target; up to you.
 
@@ -146,27 +146,21 @@ func _task_load_species() -> bool:
 	# Try JSONs (first hit wins)
 	for p in species_json_candidates:
 		if FileAccess.file_exists(p):
-			species_loader.clear()
-			species_loader.load_from_json(p)
-			_log_registry("Species from JSON", p)
-			if species_loader.size() > 0:
+			StarquillData.load_species_from_json(p)
+			_log_species_registry("Species from JSON", p)
+			if StarquillData.get_species_count() > 0:
 				return true
 			elif fail_fast:
 				push_error("ConfigManager: JSON '%s' parsed but no species added; stopping (fail_fast)." % p)
 				return false
 
-	# Try folders
+	# Try folders (TODO: implement directory loading in StarquillData if needed)
 	for dpath in species_dir_candidates:
 		var da := DirAccess.open(dpath)
 		if da != null:
-			species_loader.clear()
-			species_loader.load_from_dir(dpath)
-			_log_registry("Species from DIR", dpath)
-			if species_loader.size() > 0:
-				return true
-			elif fail_fast:
-				push_error("ConfigManager: DIR '%s' scanned but no species added; stopping (fail_fast)." % dpath)
-				return false
+			# Directory loading not yet implemented in StarquillData
+			push_warning("ConfigManager: Directory loading not implemented for StarquillData: %s" % dpath)
+			continue
 
 	push_warning("ConfigManager: No species sources found in any configured paths.")
 	return not fail_fast
@@ -219,9 +213,9 @@ func _do_change_scene(packed: PackedScene) -> void:
 	# Change scenes safely
 	tree.change_scene_to_packed(packed)
 
-func _log_registry(prefix: String, src: String) -> void:
+func _log_species_registry(prefix: String, src: String) -> void:
 	print("%s: %s | count=%d | ids=%s" % [
-		prefix, src, species_loader.size(), str(species_loader.by_id.keys())
+		prefix, src, StarquillData.get_species_count(), str(StarquillData.get_species_ids())
 	])
 
 # ================================

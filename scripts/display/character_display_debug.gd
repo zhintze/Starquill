@@ -230,7 +230,7 @@ func _gather_species_keys() -> Dictionary:
 func _get_hidden_layers_from_equipment(insts: Array[EquipmentInstance]) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for ei in insts:
-		var cat: EquipmentCatalog.CatalogItem = equipment_catalog.by_type.get(ei.item_type, null) as EquipmentCatalog.CatalogItem
+		var cat: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
 		if cat == null:
 			continue
 		for h in cat.hidden_layers:

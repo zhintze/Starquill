@@ -80,7 +80,7 @@ func from_species(s: Species) -> void:
 	# pick persistent image numbers for any group-only tokens present
 	for code in _present_modular_codes():
 		if not modular_image_nums.has(code):
-			var chosen := SpeciesLoader.pick_modular_image_num(code)
+			var chosen := StarquillData.pick_modular_image_num(code)
 			if chosen == "":
 				push_warning("SpeciesInstance: modular type %s has no amounts; cannot pick image num" % [code])
 			else:
@@ -130,7 +130,7 @@ func _select_hair(v: Variant) -> String:
 		if s != "" and s.length() == 3:
 			# group-only hair; pick image as persistent
 			if not modular_image_nums.has(s):
-				modular_image_nums[s] = SpeciesLoader.pick_modular_image_num(s)
+				modular_image_nums[s] = StarquillData.pick_modular_image_num(s)
 			modular_group_choice["hair"] = s
 		return s
 	if typeof(v) == TYPE_ARRAY:
@@ -166,7 +166,7 @@ func _select_hair(v: Variant) -> String:
 		modular_group_choice["hair"] = picked
 		# ensure image num is chosen persistently
 		if not modular_image_nums.has(picked):
-			modular_image_nums[picked] = SpeciesLoader.pick_modular_image_num(picked)
+			modular_image_nums[picked] = StarquillData.pick_modular_image_num(picked)
 		return picked
 	return ""
 

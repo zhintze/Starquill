@@ -28,10 +28,8 @@ BusSave="*res://autoload/bus_save.gd"
 BusAudio="*res://autoload/bus_audio.gd"
 SceneLoader="*res://autoload/scene_loader.gd"
 Game="*res://autoload/game.gd"
-species_loader="*res://scripts/species/species_loader.gd"
+StarquillData="*res://scripts/core/starquill_data.gd"
 species_display_builder="*res://scripts/display/species_display_builder.gd"
-equipment_catalog="*res://scripts/equipment/equipment_catalog.gd"
-equipment_loader="*res://scripts/equipment/equipment_loader.gd"
 equipment_factory="*res://scripts/equipment/equipment_factory.gd"
 
 [editor]

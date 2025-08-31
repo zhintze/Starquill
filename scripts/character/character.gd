@@ -206,7 +206,7 @@ func _assign_colors_for_equipment_variants() -> void:
 	# Build a set of all layers that need color variance from equipped items
 	var needed: Dictionary = {} # layer(int) -> true
 	for ei in get_all_equipment_instances():
-		var cat: EquipmentCatalog.CatalogItem = equipment_catalog.by_type.get(ei.item_type, null) as EquipmentCatalog.CatalogItem
+		var cat: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
 		if cat == null:
 			continue
 		for layer_code in cat.layer_color_variance:

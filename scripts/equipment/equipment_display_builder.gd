@@ -17,7 +17,7 @@ static func build_for_character(ch: Character) -> EquipmentDisplayResult:
 		if ei == null:
 			continue
 
-		var cat: EquipmentCatalog.CatalogItem = equipment_catalog.by_type.get(ei.item_type, null) as EquipmentCatalog.CatalogItem
+		var cat: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
 		if cat == null:
 			push_warning("EquipBuilder: unknown item_type '%s' on instance" % ei.item_type)
 			continue

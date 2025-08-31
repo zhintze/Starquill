@@ -10,28 +10,26 @@ func _ready() -> void:
 	_rng.randomize()
 
 	# Ensure species are loaded (defensive)
-	if species_loader.size() == 0:
+	if StarquillData.get_species_count() == 0:
 		if FileAccess.file_exists(SPECIES_JSON_PATH):
-			species_loader.load_from_json(SPECIES_JSON_PATH)
-			print("After JSON load: count=", species_loader.size(), " ids=", species_loader.by_id.keys())
+			StarquillData.load_species_from_json(SPECIES_JSON_PATH)
+			print("After JSON load: count=", StarquillData.get_species_count(), " ids=", StarquillData.get_species_ids())
 		else:
-			print("JSON missing:", SPECIES_JSON_PATH, " → trying folder fallback…")
-			species_loader.load_from_dir("res://data/species")
-			print("After DIR load: count=", species_loader.size(), " ids=", species_loader.by_id.keys())
+			print("JSON missing:", SPECIES_JSON_PATH, " → species will be loaded by ConfigManager")
 
-	if species_loader.size() == 0:
+	if StarquillData.get_species_count() == 0:
 		push_error("RandomSpeciesDemo: No species loaded; nothing to render.")
 		return
 
 	# Prefer a known id; fall back to random so we always render something
 	var target_id := "human"
 	var inst: SpeciesInstance = null
-	var s := species_loader.get_by_id(target_id)
+	var s := StarquillData.get_species_by_id(target_id)
 	if s == null:
 		push_warning("Target id '%s' not found. Falling back to random." % target_id)
-		inst = species_loader.create_random_instance_from_index(_rng.randi_range(0, species_loader.size() - 1))
+		inst = StarquillData.create_random_species_instance()
 	else:
-		inst = species_loader.create_instance_from_species(s)
+		inst = StarquillData.create_species_instance(target_id)
 
 	if inst == null:
 		push_error("RandomSpeciesDemo: Failed to create instance.")
