@@ -159,47 +159,8 @@ func _recalc_stats() -> void:
 
 # --------------- Display pieces merge ---------------
 func get_display_pieces() -> Array[DisplayPiece]:
-	_assign_colors_for_equipment_variants()
-
-	# (1) Equipment → pieces + hidden species layers
-	var equip_res: EquipmentDisplayBuilder.EquipmentDisplayResult = EquipmentDisplayBuilder.build_for_character(self)
-	var equip_pieces: Array[DisplayPiece] = equip_res.pieces
-	var hidden: PackedInt32Array = equip_res.hidden_species_layers
-
-	# Apply color-variance tints to equipment pieces (CharacterDisplay reads 'modulate')
-	if not equipment_layer_colors.is_empty():
-		for i in equip_pieces.size():
-			var dp: DisplayPiece = equip_pieces[i]
-			var layer_i: int = int(dp.layer)
-			if equipment_layer_colors.has(layer_i):
-				var tint_col: Color = equipment_layer_colors[layer_i]
-				dp.modulate = (dp.modulate * tint_col) if dp.modulate != Color(1,1,1,1) else tint_col
-				equip_pieces[i] = dp
-
-	# (2) Species via your proven method, then filter hidden locally
-	var sp_disp := SpeciesDisplayable.new(species)
-	var species_pieces: Array[DisplayPiece] = sp_disp.get_display_pieces()
-
-	if not hidden.is_empty():
-		var hidden_set := {}
-		for h in hidden:
-			hidden_set[int(h)] = true
-		var keep = func(p: DisplayPiece) -> bool:
-			return not hidden_set.has(int(p.layer))
-		species_pieces = species_pieces.filter(keep)
-
-	# (3) Merge + sort by layer
-	var all_pieces: Array[DisplayPiece] = []
-	all_pieces.append_array(species_pieces)
-	all_pieces.append_array(equip_pieces)
-
-	var cmp = func(a: DisplayPiece, b: DisplayPiece) -> bool:
-		return a.layer < b.layer
-	all_pieces.sort_custom(cmp)
-
-	# Debug (remove later): show counts and a peek at hidden list
-	print("[Character] species=", species_pieces.size(), " equip=", equip_pieces.size(), " hidden=", hidden.size(), " total=", all_pieces.size())
-	return all_pieces
+	# Use unified DisplayBuilder for all display piece generation
+	return DisplayBuilder.build_character_display(self)
 
 # --------------- Color palette + assignment ---------------
 func _assign_colors_for_equipment_variants() -> void:
