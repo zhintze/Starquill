@@ -115,17 +115,17 @@ func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: P
 			var layer: int = int(layer_code)
 			var path := "%s/%s-%04d-%03d.png" % [EQUIPMENT_IMG_DIR, item_code, item_num, layer]
 			
-			if not FileAccess.file_exists(path):
-				push_warning("DisplayBuilder: equipment texture not found: %s" % path)
-				continue
-			
 			# Get color tint for this layer
 			var tint: Color = ei.tint_for_layer(layer_code)
 			
-			# Create display piece
+			# Create display piece (let load() handle missing files rather than FileAccess.file_exists)
 			var piece: DisplayPiece = DisplayPiece.from_path(path, layer, tint)
 			if piece != null:
 				result.pieces.append(piece)
+			else:
+				# Only warn if in debug build, since FileAccess.file_exists() doesn't work reliably in exports
+				if OS.is_debug_build():
+					push_warning("DisplayBuilder: equipment texture not found: %s" % path)
 	
 	return result
 
