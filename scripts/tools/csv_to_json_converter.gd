@@ -306,9 +306,17 @@ func _write_json(rows: Array, json_out_path: String) -> void:
 	out.store_string(json_text)
 	out.close()
 	print("csv_to_json_converter: Wrote %d rows -> %s" % [rows.size(), json_out_path])
-	
-	
-	
+
+func _write_json_dict(data: Dictionary, json_out_path: String) -> void:
+	var json_text := JSON.stringify(data, "\t")
+	var out := FileAccess.open(json_out_path, FileAccess.WRITE)
+	if out == null:
+		push_error("csv_to_json_converter: Cannot open output JSON: %s" % json_out_path)
+		return
+	out.store_string(json_text)
+	out.close()
+	print("csv_to_json_converter: Wrote dictionary -> %s" % json_out_path)
+
 	
 func _extract_first_int(text: String) -> int:
 	# Returns an int if found; otherwise -1.
@@ -373,3 +381,71 @@ func convert_species_modular_parts_csv_to_json(csv_path: String, json_out_path: 
 
 	f.close()
 	_write_json(rows, json_out_path)
+
+# =========================
+# COLOR PALETTE CONVERTER
+# =========================
+# Scans documents/color_*.csv files and converts them to a single color_palettes.json
+# Format: { "main": ["ddc98a", "b6a37e", ...], "skin_human": [...], "weapon": [...] }
+func convert_all_color_csvs_to_json(output_path: String = "res://assets/data/color_palettes.json") -> void:
+	var color_dir = "res://documents"
+	var palettes: Dictionary = {}
+	
+	# Scan for all color_*.csv files
+	var dir = DirAccess.open(color_dir)
+	if dir == null:
+		push_error("csv_to_json_converter: Cannot open documents directory: %s" % color_dir)
+		return
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != "":
+		if file_name.begins_with("color_") and file_name.ends_with(".csv"):
+			# Extract palette name: color_main.csv -> main, color_skin_human.csv -> skin_human
+			var palette_name = file_name.trim_prefix("color_").trim_suffix(".csv")
+			var file_path = color_dir + "/" + file_name
+			
+			var colors = _read_color_csv(file_path)
+			if not colors.is_empty():
+				palettes[palette_name] = colors
+				print("Converted color palette: %s (%d colors)" % [palette_name, colors.size()])
+		
+		file_name = dir.get_next()
+	
+	dir.list_dir_end()
+	
+	if palettes.is_empty():
+		push_warning("csv_to_json_converter: No color CSV files found in %s" % color_dir)
+		return
+	
+	_write_json_dict(palettes, output_path)
+	print("Color palettes written to: %s (%d palettes)" % [output_path, palettes.size()])
+
+func _read_color_csv(csv_path: String) -> Array[String]:
+	var colors: Array[String] = []
+	var f := FileAccess.open(csv_path, FileAccess.READ)
+	
+	if f == null:
+		push_error("csv_to_json_converter: Cannot open color CSV: %s" % csv_path)
+		return colors
+	
+	while not f.eof_reached():
+		var line = f.get_line().strip_edges()
+		if line != "" and not line.begins_with("#"):
+			# Validate hex color (6 chars, no # prefix)
+			if line.length() == 6 and _is_valid_hex(line):
+				colors.append(line.to_lower())
+			else:
+				push_warning("csv_to_json_converter: Invalid hex color '%s' in %s" % [line, csv_path])
+	
+	f.close()
+	return colors
+
+func _is_valid_hex(hex: String) -> bool:
+	for i in hex.length():
+		var c = hex[i]
+		var valid = (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F')
+		if not valid:
+			return false
+	return true

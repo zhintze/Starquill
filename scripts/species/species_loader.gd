@@ -168,35 +168,15 @@ func load_from_dir(dir_path: String) -> void:
 
 
 # ================================
-# Static palette & modular helpers
+# Static palette & modular helpers (now uses ColorManager)
 # ================================
 static func get_palette(palette_ref: String) -> PackedStringArray:
-	if _is_hex_color(palette_ref):
-		return PackedStringArray([_canon_hex(palette_ref)])
-
-	var override_path := ""
-	if ProjectSettings.has_setting("starquill/palette_csv_path"):
-		override_path = str(ProjectSettings.get_setting("starquill/palette_csv_path"))
-		if override_path != "" and FileAccess.file_exists(override_path):
-			var from_override := _parse_csv_hexes(override_path)
-			if from_override.size() > 0:
-				return from_override
-
-	var candidates := [
-		"res://documents/color_%s.csv" % palette_ref,
-		"res://documents/skin_color_skin_%s.csv" % palette_ref,
-		"res://documents/color_main.csv"
-	]
-	for p in candidates:
-		if FileAccess.file_exists(p):
-			var parsed := _parse_csv_hexes(p)
-			if parsed.size() > 0:
-				return parsed
-
-	return PackedStringArray([
-		"f6e0c8","e8c6a0","d6a77d","bf825b",
-		"a4633f","7e482c","5d3421","3f2318"
-	])
+	# Use ColorManager for all palette operations
+	var hex_colors = ColorManager.get_palette_hex(palette_ref)
+	var result := PackedStringArray()
+	for hex in hex_colors:
+		result.append(hex)
+	return result
 
 const MODULAR_CODE_COUNTS := {
 	"f01": 40,
@@ -213,35 +193,4 @@ static func pick_modular_image_num(code: String) -> String:
 	var idx := rng.randi_range(0, count - 1)
 	return "%04d" % idx
 
-# ---- static helpers ----
-static func _is_hex_color(s: String) -> bool:
-	var t := s.strip_edges()
-	if t.begins_with("#"): t = t.substr(1)
-	elif t.to_lower().begins_with("0x"): t = t.substr(2)
-	var n := t.length()
-	if n != 6 and n != 8: return false
-	for i in n:
-		var c := t[i]
-		var ok := (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F')
-		if not ok: return false
-	return true
-
-static func _canon_hex(s: String) -> String:
-	var t := s.strip_edges()
-	if t.to_lower().begins_with("0x"): t = t.substr(2)
-	if t.begins_with("#"): t = t.substr(1)
-	return t.to_lower()
-
-static func _parse_csv_hexes(path: String) -> PackedStringArray:
-	var out := PackedStringArray()
-	var f := FileAccess.open(path, FileAccess.READ)
-	if f == null: return out
-	while not f.eof_reached():
-		var line := f.get_line().strip_edges()
-		if line == "" or line.begins_with("#"): continue
-		var parts := line.split(",", false)
-		if parts.is_empty(): continue
-		var token := _canon_hex(parts[0])
-		if _is_hex_color(token):
-			out.append(token)
-	return out
+# Color management now handled by ColorManager autoload

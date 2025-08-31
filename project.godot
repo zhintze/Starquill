@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 ConfigManager="*res://scripts/core/config_manager.gd"
+ColorManager="*res://scripts/core/color_manager.gd"
 BusFlow="*res://autoload/bus_flow.gd"
 BusActors="*res://autoload/bus_actors.gd"
 BusCombat="*res://autoload/bus_combat.gd"
