@@ -111,7 +111,7 @@ func _refresh_list_contents() -> void:
 		var list := VBoxContainer.new()
 		list.add_theme_constant_override("separation", 2)
 		for ei in insts:
-			var slot := EquipmentCatalog.slot_for_item_type(ei.item_type)
+			var slot := StarquillData.get_slot_for_item_type(ei.item_type)
 			_add_text_into(list, "• %s  :  %s  #%04d" % [slot, ei.item_type, int(ei.item_num)])
 		_add_section_divider_into(summary)
 		summary.add_child(list)

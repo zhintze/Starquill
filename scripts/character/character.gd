@@ -84,31 +84,89 @@ func get_equipment(slot: int) -> EquipmentInstance:
 func equip_instance(ei: EquipmentInstance) -> bool:
 	if ei == null:
 		return false
-	var slot_name: String = EquipmentCatalog.slot_for_item_type(ei.item_type)
+	
+	# Apply equipment duplicate rule: remove all conflicting items first
+	_clear_conflicting_equipment(ei)
+	
+	# Now equip the new item in its preferred slot
+	var slot_name: String = StarquillData.get_slot_for_item_type(ei.item_type)
 	match slot_name:
 		"head":
-			if head == null: head = ei
-			else: return _equip_misc_overflow(ei)
+			head = ei
 		"torso":
-			if torso == null: torso = ei
-			else: return _equip_misc_overflow(ei)
+			torso = ei
 		"arms":
-			if arms == null: arms = ei
-			else: return _equip_misc_overflow(ei)
+			arms = ei
 		"legs":
-			if legs == null: legs = ei
-			else: return _equip_misc_overflow(ei)
+			legs = ei
 		"feet":
-			if feet == null: feet = ei
-			else: return _equip_misc_overflow(ei)
+			feet = ei
 		"misc":
 			return _equip_misc_overflow(ei)
 		_:
 			return _equip_misc_overflow(ei)
+	
 	_assign_colors_for_equipment_variants()
 	_recalc_stats()
 	emit_signal("model_changed")
 	return true
+
+# Apply equipment duplicate rule: remove items with same item_type or overlapping layers
+func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
+	if new_item == null:
+		return
+	
+	# Get new item's properties for conflict detection
+	var new_item_type: String = new_item.item_type
+	var new_catalog: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(new_item_type)
+	if new_catalog == null:
+		return
+	
+	var new_layers: PackedInt32Array = new_catalog.layer_codes
+	
+	# Check all equipment slots for conflicts
+	var slots_to_check: Array[EquipmentInstance] = [head, torso, arms, legs, feet, misc1, misc2, misc3, misc4]
+	var slot_names: Array[String] = ["head", "torso", "arms", "legs", "feet", "misc1", "misc2", "misc3", "misc4"]
+	
+	for i in range(slots_to_check.size()):
+		var existing_item: EquipmentInstance = slots_to_check[i]
+		if existing_item == null:
+			continue
+		
+		# Check for conflicts
+		if _items_conflict(new_item_type, new_layers, existing_item):
+			# Remove conflicting item
+			match slot_names[i]:
+				"head": head = null
+				"torso": torso = null
+				"arms": arms = null
+				"legs": legs = null  
+				"feet": feet = null
+				"misc1": misc1 = null
+				"misc2": misc2 = null
+				"misc3": misc3 = null
+				"misc4": misc4 = null
+
+# Check if two equipment items conflict (same item_type or overlapping layers)
+func _items_conflict(new_item_type: String, new_layers: PackedInt32Array, existing_item: EquipmentInstance) -> bool:
+	# Rule 1: Same item_type identifier
+	if existing_item.item_type == new_item_type:
+		return true
+	
+	# Rule 2: Overlapping layers
+	var existing_catalog: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(existing_item.item_type)
+	if existing_catalog == null:
+		return false
+	
+	var existing_layers: PackedInt32Array = existing_catalog.layer_codes
+	
+	# Check for any layer overlap
+	for new_layer in new_layers:
+		for existing_layer in existing_layers:
+			if new_layer == existing_layer:
+				return true
+	
+	return false
 
 func _equip_misc_overflow(ei: EquipmentInstance) -> bool:
 	if misc1 == null: misc1 = ei
