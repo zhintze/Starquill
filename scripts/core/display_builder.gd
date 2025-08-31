@@ -24,9 +24,10 @@ func build_character_display(character: Character) -> Array[DisplayPiece]:
 	# Apply equipment color assignments first
 	character._assign_colors_for_equipment_variants()
 	
-	# Build equipment pieces and get hidden layers
+	# Build equipment pieces and get hidden layers (filter out species-restricted items)
 	var equipment_instances: Array[EquipmentInstance] = character.get_all_equipment_instances()
-	var equipment_result: EquipmentResult = build_equipment_pieces(equipment_instances)
+	var species_restrictions: PackedStringArray = character.species.itemRestrictions
+	var equipment_result: EquipmentResult = build_equipment_pieces(equipment_instances, species_restrictions)
 	var equipment_pieces: Array[DisplayPiece] = equipment_result.pieces
 	var hidden_layers: PackedInt32Array = equipment_result.hidden_species_layers
 	
@@ -48,7 +49,7 @@ func build_species_display(species_instance: SpeciesInstance) -> Array[DisplayPi
 
 # Build display for equipment only
 func build_equipment_display(equipment: Array[EquipmentInstance]) -> Array[DisplayPiece]:
-	var result: EquipmentResult = build_equipment_pieces(equipment)
+	var result: EquipmentResult = build_equipment_pieces(equipment, PackedStringArray())
 	return StarquillLayerManager.sort_pieces_by_layer(result.pieces)
 
 # ================================
@@ -86,11 +87,15 @@ func build_species_pieces(species_instance: SpeciesInstance) -> Array[DisplayPie
 	return StarquillLayerManager.sort_pieces_by_layer(pieces)
 
 # Build display pieces for equipment instances
-func build_equipment_pieces(equipment: Array[EquipmentInstance]) -> EquipmentResult:
+func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: PackedStringArray = PackedStringArray()) -> EquipmentResult:
 	var result := EquipmentResult.new()
 	
 	for ei in equipment:
 		if ei == null:
+			continue
+		
+		# Skip equipment that is restricted by species
+		if restrictions.has(ei.item_type):
 			continue
 		
 		var catalog_item: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
