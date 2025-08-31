@@ -13,11 +13,7 @@ static func list_species_keys() -> Array[String]:
 static func create_instance(species_id: String) -> SpeciesInstance:
 	return StarquillData.create_species_instance(species_id)
 
-static func create_displayable(species_id: String) -> SpeciesDisplayable:
-	var inst := create_instance(species_id)
-	if inst == null:
-		return null
-	return SpeciesDisplayable.new(inst)
+# Note: For display pieces, use DisplayBuilder.build_species_display(species_instance) directly
 
 static func _find_species_by_name(name: String) -> Species:
 	return StarquillData.get_species_by_id(name)

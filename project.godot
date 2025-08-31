@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 ConfigManager="*res://scripts/core/config_manager.gd"
 ColorManager="*res://scripts/core/color_manager.gd"
+DisplayBuilder="*res://scripts/core/display_builder.gd"
 BusFlow="*res://autoload/bus_flow.gd"
 BusActors="*res://autoload/bus_actors.gd"
 BusCombat="*res://autoload/bus_combat.gd"
@@ -29,7 +30,6 @@ BusAudio="*res://autoload/bus_audio.gd"
 SceneLoader="*res://autoload/scene_loader.gd"
 Game="*res://autoload/game.gd"
 StarquillData="*res://scripts/core/starquill_data.gd"
-species_display_builder="*res://scripts/display/species_display_builder.gd"
 equipment_factory="*res://scripts/equipment/equipment_factory.gd"
 
 [editor]

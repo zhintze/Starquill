@@ -219,8 +219,7 @@ func _gather_species_keys() -> Dictionary:
 	var out := {}
 	if _character == null or _character.species == null:
 		return out
-	var sp := SpeciesDisplayable.new(_character.species)
-	var sp_pieces: Array[DisplayPiece] = sp.get_display_pieces()
+	var sp_pieces: Array[DisplayPiece] = DisplayBuilder.build_species_pieces(_character.species)
 	for p in sp_pieces:
 		if p.texture and p.texture.resource_path != "":
 			var key := "%s|%d" % [_trim_path(p.texture.resource_path), int(p.layer)]
