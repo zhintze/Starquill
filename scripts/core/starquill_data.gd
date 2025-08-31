@@ -254,17 +254,51 @@ func _map_dict_to_species(data_dict: Dictionary, species: Species) -> void:
 # Modular Image Number Generator (from SpeciesLoader)
 # ================================
 
-const MODULAR_CODE_COUNTS := {
-	"f01": 40,
-	"f02": 28,
-	"e01": 32
-}
+static var _modular_counts: Dictionary = {}
+
+static func _ensure_modular_data_loaded() -> void:
+	if not _modular_counts.is_empty():
+		return
+		
+	var path := "res://assets/data/speciesModularParts.json"
+	if not FileAccess.file_exists(path):
+		push_error("StarquillData: speciesModularParts.json not found at %s" % path)
+		return
+	
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("StarquillData: failed to open speciesModularParts.json")
+		return
+	
+	var json_text := file.get_as_text()
+	file.close()
+	
+	var json := JSON.new()
+	var parse_result := json.parse(json_text)
+	if parse_result != OK:
+		push_error("StarquillData: failed to parse speciesModularParts.json")
+		return
+	
+	var data_array := json.get_data() as Array
+	if data_array == null:
+		push_error("StarquillData: speciesModularParts.json data is not an array")
+		return
+	
+	# Build lookup dictionary
+	for item in data_array:
+		if item is Dictionary and item.has("type") and item.has("amount"):
+			var type_code: String = str(item.type)
+			var amount: int = int(item.amount)
+			_modular_counts[type_code] = amount
 
 static func pick_modular_image_num(code: String) -> String:
+	_ensure_modular_data_loaded()
+	
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var count := int(MODULAR_CODE_COUNTS.get(code, 50))
+	var count := int(_modular_counts.get(code, 0))
 	if count <= 0:
+		push_warning("StarquillData: no modular count data for code '%s'" % code)
 		return "0000"
 	var idx := rng.randi_range(0, count - 1)
 	return "%04d" % idx
