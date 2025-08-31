@@ -22,8 +22,7 @@ class_name Species
 
 # Skin coloring
 @export var skin_color: PackedStringArray = PackedStringArray()        # ["human"] or ["#hex", ...]
-@export var skinVariance_hex: PackedStringArray = PackedStringArray()    # overrides palette if non-empty
-@export var skinVariance_indices: PackedInt32Array = PackedInt32Array()  # layers to tint with variance
+@export var skinVariance_sets: Array[Dictionary] = []                  # multiple sets of indices + hex colors for variance
 
 # New: category color defaults/keywords (mirror skin_color behavior)
 @export var hair_color: PackedStringArray = PackedStringArray()           # e.g. ["default"] or ["dark"] or ["#6a6a6a", "#796a5c"]

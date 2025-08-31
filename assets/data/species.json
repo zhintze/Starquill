@@ -20,8 +20,7 @@
 		"name": "human",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -51,8 +50,7 @@
 		"name": "dwarf",
 		"nose": "d02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -82,8 +80,7 @@
 		"name": "gnome",
 		"nose": "g02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -118,14 +115,18 @@
 		"name": "naga",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"F3D9C2",
-			"746C5B",
-			"233320",
-			"485232"
-		],
-		"skinVariance_indices": [
-			37
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"F3D9C2",
+					"746C5B",
+					"233320",
+					"485232"
+				],
+				"indices": [
+					37
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -149,8 +150,7 @@
 		"name": "skeleton",
 		"nose": "s03",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"FFFFFF",
 			"FBF6E1",
@@ -215,20 +215,36 @@
 			"0005-040",
 			"0005-134"
 		],
-		"skinVariance_hex": [
-			"9D5427",
-			"39251A",
-			"D8C0A4",
-			"C48D64",
-			"9D5427",
-			"39251A",
-			"000000",
-			"222221",
-			"403D4B"
-		],
-		"skinVariance_indices": [
-			4,
-			37
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"9D5427",
+					"39251A",
+					"D8C0A4",
+					"C48D64",
+					"9D5427",
+					"39251A",
+					"000000",
+					"222221",
+					"403D4B"
+				],
+				"indices": [
+					4,
+					37
+				]
+			},
+			{
+				"hex_colors": [
+					"FFFFF0",
+					"DDDBC7",
+					"DCDAC6"
+				],
+				"indices": [
+					10,
+					40,
+					134
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -259,8 +275,7 @@
 		"name": "oak elf",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -290,8 +305,7 @@
 		"name": "dark elf",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -321,8 +335,7 @@
 		"name": "divine elf",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -352,16 +365,20 @@
 		"otherBodyParts": [
 			"0009-002"
 		],
-		"skinVariance_hex": [
-			"FFFFFF",
-			"849BA0",
-			"F2F2F3",
-			"9CC2D9",
-			"B1C0C9",
-			"D8D8D5"
-		],
-		"skinVariance_indices": [
-			2
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF",
+					"849BA0",
+					"F2F2F3",
+					"9CC2D9",
+					"B1C0C9",
+					"D8D8D5"
+				],
+				"indices": [
+					2
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -393,8 +410,7 @@
 		"otherBodyParts": [
 			"0010-123"
 		],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -427,13 +443,17 @@
 		"otherBodyParts": [
 			"0005-004"
 		],
-		"skinVariance_hex": [
-			"FFFFF0",
-			"DDDBC7",
-			"DCDAC6"
-		],
-		"skinVariance_indices": [
-			87
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFF0",
+					"DDDBC7",
+					"DCDAC6"
+				],
+				"indices": [
+					87
+				]
+			}
 		],
 		"skin_color": [
 			"8a9096",
@@ -470,8 +490,7 @@
 		"otherBodyParts": [
 			"0012-004"
 		],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -503,14 +522,18 @@
 			"0013-010",
 			"0013-134"
 		],
-		"skinVariance_hex": [
-			"511D00",
-			"742414",
-			"714741",
-			"600B00"
-		],
-		"skinVariance_indices": [
-			2
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"511D00",
+					"742414",
+					"714741",
+					"600B00"
+				],
+				"indices": [
+					2
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -542,14 +565,18 @@
 			"0014-002",
 			"0014-134"
 		],
-		"skinVariance_hex": [
-			"E3E2D5",
-			"D8D9DA",
-			"E0E9ED",
-			"F2F2F2"
-		],
-		"skinVariance_indices": [
-			2
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"E3E2D5",
+					"D8D9DA",
+					"E0E9ED",
+					"F2F2F2"
+				],
+				"indices": [
+					2
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -585,16 +612,20 @@
 		"name": "merfolk",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"908FC6",
-			"3D6D74",
-			"436BB4",
-			"B9D1CF",
-			"7FB592",
-			"76A0BC"
-		],
-		"skinVariance_indices": [
-			37
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"908FC6",
+					"3D6D74",
+					"436BB4",
+					"B9D1CF",
+					"7FB592",
+					"76A0BC"
+				],
+				"indices": [
+					37
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -630,14 +661,18 @@
 		"name": "djinn",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF",
-			"FBF6E1",
-			"D0D1D3",
-			"C7CACB"
-		],
-		"skinVariance_indices": [
-			37
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF",
+					"FBF6E1",
+					"D0D1D3",
+					"C7CACB"
+				],
+				"indices": [
+					37
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -687,8 +722,7 @@
 		"name": "stone golem",
 		"nose": "",
 		"otherBodyParts": [],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"d8d9da",
 			"9d9b90",
@@ -729,11 +763,15 @@
 		"name": "goblin",
 		"nose": "0018-086",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF"
-		],
-		"skinVariance_indices": [
-			85
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF"
+				],
+				"indices": [
+					85
+				]
+			}
 		],
 		"skin_color": [
 			"2a421c",
@@ -781,11 +819,15 @@
 		"name": "ogre",
 		"nose": "0019-086",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF"
-		],
-		"skinVariance_indices": [
-			85
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF"
+				],
+				"indices": [
+					85
+				]
+			}
 		],
 		"skin_color": [
 			"2a421c",
@@ -833,11 +875,15 @@
 		"name": "cyclops ogre",
 		"nose": "0020-086",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF"
-		],
-		"skinVariance_indices": [
-			85
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF"
+				],
+				"indices": [
+					85
+				]
+			}
 		],
 		"skin_color": [
 			"2a421c",
@@ -888,11 +934,15 @@
 		"name": "bridge troll",
 		"nose": "0021-086",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF"
-		],
-		"skinVariance_indices": [
-			85
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF"
+				],
+				"indices": [
+					85
+				]
+			}
 		],
 		"skin_color": [
 			"2a421c",
@@ -928,8 +978,7 @@
 		"otherBodyParts": [
 			"0022-123"
 		],
-		"skinVariance_hex": [],
-		"skinVariance_indices": [],
+		"skinVariance_sets": [],
 		"skin_color": [
 			"human"
 		],
@@ -952,14 +1001,18 @@
 		"name": "war orc",
 		"nose": "0023-086",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF",
-			"FBF6E1",
-			"D0D1D3",
-			"C7CACB"
-		],
-		"skinVariance_indices": [
-			85
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF",
+					"FBF6E1",
+					"D0D1D3",
+					"C7CACB"
+				],
+				"indices": [
+					85
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -988,14 +1041,18 @@
 		"name": "vampire",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"FFFFFF",
-			"FBF6E1",
-			"D0D1D3",
-			"C7CACB"
-		],
-		"skinVariance_indices": [
-			85
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF",
+					"FBF6E1",
+					"D0D1D3",
+					"C7CACB"
+				],
+				"indices": [
+					85
+				]
+			}
 		],
 		"skin_color": [
 			"human"
@@ -1022,15 +1079,19 @@
 			"0025-004",
 			"0025-134"
 		],
-		"skinVariance_hex": [
-			"FFFFFF",
-			"FBF6E1",
-			"D0D1D3",
-			"C7CACB"
-		],
-		"skinVariance_indices": [
-			85,
-			134
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"FFFFFF",
+					"FBF6E1",
+					"D0D1D3",
+					"C7CACB"
+				],
+				"indices": [
+					85,
+					134
+				]
+			}
 		],
 		"skin_color": [
 			"8b4e2e",
@@ -1078,14 +1139,18 @@
 		"name": "centaur",
 		"nose": "f02",
 		"otherBodyParts": [],
-		"skinVariance_hex": [
-			"F3D9C2",
-			"746C5B",
-			"233320",
-			"485232"
-		],
-		"skinVariance_indices": [
-			37
+		"skinVariance_sets": [
+			{
+				"hex_colors": [
+					"F3D9C2",
+					"746C5B",
+					"233320",
+					"485232"
+				],
+				"indices": [
+					37
+				]
+			}
 		],
 		"skin_color": [
 			"human"

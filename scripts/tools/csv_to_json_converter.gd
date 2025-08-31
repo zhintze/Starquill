@@ -63,7 +63,7 @@ func convert_equipment_csv_to_json(csv_path: String, json_out_path: String) -> v
 # otherBodyParts : array<string> (space-separated)
 # skin color : array<string> (space-separated; if single token present, becomes ["token"])
 # itemRestrictions : array<string> (space-separated)
-# skinVariance : split → skinVariance_hex (array<string> of 6-char hex), skinVariance_indices (array<int>)
+# skinVariance : first column + unnamed columns after → skinVariance_sets (array of {indices: array<int>, hex_colors: array<string>})
 func convert_species_csv_to_json(csv_path: String, json_out_path: String) -> void:
 	var f := FileAccess.open(csv_path, FileAccess.READ)
 	if f == null:
@@ -111,12 +111,41 @@ func convert_species_csv_to_json(csv_path: String, json_out_path: String) -> voi
 
 		var item_restrictions: Array = _split_tokens(_first_non_empty([_csv_get(line, idx, "itemrestrictions", ""), _csv_get(line, idx, "item restrictions", "")]))
 
-		var raw_skin_variance := _first_non_empty([_csv_get(line, idx, "skinvariance", ""), _csv_get(line, idx, "skin variance", "")])
-		var sv_hex: Array
-		var sv_idx: Array
-		var sv := _split_skin_variance(raw_skin_variance)
-		sv_hex = sv["hex"]
-		sv_idx = sv["idx"]
+		# Process multiple skinVariance columns
+		var skin_variance_sets: Array = []
+		var variance_column_index = 0
+		
+		# First try named column "skinvariance" or "skin variance"
+		var first_variance := _first_non_empty([_csv_get(line, idx, "skinvariance", ""), _csv_get(line, idx, "skin variance", "")])
+		if first_variance != "":
+			var sv := _split_skin_variance(first_variance)
+			if not sv["hex"].is_empty() and not sv["idx"].is_empty():
+				skin_variance_sets.append({
+					"indices": sv["idx"],
+					"hex_colors": sv["hex"]
+				})
+		
+		# Then check for additional unnamed columns after the first skinVariance column
+		# Find the index of the skinVariance column to start checking after it
+		var skin_variance_col_idx = -1
+		for i in range(headers.size()):
+			var header = String(headers[i]).to_lower().strip_edges()
+			if header == "skinvariance" or header == "skin variance":
+				skin_variance_col_idx = i
+				break
+		
+		# Check columns after skinVariance for additional variance sets
+		if skin_variance_col_idx >= 0:
+			for col_idx in range(skin_variance_col_idx + 1, headers.size()):
+				if col_idx < line.size():
+					var additional_variance := String(line[col_idx]).strip_edges()
+					if additional_variance != "":
+						var sv := _split_skin_variance(additional_variance)
+						if not sv["hex"].is_empty() and not sv["idx"].is_empty():
+							skin_variance_sets.append({
+								"indices": sv["idx"],
+								"hex_colors": sv["hex"]
+							})
 
 		rows.append({
 			"name": name,
@@ -137,8 +166,7 @@ func convert_species_csv_to_json(csv_path: String, json_out_path: String) -> voi
 			"otherBodyParts": other_body_parts_arr,
 			"skin_color": skin_color_arr,
 			"itemRestrictions": item_restrictions,
-			"skinVariance_hex": sv_hex,
-			"skinVariance_indices": sv_idx
+			"skinVariance_sets": skin_variance_sets
 		})
 
 	f.close()
