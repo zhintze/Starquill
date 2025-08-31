@@ -64,26 +64,24 @@ func build_species_pieces(species_instance: SpeciesInstance) -> Array[DisplayPie
 	var hair_color: Color = species_instance.hairColor
 	var eyes_color: Color = species_instance.eyesColor
 	var facial_detail_color: Color = species_instance.facialDetailColor
-	var variance_color: Color = species_instance.get_skin_variance_color()
-	var variance_indices: PackedInt32Array = species_instance.skinVariance_indices
 	
-	# Build pieces for each body part
-	_add_species_field("backArm", species_instance.backArm, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("body", species_instance.body, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("legs", species_instance.legs, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("head", species_instance.head, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("ears", species_instance.ears, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("eyes", species_instance.eyes, pieces, eyes_color, variance_color, variance_indices)
-	_add_species_field("nose", species_instance.nose, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("mouth", species_instance.mouth, pieces, skin_color, variance_color, variance_indices)
-	_add_species_field("facialHair", species_instance.facialHair, pieces, hair_color, variance_color, variance_indices)
-	_add_species_field("facialDetail", species_instance.facialDetail, pieces, facial_detail_color, variance_color, variance_indices)
-	_add_species_field("hair", species_instance.hair, pieces, hair_color, variance_color, variance_indices)
-	_add_species_field("frontArm", species_instance.frontArm, pieces, skin_color, variance_color, variance_indices)
+	# Build pieces for each body part (pass species_instance for variance lookup)
+	_add_species_field("backArm", species_instance.backArm, pieces, skin_color, species_instance)
+	_add_species_field("body", species_instance.body, pieces, skin_color, species_instance)
+	_add_species_field("legs", species_instance.legs, pieces, skin_color, species_instance)
+	_add_species_field("head", species_instance.head, pieces, skin_color, species_instance)
+	_add_species_field("ears", species_instance.ears, pieces, skin_color, species_instance)
+	_add_species_field("eyes", species_instance.eyes, pieces, eyes_color, species_instance)
+	_add_species_field("nose", species_instance.nose, pieces, skin_color, species_instance)
+	_add_species_field("mouth", species_instance.mouth, pieces, skin_color, species_instance)
+	_add_species_field("facialHair", species_instance.facialHair, pieces, hair_color, species_instance)
+	_add_species_field("facialDetail", species_instance.facialDetail, pieces, facial_detail_color, species_instance)
+	_add_species_field("hair", species_instance.hair, pieces, hair_color, species_instance)
+	_add_species_field("frontArm", species_instance.frontArm, pieces, skin_color, species_instance)
 	
 	# Other body parts
 	for token in species_instance.otherBodyParts:
-		_add_species_field("otherBodyParts", String(token), pieces, skin_color, variance_color, variance_indices)
+		_add_species_field("otherBodyParts", String(token), pieces, skin_color, species_instance)
 	
 	return StarquillLayerManager.sort_pieces_by_layer(pieces)
 
@@ -130,7 +128,7 @@ func build_equipment_pieces(equipment: Array[EquipmentInstance]) -> EquipmentRes
 # Species Field Processing (from SpeciesDisplayable)
 # ================================
 
-func _add_species_field(field_name: String, token: String, pieces: Array[DisplayPiece], base_color: Color, variance_color: Color, variance_indices: PackedInt32Array) -> void:
+func _add_species_field(field_name: String, token: String, pieces: Array[DisplayPiece], base_color: Color, species_instance: SpeciesInstance) -> void:
 	if token == "":
 		return
 	
@@ -142,28 +140,28 @@ func _add_species_field(field_name: String, token: String, pieces: Array[Display
 			push_warning("DisplayBuilder: invalid species token '%s' for %s" % [token, field_name])
 			return
 		ImageId.Kind.STATIC:
-			_add_static_species_piece(parsed, pieces, field_name, base_color, variance_color, variance_indices)
+			_add_static_species_piece(parsed, pieces, field_name, base_color, species_instance)
 		ImageId.Kind.MODULAR_FULL:
-			_add_modular_full_species_piece(parsed, pieces, field_name, base_color, variance_color, variance_indices)
+			_add_modular_full_species_piece(parsed, pieces, field_name, base_color, species_instance)
 		ImageId.Kind.MODULAR_GROUP_ONLY:
-			_add_modular_group_species_piece(parsed, pieces, field_name, base_color, variance_color, variance_indices)
+			_add_modular_group_species_piece(parsed, pieces, field_name, base_color, species_instance)
 
-func _add_static_species_piece(parsed: Dictionary, pieces: Array[DisplayPiece], field_name: String, base_color: Color, variance_color: Color, variance_indices: PackedInt32Array) -> void:
+func _add_static_species_piece(parsed: Dictionary, pieces: Array[DisplayPiece], field_name: String, base_color: Color, species_instance: SpeciesInstance) -> void:
 	var image_num: String = parsed["imageNum"]
 	var layer: int = int(parsed["layer"])
 	var id_str := ImageId.to_static_id(image_num, layer)
 	var path := "%s/%s.png" % [SPECIES_IMG_DIR, id_str]
-	_create_species_piece(path, layer, field_name, base_color, variance_color, variance_indices, pieces)
+	_create_species_piece(path, layer, field_name, base_color, species_instance, pieces)
 
-func _add_modular_full_species_piece(parsed: Dictionary, pieces: Array[DisplayPiece], field_name: String, base_color: Color, variance_color: Color, variance_indices: PackedInt32Array) -> void:
+func _add_modular_full_species_piece(parsed: Dictionary, pieces: Array[DisplayPiece], field_name: String, base_color: Color, species_instance: SpeciesInstance) -> void:
 	var group: String = parsed["groupType"]
 	var image_num: String = parsed["imageNum"]
 	var layer: int = int(parsed["layer"])
 	var id_str := ImageId.to_modular_id(group, image_num, layer)
 	var path := "%s/%s.png" % [SPECIES_IMG_DIR, id_str]
-	_create_species_piece(path, layer, field_name, base_color, variance_color, variance_indices, pieces)
+	_create_species_piece(path, layer, field_name, base_color, species_instance, pieces)
 
-func _add_modular_group_species_piece(parsed: Dictionary, pieces: Array[DisplayPiece], field_name: String, base_color: Color, variance_color: Color, variance_indices: PackedInt32Array) -> void:
+func _add_modular_group_species_piece(parsed: Dictionary, pieces: Array[DisplayPiece], field_name: String, base_color: Color, species_instance: SpeciesInstance) -> void:
 	var type_code: String = parsed["groupType"]
 	var layers: Array[int] = StarquillLayerManager.get_layer_mapping(type_code)
 	
@@ -178,14 +176,14 @@ func _add_modular_group_species_piece(parsed: Dictionary, pieces: Array[DisplayP
 	for layer in layers:
 		var id_str := ImageId.to_modular_id(type_code, img_num, layer)
 		var path := "%s/%s.png" % [SPECIES_IMG_DIR, id_str]
-		_create_species_piece(path, layer, field_name, base_color, variance_color, variance_indices, pieces)
+		_create_species_piece(path, layer, field_name, base_color, species_instance, pieces)
 
-func _create_species_piece(path: String, layer: int, field_name: String, base_color: Color, variance_color: Color, variance_indices: PackedInt32Array, pieces: Array[DisplayPiece]) -> void:
+func _create_species_piece(path: String, layer: int, field_name: String, base_color: Color, species_instance: SpeciesInstance, pieces: Array[DisplayPiece]) -> void:
 	if not ResourceLoader.exists(path):
 		push_warning("DisplayBuilder: species texture not found: %s" % path)
 		return
 	
-	var tint: Color = _calculate_species_tint(field_name, layer, base_color, variance_color, variance_indices)
+	var tint: Color = _calculate_species_tint(field_name, layer, base_color, species_instance)
 	var piece: DisplayPiece = DisplayPiece.from_path(path, layer, tint)
 	if piece != null:
 		pieces.append(piece)
@@ -194,18 +192,17 @@ func _create_species_piece(path: String, layer: int, field_name: String, base_co
 # Color Tinting Logic (from SpeciesDisplayable)
 # ================================
 
-func _calculate_species_tint(field_name: String, layer: int, base_color: Color, variance_color: Color, variance_indices: PackedInt32Array) -> Color:
+func _calculate_species_tint(field_name: String, layer: int, base_color: Color, species_instance: SpeciesInstance) -> Color:
 	# Hair and eyes use their specific colors, not skin tinting
 	match field_name:
 		"hair", "facialHair":
 			return base_color
 		"eyes":
 			return base_color
-		"facialDetail":
-			return base_color
 		_:
-			# Skin parts: check for variance, otherwise use base skin color
-			if variance_indices.has(layer):
+			# All other parts (including facialDetail): check for variance first, then use base color
+			var variance_color: Color = species_instance.get_variance_color_for_layer(layer)
+			if variance_color != Color(1,1,1,1):  # If a variance color was found
 				return variance_color
 			else:
 				return base_color

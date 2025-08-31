@@ -245,10 +245,32 @@ func _map_dict_to_species(data_dict: Dictionary, species: Species) -> void:
 	# Color fields
 	if data_dict.has("skin_color"):
 		species.skin_color = _to_string_array(data_dict.skin_color)
-	if data_dict.has("skinVariance_hex"):
-		species.skinVariance_hex = _to_string_array(data_dict.skinVariance_hex)
-	if data_dict.has("skinVariance_indices"):
-		species.skinVariance_indices = _to_int_array(data_dict.skinVariance_indices)
+	# Handle new skinVariance_sets structure
+	if data_dict.has("skinVariance_sets"):
+		var sets_array = data_dict.skinVariance_sets as Array
+		if sets_array:
+			species.skinVariance_sets = []
+			for set_data in sets_array:
+				if set_data is Dictionary:
+					var set_dict = set_data as Dictionary
+					if set_dict.has("indices") and set_dict.has("hex_colors"):
+						var variance_dict = {
+							"indices": _to_int_array(set_dict.indices),
+							"hex_colors": _to_string_array(set_dict.hex_colors)
+						}
+						species.skinVariance_sets.append(variance_dict)
+	
+	# Backwards compatibility with old format (can be removed later)
+	elif data_dict.has("skinVariance_hex") or data_dict.has("skinVariance_indices"):
+		var old_hex = _to_string_array(data_dict.get("skinVariance_hex", []))
+		var old_indices = _to_int_array(data_dict.get("skinVariance_indices", []))
+		if not old_hex.is_empty() and not old_indices.is_empty():
+			species.skinVariance_sets = []
+			var variance_dict = {
+				"indices": old_indices,
+				"hex_colors": old_hex
+			}
+			species.skinVariance_sets.append(variance_dict)
 
 # ================================
 # Modular Image Number Generator (from SpeciesLoader)

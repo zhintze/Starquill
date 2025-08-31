@@ -38,9 +38,7 @@ var facialDetailColor: Color = Color(1, 1, 1, 1)
 
 # Skin coloring (resolved)
 @export var skinColor: Color = Color(1,1,1,1)
-@export var skinVariance_indices: PackedInt32Array = PackedInt32Array()
-@export var skinVariance_hex: PackedStringArray = PackedStringArray()    # original list from Species
-var _skinVariance_color: Color = Color(1,1,1,1)  # chosen single variance color, applied to indices
+@export var skinVarianceColors: Dictionary = {}  # key: set_index (int) -> Color (chosen color for that variance set)
 
 # Persistent modular selections
 #   modular_image_nums: e.g. { "f01": "0043", "h02": "0081" }
@@ -209,17 +207,26 @@ func _choose_skin_colors(s: Species) -> void:
 
 	skinColor = chosen_col
 
-	# variance indices + choose one variance hex if available
-	skinVariance_indices = s.skinVariance_indices
-	skinVariance_hex = s.skinVariance_hex
-	if skinVariance_hex.size() > 0:
-		var vhex := String(s.skinVariance_hex[int(_rng.randi() % s.skinVariance_hex.size())])
-		_skinVariance_color = _safe_color(vhex)
-	else:
-		_skinVariance_color = Color(1,1,1,1)
+	# Process multiple skinVariance sets
+	skinVarianceColors.clear()
+	if s.skinVariance_sets:
+		for i in range(s.skinVariance_sets.size()):
+			var variance_set = s.skinVariance_sets[i]
+			if variance_set.has("hex_colors") and variance_set["hex_colors"].size() > 0:
+				var hex_colors = variance_set["hex_colors"]
+				var vhex := String(hex_colors[int(_rng.randi() % hex_colors.size())])
+				skinVarianceColors[i] = _safe_color(vhex)
 
-func get_skin_variance_color() -> Color:
-	return _skinVariance_color
+
+func get_variance_color_for_layer(layer: int) -> Color:
+	# Check all variance sets to see if any contain this layer
+	if base and base.skinVariance_sets:
+		for i in range(base.skinVariance_sets.size()):
+			var variance_set = base.skinVariance_sets[i]
+			if variance_set.has("indices") and variance_set["indices"].has(layer):
+				# Return the chosen color for this set
+				return skinVarianceColors.get(i, Color(1,1,1,1))
+	return Color(1,1,1,1)  # Default if no variance found
 
 func _safe_color(hex: String) -> Color:
 	var t := hex.strip_edges()
