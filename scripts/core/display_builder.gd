@@ -174,8 +174,12 @@ func _add_modular_group_species_piece(parsed: Dictionary, pieces: Array[DisplayP
 		push_warning("DisplayBuilder: no layer mapping for modular type '%s' in %s" % [type_code, field_name])
 		return
 	
-	# Get or generate image number for this modular type
-	var img_num: String = StarquillData.pick_modular_image_num(type_code)
+	# Get persistent image number from species instance (or generate if missing)
+	var img_num: String = species_instance.modular_image_nums.get(type_code, "")
+	if img_num == "":
+		# Fallback: generate and store for consistency
+		img_num = StarquillData.pick_modular_image_num(type_code)
+		species_instance.modular_image_nums[type_code] = img_num
 	
 	# Create pieces for all layers of this modular type
 	for layer in layers:
