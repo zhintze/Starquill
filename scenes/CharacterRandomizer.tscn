@@ -53,6 +53,10 @@ text = "Equipment Search"
 layout_mode = 2
 placeholder_text = "Search equipment (e.g. hd01-0001)"
 
+[node name="ExportPNGButton" type="Button" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Export PNG"
+
 [node name="SelectedEquipmentContainer" type="VBoxContainer" parent="CharacterRandomizer (Control)/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
