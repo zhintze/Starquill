@@ -143,11 +143,27 @@ func _roll_all(species_key: String) -> void:
 		_characters[i] = ch
 		_displays[i].set_character(ch)
 
+func _roll_characters_without_equipment(species_key: String) -> void:
+	if species_key == "":
+		push_warning("No species available to populate.")
+		return
+
+	_characters.clear()
+	_characters.resize(NUM_CHARACTERS)
+	for i in NUM_CHARACTERS:
+		var ch := CharacterFactory.create_random_for_species_key(species_key)
+		# Clear any equipment that might have been randomly assigned
+		ch.clear_equipment()
+		# Only apply forced equipment (if any)
+		_apply_forced_equipment_only_to_character(ch)
+		_characters[i] = ch
+		_displays[i].set_character(ch)
+
 func _on_species_changed(_index: int) -> void:
 	_roll_all(_current_species_key())
 
 func _on_randomize_pressed() -> void:
-	_roll_all(_current_species_key())
+	_roll_characters_without_equipment(_current_species_key())
 
 # ---------------------------------------------------------
 # Equipment Search and Forced Equipment Management
@@ -324,6 +340,25 @@ func _apply_forced_equipment_to_character(character: Character) -> void:
 	
 	# Apply forced equipment AFTER random - this will override/replace conflicting items
 	# The "latest wins" functionality in Character.equip_instance() will handle conflicts
+	for variant in _forced_equipment:
+		var item_type = _extract_item_type(variant)
+		var item_num = _extract_item_num(variant)
+		
+		# Use EquipmentFactory to create the equipment instance properly
+		var catalog_item = StarquillData.get_equipment_by_type(item_type)
+		if catalog_item == null:
+			push_warning("ForceEquip: No catalog item found for type: %s" % item_type)
+			continue
+		
+		var equipment_instance = equipment_factory.create_from_catalog(catalog_item, int(item_num))
+		if equipment_instance == null:
+			push_warning("ForceEquip: Failed to create equipment instance for: %s" % variant)
+			continue
+		
+		character.equip_instance(equipment_instance)
+
+func _apply_forced_equipment_only_to_character(character: Character) -> void:
+	# Apply only forced equipment (no random equipment)
 	for variant in _forced_equipment:
 		var item_type = _extract_item_type(variant)
 		var item_num = _extract_item_num(variant)
