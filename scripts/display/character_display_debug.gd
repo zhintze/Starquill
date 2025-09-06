@@ -107,12 +107,15 @@ func _refresh_list_contents() -> void:
 	if not hidden_layers.is_empty():
 		_add_kv_into(summary, "Hidden Species Layers", _join_ints_sorted_unique(hidden_layers))
 
-	if not insts.is_empty():
+	# Get equipment with actual slot information
+	var equipment_with_slots = _character.get_all_equipment_with_slots()
+	if not equipment_with_slots.is_empty():
 		var list := VBoxContainer.new()
 		list.add_theme_constant_override("separation", 2)
-		for ei in insts:
-			var slot := StarquillData.get_slot_for_item_type(ei.item_type)
-			_add_text_into(list, "• %s  :  %s  #%04d" % [slot, ei.item_type, int(ei.item_num)])
+		for entry in equipment_with_slots:
+			var ei: EquipmentInstance = entry.equipment
+			var actual_slot: String = entry.slot
+			_add_text_into(list, "• %s  :  %s  #%04d" % [actual_slot, ei.item_type, int(ei.item_num)])
 		_add_section_divider_into(summary)
 		summary.add_child(list)
 

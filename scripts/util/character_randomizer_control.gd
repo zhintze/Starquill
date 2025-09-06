@@ -449,11 +449,13 @@ func _apply_forced_equipment_to_character(character: Character) -> void:
 	# Fill slots with random equipment first
 	equipment_factory.equip_random_set(character, 4)
 	
-	# Apply forced equipment AFTER random - this will override/replace conflicting items
-	# The "latest wins" functionality in Character.equip_instance() will handle conflicts
+	# Apply forced equipment with smart slot assignment
+	var prefixes_used: Dictionary = {}  # Track which prefixes have been placed in their natural slots
+	
 	for variant in _forced_equipment:
 		var item_type = _extract_item_type(variant)
 		var item_num = _extract_item_num(variant)
+		var prefix = item_type.substr(0, 2).to_lower()
 		
 		# Use EquipmentFactory to create the equipment instance properly
 		var catalog_item = StarquillData.get_equipment_by_type(item_type)
@@ -466,7 +468,14 @@ func _apply_forced_equipment_to_character(character: Character) -> void:
 			push_warning("ForceEquip: Failed to create equipment instance for: %s" % variant)
 			continue
 		
-		character.equip_instance(equipment_instance)
+		# Smart slot assignment: first of each prefix goes to natural slot, subsequent ones go to misc
+		if prefixes_used.has(prefix):
+			# This prefix already used - force into misc slot
+			_force_equip_to_misc_slot(character, equipment_instance)
+		else:
+			# First time seeing this prefix - use natural slot
+			prefixes_used[prefix] = true
+			character.equip_instance(equipment_instance)
 
 func _apply_forced_equipment_only_to_character(character: Character) -> void:
 	# Apply only forced equipment (no random equipment)
@@ -491,6 +500,25 @@ func _extract_item_num(variant: String) -> String:
 	# Extract "0001" from "hd01-0001"
 	var parts = variant.split("-")
 	return parts[1] if parts.size() > 1 else "0001"
+
+func _force_equip_to_misc_slot(character: Character, equipment_instance: EquipmentInstance) -> void:
+	# Directly assign to first available misc slot
+	if character.misc1 == null:
+		character.misc1 = equipment_instance
+	elif character.misc2 == null:
+		character.misc2 = equipment_instance
+	elif character.misc3 == null:
+		character.misc3 = equipment_instance
+	elif character.misc4 == null:
+		character.misc4 = equipment_instance
+	else:
+		# All misc slots full - replace misc1 (latest wins)
+		character.misc1 = equipment_instance
+	
+	# Trigger character updates
+	character._assign_colors_for_equipment_variants()
+	character._recalc_stats()
+	character.emit_signal("model_changed")
 
 func _update_selection_ui_visibility() -> void:
 	if no_selection_label:

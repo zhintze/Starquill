@@ -118,11 +118,6 @@ func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
 	
 	# Get new item's properties for conflict detection
 	var new_item_type: String = new_item.item_type
-	var new_catalog: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(new_item_type)
-	if new_catalog == null:
-		return
-	
-	var new_layers: PackedInt32Array = new_catalog.layer_codes
 	
 	# Check all equipment slots for conflicts
 	var slots_to_check: Array[EquipmentInstance] = [head, torso, arms, legs, feet, misc1, misc2, misc3, misc4]
@@ -134,7 +129,7 @@ func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
 			continue
 		
 		# Check for conflicts
-		if _items_conflict(new_item_type, new_layers, existing_item):
+		if _items_conflict(new_item_type, existing_item):
 			# Remove conflicting item
 			match slot_names[i]:
 				"head": head = null
@@ -147,24 +142,11 @@ func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
 				"misc3": misc3 = null
 				"misc4": misc4 = null
 
-# Check if two equipment items conflict (same item_type or overlapping layers)
-func _items_conflict(new_item_type: String, new_layers: PackedInt32Array, existing_item: EquipmentInstance) -> bool:
-	# Rule 1: Same item_type identifier
+# Check if two equipment items conflict (same exact item_type only)
+func _items_conflict(new_item_type: String, existing_item: EquipmentInstance) -> bool:
+	# Only conflict if exact same item_type identifier
 	if existing_item.item_type == new_item_type:
 		return true
-	
-	# Rule 2: Overlapping layers
-	var existing_catalog: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(existing_item.item_type)
-	if existing_catalog == null:
-		return false
-	
-	var existing_layers: PackedInt32Array = existing_catalog.layer_codes
-	
-	# Check for any layer overlap
-	for new_layer in new_layers:
-		for existing_layer in existing_layers:
-			if new_layer == existing_layer:
-				return true
 	
 	return false
 
@@ -201,6 +183,19 @@ func get_all_equipment_instances() -> Array[EquipmentInstance]:
 	if feet: out.append(feet)
 	for m in [misc1, misc2, misc3, misc4]:
 		if m: out.append(m)
+	return out
+
+func get_all_equipment_with_slots() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if head: out.append({"equipment": head, "slot": "head"})
+	if torso: out.append({"equipment": torso, "slot": "torso"})
+	if arms: out.append({"equipment": arms, "slot": "arms"})
+	if legs: out.append({"equipment": legs, "slot": "legs"})
+	if feet: out.append({"equipment": feet, "slot": "feet"})
+	if misc1: out.append({"equipment": misc1, "slot": "misc1"})
+	if misc2: out.append({"equipment": misc2, "slot": "misc2"})
+	if misc3: out.append({"equipment": misc3, "slot": "misc3"})
+	if misc4: out.append({"equipment": misc4, "slot": "misc4"})
 	return out
 
 # ---------------- Stats recompute ----------------
