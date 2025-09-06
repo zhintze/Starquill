@@ -90,7 +90,10 @@ func build_species_pieces(species_instance: SpeciesInstance) -> Array[DisplayPie
 func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: PackedStringArray = PackedStringArray()) -> EquipmentResult:
 	var result := EquipmentResult.new()
 	
-	for ei in equipment:
+	# Apply "latest wins" deduplication for identical item_types
+	var deduplicated_equipment: Array[EquipmentInstance] = _deduplicate_equipment_by_type(equipment)
+	
+	for ei in deduplicated_equipment:
 		if ei == null:
 			continue
 		
@@ -128,6 +131,27 @@ func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: P
 					push_warning("DisplayBuilder: equipment texture not found: %s" % path)
 	
 	return result
+
+# Apply "latest wins" deduplication for identical item_type items
+func _deduplicate_equipment_by_type(equipment: Array[EquipmentInstance]) -> Array[EquipmentInstance]:
+	var item_type_tracker: Dictionary = {}  # item_type -> latest EquipmentInstance
+	
+	# Process in order - later items override earlier ones with same item_type
+	for ei in equipment:
+		if ei == null:
+			continue
+		item_type_tracker[ei.item_type] = ei
+	
+	# Return only the latest instance of each item_type
+	var deduplicated: Array[EquipmentInstance] = []
+	for ei in equipment:
+		if ei == null:
+			continue
+		# Only include if this is the latest instance of this item_type
+		if item_type_tracker[ei.item_type] == ei:
+			deduplicated.append(ei)
+	
+	return deduplicated
 
 # ================================
 # Species Field Processing (from SpeciesDisplayable)
