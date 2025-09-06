@@ -447,7 +447,7 @@ func _apply_forced_equipment_to_character(character: Character) -> void:
 	character.clear_equipment()
 	
 	# Fill slots with random equipment first
-	equipment_factory.equip_random_set(character, 4)
+	equipment_factory.equip_random_set(character, 2)
 	
 	# Apply forced equipment with smart slot assignment
 	var prefixes_used: Dictionary = {}  # Track which prefixes have been placed in their natural slots
