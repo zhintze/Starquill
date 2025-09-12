@@ -36,15 +36,29 @@ var randomization_constants: Dictionary = {
 		"mc": 0.3   # misc - 30% chance per misc slot
 	},
 	
-	# Equipment prefix misc priorities (higher = more likely to be chosen for misc slots)
-	"equipment_prefix_misc_priorities": {
-		"hd": 1.0,  # head - normal misc priority
-		"tr": 1.2,  # torso - slightly higher misc priority
-		"ar": 1.0,  # arms - normal misc priority  
-		"lg": 1.1,  # legs - slightly higher misc priority
-		"fe": 0.9,  # feet - slightly lower misc priority
-		"mc": 0.8   # misc - lower misc priority
-	}
+	# Main-slot equip priorities (1 = highest priority; 0 = no priority -> falls back to percentage)
+	"equipment_prefix_priorities": {
+		"hd": 0,
+		"tr": 2,
+		"ar": 0,
+		"lg": 1,
+		"fe": 0
+	},
+
+	# Misc selection weights (interpreted as percentages after normalization when toggle is enabled)
+	# These are per-prefix weights for being chosen for a misc slot when enabled
+	"equipment_prefix_misc_priorities": { # kept key name for backward compatibility
+		"hd": 1.0,
+		"tr": 1.0,
+		"ar": 1.0,
+		"lg": 1.0,
+		"fe": 1.0,
+		"mc": 1.0
+	},
+
+	# Toggle: when true, use the misc weights above (normalized) to choose prefix for misc slots.
+	# When false, fall back to per-prefix equip chances for misc selection.
+	"use_misc_prefix_percentages": true
 }
 
 func _ready() -> void:
@@ -389,11 +403,11 @@ func set_equipment_prefix_chance(prefix: String, value: float) -> void:
 
 func get_equipment_prefix_misc_priority(prefix: String) -> float:
 	var priorities = randomization_constants.get("equipment_prefix_misc_priorities", {}) as Dictionary
-	return priorities.get(prefix, 1.0)
+	return float(priorities.get(prefix, 1.0))
 
 func set_equipment_prefix_misc_priority(prefix: String, value: float) -> void:
 	var priorities = randomization_constants.get("equipment_prefix_misc_priorities", {}) as Dictionary
-	priorities[prefix] = max(value, 0.0)  # No upper limit on priorities
+	priorities[prefix] = max(value, 0.0)  # Non-negative weight
 	randomization_constants["equipment_prefix_misc_priorities"] = priorities
 
 func get_all_equipment_prefix_chances() -> Dictionary:
@@ -401,6 +415,32 @@ func get_all_equipment_prefix_chances() -> Dictionary:
 
 func get_all_equipment_prefix_misc_priorities() -> Dictionary:
 	return randomization_constants.get("equipment_prefix_misc_priorities", {}).duplicate()
+
+# ================================
+# Equip Priority API (main slots)
+# ================================
+
+func get_equipment_prefix_priority(prefix: String) -> int:
+	var table = randomization_constants.get("equipment_prefix_priorities", {}) as Dictionary
+	return int(table.get(prefix, 0))
+
+func set_equipment_prefix_priority(prefix: String, value: int) -> void:
+	var table = randomization_constants.get("equipment_prefix_priorities", {}) as Dictionary
+	table[prefix] = max(value, 0)
+	randomization_constants["equipment_prefix_priorities"] = table
+
+func get_all_equipment_prefix_priorities() -> Dictionary:
+	return randomization_constants.get("equipment_prefix_priorities", {}).duplicate()
+
+# ================================
+# Misc Selection Toggle
+# ================================
+
+func get_use_misc_prefix_percentages() -> bool:
+	return bool(randomization_constants.get("use_misc_prefix_percentages", false))
+
+func set_use_misc_prefix_percentages(value: bool) -> void:
+	randomization_constants["use_misc_prefix_percentages"] = value
 
 # ================================
 # Helper methods for data mapping
