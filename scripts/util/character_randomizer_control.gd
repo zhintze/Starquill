@@ -6,6 +6,7 @@ class_name CharacterRandomizerControl
 @onready var grid: GridContainer         = $MarginContainer/VBoxContainer/DisplayGrid
 @onready var equip_random_btn: Button    = $MarginContainer/VBoxContainer/HBoxContainer/EquipRandomButton
 @onready var export_png_btn: Button      = $MarginContainer/VBoxContainer/HBoxContainer/ExportPNGButton
+var percentage_btn: Button
 
 # Equipment search UI
 @onready var search_bar: LineEdit = $MarginContainer/VBoxContainer/HBoxContainer/EquipSearchContainer/SearchBar
@@ -24,6 +25,12 @@ var _characters: Array[Character] = []
 var _forced_equipment: Array[String] = []  # Array of "item_type-variant" strings like "hd01-0001"
 var _all_equipment_variants: Array[String] = []  # Cache of all searchable equipment variants
 
+# Randomization controls UI (popup)
+var _percentage_popup: AcceptDialog
+var _facial_hair_slider: HSlider
+var _facial_detail_slider: HSlider
+var _equipment_chance_controls: Dictionary = {}  # prefix -> chance_slider
+
 func _ready() -> void:
 	randomize()
 
@@ -34,6 +41,7 @@ func _ready() -> void:
 
 	_ensure_equipment_catalog_loaded()
 	_populate_species_option()
+	_create_percentage_button()
 
 	if species_option.item_count > 13:
 		species_option.select(13)
@@ -58,6 +66,7 @@ func _ready() -> void:
 	
 	_build_equipment_variants_cache()
 	_update_selection_ui_visibility()
+	_create_percentage_popup()
 
 	_ensure_displays()
 	_roll_all(_current_species_key())
@@ -88,6 +97,26 @@ func _on_equip_random_pressed() -> void:
 		if after > before:
 			changed_count += 1
 	print("[EquipRandom] changed=", changed_count, "/", _characters.size())
+
+# ---------------------------------------------------------
+# UI Creation
+# ---------------------------------------------------------
+
+func _create_percentage_button() -> void:
+	print("[Debug] Creating percentage button")
+	# Create the button
+	percentage_btn = Button.new()
+	percentage_btn.text = "Percentage Chances"
+	percentage_btn.pressed.connect(_on_percentage_btn_pressed)
+	print("[Debug] Button created and connected")
+	
+	# Add to the top horizontal container
+	var top_hbox = $MarginContainer/VBoxContainer/HBoxContainer
+	top_hbox.add_child(percentage_btn)
+	
+	# Move it after the ExportPNGButton 
+	var export_index = export_png_btn.get_index()
+	top_hbox.move_child(percentage_btn, export_index + 1)
 
 # ---------------------------------------------------------
 # Species / grid population
@@ -275,6 +304,140 @@ func _export_single_character(display: CharacterDisplay, character: Character, f
 	
 	# Cleanup
 	viewport.queue_free()
+
+# ---------------------------------------------------------
+# Percentage Controls Popup UI
+# ---------------------------------------------------------
+
+func _create_percentage_popup() -> void:
+	print("[Debug] Creating percentage popup")
+	# Create popup dialog
+	_percentage_popup = AcceptDialog.new()
+	_percentage_popup.title = "Randomization Percentages"
+	_percentage_popup.min_size = Vector2i(400, 300)
+	_percentage_popup.size = Vector2i(500, 400)  # Set initial size
+	
+	# Create main container
+	var main_container = VBoxContainer.new()
+	main_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	
+	# Create scroll container for all the controls
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_container.add_child(scroll)
+	
+	var content = VBoxContainer.new()
+	scroll.add_child(content)
+	
+	# Facial features section
+	_create_popup_facial_feature_controls(content)
+	content.add_child(HSeparator.new())
+	
+	# Equipment section
+	_create_popup_equipment_controls(content)
+	
+	# Add main container to popup
+	_percentage_popup.add_child(main_container)
+	
+	# Add popup to this control instead of root to avoid timing issues
+	add_child(_percentage_popup)
+	print("[Debug] Popup added to tree, in_tree: ", _percentage_popup.is_inside_tree())
+
+func _create_popup_facial_feature_controls(parent: VBoxContainer) -> void:
+	# Facial features title
+	var facial_title = Label.new()
+	facial_title.text = "Facial Features"
+	facial_title.add_theme_font_size_override("font_size", 14)
+	parent.add_child(facial_title)
+	
+	# Facial hair slider
+	var facial_hair_container = _create_percentage_slider("Facial Hair Chance", StarquillData.get_facial_hair_chance(), _on_facial_hair_changed)
+	parent.add_child(facial_hair_container)
+	_facial_hair_slider = facial_hair_container.get_child(1) as HSlider  # Get slider from container
+	
+	# Facial detail slider
+	var facial_detail_container = _create_percentage_slider("Facial Detail Chance", StarquillData.get_facial_detail_chance(), _on_facial_detail_changed)
+	parent.add_child(facial_detail_container)
+	_facial_detail_slider = facial_detail_container.get_child(1) as HSlider  # Get slider from container
+
+func _create_popup_equipment_controls(parent: VBoxContainer) -> void:
+	# Equipment title
+	var equipment_title = Label.new()
+	equipment_title.text = "Equipment Chances"
+	equipment_title.add_theme_font_size_override("font_size", 14)
+	parent.add_child(equipment_title)
+	
+	# Create controls for each prefix
+	var prefixes = ["hd", "tr", "ar", "lg", "fe", "mc"]
+	var prefix_names = {"hd": "Head", "tr": "Torso", "ar": "Arms", "lg": "Legs", "fe": "Feet", "mc": "Misc"}
+	
+	for prefix in prefixes:
+		var prefix_label = Label.new()
+		prefix_label.text = prefix_names.get(prefix, prefix.to_upper())
+		prefix_label.add_theme_font_size_override("font_size", 12)
+		parent.add_child(prefix_label)
+		
+		# Chance slider only (no priority in popup)
+		var chance_container = _create_percentage_slider("Chance", StarquillData.get_equipment_prefix_chance(prefix), func(value: float): _on_equipment_chance_changed(prefix, value))
+		parent.add_child(chance_container)
+		var chance_slider = chance_container.get_child(1) as HSlider  # Get slider from container
+		
+		# Store reference  
+		_equipment_chance_controls[prefix] = chance_slider
+
+func _on_percentage_btn_pressed() -> void:
+	print("[Debug] Percentage button pressed")
+	if _percentage_popup and _percentage_popup.is_inside_tree():
+		print("[Debug] Popup exists and in tree, showing...")
+		_percentage_popup.popup_centered()
+		_percentage_popup.grab_focus()  # Use updated method instead of move_to_foreground
+		print("[Debug] Popup visible: ", _percentage_popup.visible)
+		print("[Debug] Popup size: ", _percentage_popup.size)
+		print("[Debug] Popup position: ", _percentage_popup.position)
+	elif _percentage_popup:
+		print("[Debug] Popup exists but not in tree!")
+	else:
+		print("[Debug] Popup is null!")
+
+func _create_percentage_slider(label_text: String, initial_value: float, callback: Callable) -> HBoxContainer:
+	var container = HBoxContainer.new()
+	
+	var label = Label.new()
+	label.text = label_text
+	label.custom_minimum_size.x = 120
+	container.add_child(label)
+	
+	var slider = HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = initial_value
+	slider.custom_minimum_size.x = 150
+	container.add_child(slider)
+	
+	var value_label = Label.new()
+	value_label.text = "%.0f%%" % (initial_value * 100)
+	value_label.custom_minimum_size.x = 40
+	container.add_child(value_label)
+	
+	# Connect slider to update value label and call callback
+	slider.value_changed.connect(func(value: float):
+		value_label.text = "%.0f%%" % (value * 100)
+		callback.call(value)
+	)
+	
+	return container
+
+
+# Slider callback methods
+func _on_facial_hair_changed(value: float) -> void:
+	StarquillData.set_facial_hair_chance(value)
+
+func _on_facial_detail_changed(value: float) -> void:
+	StarquillData.set_facial_detail_chance(value)
+
+func _on_equipment_chance_changed(prefix: String, value: float) -> void:
+	StarquillData.set_equipment_prefix_chance(prefix, value)
 
 # ---------------------------------------------------------
 # Equipment Search and Forced Equipment Management

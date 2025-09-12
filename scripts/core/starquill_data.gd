@@ -20,6 +20,33 @@ var _equipment_by_slot_prefix: Dictionary = {
 var _equipment_templates_all: Array[Equipment] = []
 var _equipment_templates_by_id: Dictionary = {} # String -> Equipment
 
+# Randomization constants for character generation
+var randomization_constants: Dictionary = {
+	# Facial feature chances (0.0 = never, 1.0 = always)
+	"facial_hair_chance": 0.7,      # 70% chance to have facial hair
+	"facial_detail_chance": 0.8,    # 80% chance to have facial detail
+	
+	# Equipment prefix chances (0.0 = never equipped, 1.0 = always equipped)
+	"equipment_prefix_chances": {
+		"hd": 0.9,  # head - 90% chance
+		"tr": 1.0,  # torso - 100% chance (always equipped)
+		"ar": 0.8,  # arms - 80% chance
+		"lg": 1.0,  # legs - 100% chance (always equipped)
+		"fe": 0.7,  # feet - 70% chance
+		"mc": 0.3   # misc - 30% chance per misc slot
+	},
+	
+	# Equipment prefix misc priorities (higher = more likely to be chosen for misc slots)
+	"equipment_prefix_misc_priorities": {
+		"hd": 1.0,  # head - normal misc priority
+		"tr": 1.2,  # torso - slightly higher misc priority
+		"ar": 1.0,  # arms - normal misc priority  
+		"lg": 1.1,  # legs - slightly higher misc priority
+		"fe": 0.9,  # feet - slightly lower misc priority
+		"mc": 0.8   # misc - lower misc priority
+	}
+}
+
 func _ready() -> void:
 	# Data will be loaded by ConfigManager during initialization
 	pass
@@ -334,6 +361,46 @@ static func pick_modular_image_num(code: String) -> String:
 		return "0000"
 	var idx := rng.randi_range(0, count - 1)
 	return "%04d" % idx
+
+# ================================
+# Randomization Constants API
+# ================================
+
+func get_facial_hair_chance() -> float:
+	return randomization_constants.get("facial_hair_chance", 0.7)
+
+func set_facial_hair_chance(value: float) -> void:
+	randomization_constants["facial_hair_chance"] = clamp(value, 0.0, 1.0)
+
+func get_facial_detail_chance() -> float:
+	return randomization_constants.get("facial_detail_chance", 0.8)
+
+func set_facial_detail_chance(value: float) -> void:
+	randomization_constants["facial_detail_chance"] = clamp(value, 0.0, 1.0)
+
+func get_equipment_prefix_chance(prefix: String) -> float:
+	var chances = randomization_constants.get("equipment_prefix_chances", {}) as Dictionary
+	return chances.get(prefix, 1.0)
+
+func set_equipment_prefix_chance(prefix: String, value: float) -> void:
+	var chances = randomization_constants.get("equipment_prefix_chances", {}) as Dictionary
+	chances[prefix] = clamp(value, 0.0, 1.0)
+	randomization_constants["equipment_prefix_chances"] = chances
+
+func get_equipment_prefix_misc_priority(prefix: String) -> float:
+	var priorities = randomization_constants.get("equipment_prefix_misc_priorities", {}) as Dictionary
+	return priorities.get(prefix, 1.0)
+
+func set_equipment_prefix_misc_priority(prefix: String, value: float) -> void:
+	var priorities = randomization_constants.get("equipment_prefix_misc_priorities", {}) as Dictionary
+	priorities[prefix] = max(value, 0.0)  # No upper limit on priorities
+	randomization_constants["equipment_prefix_misc_priorities"] = priorities
+
+func get_all_equipment_prefix_chances() -> Dictionary:
+	return randomization_constants.get("equipment_prefix_chances", {}).duplicate()
+
+func get_all_equipment_prefix_misc_priorities() -> Dictionary:
+	return randomization_constants.get("equipment_prefix_misc_priorities", {}).duplicate()
 
 # ================================
 # Helper methods for data mapping
