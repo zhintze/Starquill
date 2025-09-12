@@ -29,6 +29,7 @@ signal canceled
 ## OK button removed per UX update
 
 const PROFILE_FILE := "user://randomization_settings.json"
+var _preset_dir: String = ""
 
 func _ready() -> void:
 	_populate_from_data()
@@ -47,6 +48,7 @@ func _populate_from_data() -> void:
 	misc_spin.value = StarquillData.get_equipment_prefix_chance("mc") * 100.0
 
 	_try_load_user_profile()
+	_refresh_preset_list()
 
 func _wire_controls() -> void:
 	apply_btn.pressed.connect(_on_apply)
@@ -91,7 +93,6 @@ func _apply_profile(p: Dictionary) -> void:
 	feet_spin.value = float(p.get("fe", feet_spin.value / 100.0)) * 100.0
 	misc_spin.value = float(p.get("mc", misc_spin.value / 100.0)) * 100.0
 
-const PRESET_DIR := "user://randomization_presets"
 var _saved_presets: Array[String] = [] # file paths 1:1 with OptionButton items
 ## Preset location notes (platform examples):
 ## - Linux: ~/.local/share/godot/app_userdata/Starquill/randomization_presets
@@ -100,12 +101,16 @@ var _saved_presets: Array[String] = [] # file paths 1:1 with OptionButton items
 ## - macOS: ~/Library/Application Support/Godot/app_userdata/Starquill/randomization_presets
 
 func _on_save_preset_pressed() -> void:
+	# Ensure directory is chosen
+	if _preset_dir == "" or not DirAccess.dir_exists_absolute(_preset_dir):
+		_choose_preset_dir(func(): _on_save_preset_pressed())
+		return
+
 	var name := preset_name.text.strip_edges()
 	if name == "":
 		name = Time.get_datetime_string_from_system().replace(":", "-")
 	var safe := _sanitize_name(name)
-	var path := PRESET_DIR + "/" + safe + ".json"
-	_ensure_preset_dir()
+	var path := _preset_dir.rstrip("/") + "/" + safe + ".json"
 	var data = {
 		"facial_hair": facial_hair_spin.value / 100.0,
 		"facial_detail": facial_detail_spin.value / 100.0,
@@ -114,7 +119,8 @@ func _on_save_preset_pressed() -> void:
 		"ar": arms_spin.value / 100.0,
 		"lg": legs_spin.value / 100.0,
 		"fe": feet_spin.value / 100.0,
-		"mc": misc_spin.value / 100.0
+		"mc": misc_spin.value / 100.0,
+		"preset_dir": _preset_dir
 	}
 	var f = FileAccess.open(path, FileAccess.WRITE)
 	if f:
@@ -124,16 +130,19 @@ func _on_save_preset_pressed() -> void:
 		print("[Presets] Saved to: ", ProjectSettings.globalize_path(path))
 
 func _refresh_preset_list() -> void:
-	_ensure_preset_dir()
 	profile_select.clear()
 	_saved_presets.clear()
-	var dir := DirAccess.open(PRESET_DIR)
+	if _preset_dir == "" or not DirAccess.dir_exists_absolute(_preset_dir):
+		_update_delete_enabled(-1)
+		return
+
+	var dir := DirAccess.open(_preset_dir)
 	if dir:
 		dir.list_dir_begin()
 		var file := dir.get_next()
 		while file != "":
 			if not dir.current_is_dir() and file.ends_with(".json"):
-				var path := PRESET_DIR + "/" + file
+				var path := _preset_dir.rstrip("/") + "/" + file
 				_saved_presets.append(path)
 				var display := file.substr(0, file.length() - 5)
 				profile_select.add_item(display)
@@ -178,14 +187,11 @@ func _load_preset_from_file(path: String) -> void:
 		if d is Dictionary:
 			_apply_profile(d)
 
-func _ensure_preset_dir() -> void:
-	if not DirAccess.dir_exists_absolute(PRESET_DIR):
-		DirAccess.make_dir_recursive_absolute(PRESET_DIR)
-
 func _open_preset_folder() -> void:
-	_ensure_preset_dir()
-	var abs_path := ProjectSettings.globalize_path(PRESET_DIR)
-	OS.shell_open(abs_path)
+	if _preset_dir == "" or not DirAccess.dir_exists_absolute(_preset_dir):
+		_choose_preset_dir()
+		return
+	OS.shell_open(_preset_dir)
 
 func _sanitize_name(name: String) -> String:
 	var s := name.strip_edges()
@@ -228,6 +234,8 @@ func _try_load_user_profile() -> void:
 		var d = json.get_data()
 		if d is Dictionary:
 			_apply_profile(d)
+			if d.has("preset_dir"):
+				_preset_dir = String(d.get("preset_dir"))
 
 func _save_user_profile() -> void:
 	var data = {
@@ -238,8 +246,27 @@ func _save_user_profile() -> void:
 		"ar": float(arms_spin.value) / 100.0,
 		"lg": float(legs_spin.value) / 100.0,
 		"fe": float(feet_spin.value) / 100.0,
-		"mc": float(misc_spin.value) / 100.0
+		"mc": float(misc_spin.value) / 100.0,
+		"preset_dir": _preset_dir
 	}
 	var f = FileAccess.open(PROFILE_FILE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data))
+
+# Prompt user to choose a preset directory. If cb is provided, call it after setting dir.
+func _choose_preset_dir(cb: Callable = Callable()) -> void:
+	var file_dialog = FileDialog.new()
+	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	file_dialog.current_dir = OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)
+	get_tree().root.add_child(file_dialog)
+	file_dialog.popup_centered(Vector2i(800, 600))
+	file_dialog.dir_selected.connect(func(path: String):
+		_preset_dir = path
+		_save_user_profile()
+		_refresh_preset_list()
+		if cb.is_valid():
+			cb.call()
+		file_dialog.queue_free()
+	)
+	file_dialog.canceled.connect(func(): file_dialog.queue_free())
