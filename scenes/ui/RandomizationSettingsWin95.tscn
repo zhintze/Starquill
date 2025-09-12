@@ -1,0 +1,248 @@
+[gd_scene load_steps=3 format=3 uid="uid://we2uk0eycsog"]
+
+[ext_resource type="Script" uid="uid://c8ebb2vr7yx3f" path="res://scripts/ui/randomization_settings_win95.gd" id="1_q9y5y"]
+[ext_resource type="Theme" path="res://themes/win95_light.tres" id="2_7t3y6"]
+
+[node name="RandomizationSettingsWin95" type="Window"]
+title = "Randomization Settings"
+initial_position = 1
+size = Vector2i(500, 330)
+visible = false
+unresizable = true
+theme = ExtResource("2_7t3y6")
+script = ExtResource("1_q9y5y")
+
+[node name="Root" type="VBoxContainer" parent="."]
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Tabs" type="TabContainer" parent="Root"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+current_tab = 0
+clip_tabs = false
+
+[node name="Facial" type="VBoxContainer" parent="Root/Tabs"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+metadata/_tab_index = 0
+
+[node name="FacialMargin" type="MarginContainer" parent="Root/Tabs/Facial"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="FacialGroup" type="PanelContainer" parent="Root/Tabs/Facial/FacialMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="FacialVBox" type="VBoxContainer" parent="Root/Tabs/Facial/FacialMargin/FacialGroup"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FacialHairRow" type="HBoxContainer" parent="Root/Tabs/Facial/FacialMargin/FacialGroup/FacialVBox"]
+layout_mode = 2
+
+[node name="FacialHairLabel" type="Label" parent="Root/Tabs/Facial/FacialMargin/FacialGroup/FacialVBox/FacialHairRow"]
+layout_mode = 2
+text = "Facial Hair"
+
+[node name="FacialHairSpin" type="SpinBox" parent="Root/Tabs/Facial/FacialMargin/FacialGroup/FacialVBox/FacialHairRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="FacialDetailRow" type="HBoxContainer" parent="Root/Tabs/Facial/FacialMargin/FacialGroup/FacialVBox"]
+layout_mode = 2
+
+[node name="FacialDetailLabel" type="Label" parent="Root/Tabs/Facial/FacialMargin/FacialGroup/FacialVBox/FacialDetailRow"]
+layout_mode = 2
+text = "Facial Detail"
+
+[node name="FacialDetailSpin" type="SpinBox" parent="Root/Tabs/Facial/FacialMargin/FacialGroup/FacialVBox/FacialDetailRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="Equipment" type="VBoxContainer" parent="Root/Tabs"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+metadata/_tab_index = 1
+
+[node name="EquipMargin" type="MarginContainer" parent="Root/Tabs/Equipment"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="EquipGroup" type="PanelContainer" parent="Root/Tabs/Equipment/EquipMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="EquipVBox" type="VBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HeadRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="HeadLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/HeadRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Head (hd)"
+
+[node name="HeadSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/HeadRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="TorsoRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="TorsoLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/TorsoRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Torso (tr)"
+
+[node name="TorsoSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/TorsoRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="ArmsRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="ArmsLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/ArmsRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Arms (ar)"
+
+[node name="ArmsSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/ArmsRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="LegsRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="LegsLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/LegsRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Legs (lg)"
+
+[node name="LegsSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/LegsRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="FeetRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="FeetLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/FeetRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Feet (fe)"
+
+[node name="FeetSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/FeetRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="MiscRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="MiscLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/MiscRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Misc (mc)"
+
+[node name="MiscSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/MiscRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
+[node name="Profiles" type="VBoxContainer" parent="Root/Tabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+metadata/_tab_index = 2
+
+[node name="ProfilesMargin" type="MarginContainer" parent="Root/Tabs/Profiles"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ProfilesVBox" type="VBoxContainer" parent="Root/Tabs/Profiles/ProfilesMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProfilesRow" type="HBoxContainer" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox"]
+layout_mode = 2
+
+[node name="ProfileLabel" type="Label" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/ProfilesRow"]
+layout_mode = 2
+text = "Preset"
+
+[node name="ProfileSelect" type="OptionButton" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/ProfilesRow"]
+layout_mode = 2
+
+[node name="ProfileApply" type="Button" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/ProfilesRow"]
+layout_mode = 2
+text = "Apply Preset"
+
+[node name="DeletePreset" type="Button" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/ProfilesRow"]
+layout_mode = 2
+text = "Delete Preset"
+
+[node name="SaveRow" type="HBoxContainer" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox"]
+layout_mode = 2
+
+[node name="SaveLabel" type="Label" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/SaveRow"]
+layout_mode = 2
+text = "Name"
+
+[node name="PresetName" type="LineEdit" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/SaveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter preset name"
+expand_to_text_length = true
+
+[node name="SavePreset" type="Button" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/SaveRow"]
+layout_mode = 2
+text = "Save Preset"
+
+[node name="OpenFolder" type="Button" parent="Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/SaveRow"]
+layout_mode = 2
+text = "Open Folder"
+
+[node name="FooterSep" type="HSeparator" parent="Root"]
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="Root"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Spacer" type="Control" parent="Root/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ResetBtn" type="Button" parent="Root/Footer"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+text = "Reset to Defaults"
+
+[node name="ApplyBtn" type="Button" parent="Root/Footer"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+text = "Apply"

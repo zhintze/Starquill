@@ -36,7 +36,7 @@ func _ready() -> void:
 		return
 
 	# Test hair distribution
-	_test_hair_distribution_fixed()
+	# _test_hair_distribution_fixed()
 
 func _test_hair_distribution():
 	print("Testing hair distribution...")

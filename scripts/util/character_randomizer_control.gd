@@ -30,6 +30,8 @@ var _percentage_popup: AcceptDialog
 var _facial_hair_slider: HSlider
 var _facial_detail_slider: HSlider
 var _equipment_chance_controls: Dictionary = {}  # prefix -> chance_slider
+var _settings_window_scene: PackedScene
+var _settings_window: RandomizationSettingsWin95
 
 func _ready() -> void:
 	randomize()
@@ -66,7 +68,7 @@ func _ready() -> void:
 	
 	_build_equipment_variants_cache()
 	_update_selection_ui_visibility()
-	_create_percentage_popup()
+	_load_settings_window()
 
 	_ensure_displays()
 	_roll_all(_current_species_key())
@@ -106,7 +108,7 @@ func _create_percentage_button() -> void:
 	print("[Debug] Creating percentage button")
 	# Create the button
 	percentage_btn = Button.new()
-	percentage_btn.text = "Percentage Chances"
+	percentage_btn.text = "Randomization Settings"
 	percentage_btn.pressed.connect(_on_percentage_btn_pressed)
 	print("[Debug] Button created and connected")
 	
@@ -386,18 +388,26 @@ func _create_popup_equipment_controls(parent: VBoxContainer) -> void:
 		_equipment_chance_controls[prefix] = chance_slider
 
 func _on_percentage_btn_pressed() -> void:
-	print("[Debug] Percentage button pressed")
-	if _percentage_popup and _percentage_popup.is_inside_tree():
-		print("[Debug] Popup exists and in tree, showing...")
-		_percentage_popup.popup_centered()
-		_percentage_popup.grab_focus()  # Use updated method instead of move_to_foreground
-		print("[Debug] Popup visible: ", _percentage_popup.visible)
-		print("[Debug] Popup size: ", _percentage_popup.size)
-		print("[Debug] Popup position: ", _percentage_popup.position)
-	elif _percentage_popup:
-		print("[Debug] Popup exists but not in tree!")
-	else:
-		print("[Debug] Popup is null!")
+	if _settings_window == null:
+		_load_settings_window()
+	if _settings_window:
+		_settings_window.popup_centered()
+		_settings_window.grab_focus()
+
+func _load_settings_window() -> void:
+	if _settings_window:
+		return
+	if _settings_window_scene == null:
+		_settings_window_scene = load("res://scenes/ui/RandomizationSettingsWin95.tscn") as PackedScene
+	if _settings_window_scene == null:
+		push_error("CharacterRandomizer: failed to load settings window scene")
+		return
+	_settings_window = _settings_window_scene.instantiate() as RandomizationSettingsWin95
+	if _settings_window == null:
+		push_error("CharacterRandomizer: failed to instantiate settings window")
+		return
+	add_child(_settings_window)
+	_settings_window.applied.connect(func(): _roll_all(_current_species_key()))
 
 func _create_percentage_slider(label_text: String, initial_value: float, callback: Callable) -> HBoxContainer:
 	var container = HBoxContainer.new()
