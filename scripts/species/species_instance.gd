@@ -64,8 +64,11 @@ func from_species(s: Species) -> void:
 	body = _as_string(s.body)
 	ears = _as_string(s.ears)
 	eyes = _as_string(s.eyes)
-	facialDetail = _as_string(s.facialDetail)
-	facialHair = _as_string(s.facialHair)
+	
+	# Apply randomization chances for facial features
+	facialDetail = _apply_facial_feature_chance(s.facialDetail, "facial_detail_chance")
+	facialHair = _apply_facial_feature_chance(s.facialHair, "facial_hair_chance")
+	
 	frontArm = _as_string(s.frontArm)
 	head = _as_string(s.head)
 	legs = _as_string(s.legs)
@@ -118,6 +121,34 @@ func _as_string(v: Variant) -> String:
 	if typeof(v) == TYPE_STRING:
 		return String(v)
 	return ""
+
+func _apply_facial_feature_chance(feature_value: Variant, chance_key: String) -> String:
+	# Convert feature to string first
+	var feature_str = _as_string(feature_value)
+	
+	# If no feature defined, return empty
+	if feature_str == "":
+		return ""
+	
+	# Only apply percentage chances to modular codes (3-character codes like "f06", "f05")
+	# Fixed anatomical features (like "0011-087" for rhinofolk horn) should not be affected
+	if feature_str.length() != 3:
+		return feature_str  # Keep fixed anatomical features unchanged
+	
+	# Get chance from StarquillData for modular codes only
+	var chance: float = 1.0
+	match chance_key:
+		"facial_hair_chance":
+			chance = StarquillData.get_facial_hair_chance()
+		"facial_detail_chance": 
+			chance = StarquillData.get_facial_detail_chance()
+	
+	# Roll against the chance
+	_rng.randomize()
+	if _rng.randf() <= chance:
+		return feature_str  # Keep the feature
+	else:
+		return ""  # Remove the feature
 
 func _select_hair(v: Variant) -> String:
 	# hair can be: "" | "h02" | ["h01","h02",...]
