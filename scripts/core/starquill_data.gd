@@ -227,14 +227,24 @@ func _map_dict_to_species(data_dict: Dictionary, species: Species) -> void:
 	if data_dict.has("y_scale"):
 		species.y_scale = float(data_dict.y_scale)
 	
-	# String part fields
+	# String part fields (excluding hair which needs special handling)
 	var string_fields = [
 		"backArm", "body", "ears", "eyes", "facialDetail", "facialHair",
-		"frontArm", "hair", "head", "legs", "mouth", "nose"
+		"frontArm", "head", "legs", "mouth", "nose"
 	]
 	for field in string_fields:
 		if data_dict.has(field):
 			species.set(field, _first_string(data_dict[field]))
+	
+	# Special handling for hair field - preserve as array if needed
+	if data_dict.has("hair"):
+		var hair_data = data_dict["hair"]
+		if typeof(hair_data) == TYPE_ARRAY:
+			# Keep as array for multiple hair options
+			species.hair = hair_data
+		else:
+			# Single hair option, convert to string
+			species.hair = _first_string(hair_data)
 	
 	# Array fields
 	if data_dict.has("otherBodyParts"):
