@@ -87,10 +87,33 @@ func equip_random_set(ch: Character, extras: int = 2) -> void:
 		return
 	ch.clear_equipment()
 
-	# Apply equipment chances for main slots
+	# Determine main slot priorities and equip in order
 	var main_prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe"]
+	var prioritized: Array[String] = []
+	var normal: Array[String] = []
+	var by_priority: Dictionary = {}
 	for p in main_prefixes:
-		# Check if this prefix should be equipped based on its chance
+		var pr: int = StarquillData.get_equipment_prefix_priority(p)
+		if pr > 0:
+			if not by_priority.has(pr):
+				by_priority[pr] = []
+			(by_priority[pr] as Array).append(p)
+		else:
+			normal.append(p)
+
+	# Equip prioritized prefixes: ascending priority, randomize within the same level
+	var priority_keys: Array = by_priority.keys()
+	priority_keys.sort()
+	for pr_key in priority_keys:
+		var group: Array = by_priority[pr_key] as Array
+		group.shuffle()
+		for p in group:
+			var ei_p := create_random_from_prefix_restricted(p)
+			if ei_p != null:
+				ch.equip_instance(ei_p)
+
+	# Handle non-prioritized prefixes via chance
+	for p in normal:
 		if randf() <= StarquillData.get_equipment_prefix_chance(p):
 			var ei := create_random_from_prefix_restricted(p)
 			if ei != null:
@@ -99,7 +122,7 @@ func equip_random_set(ch: Character, extras: int = 2) -> void:
 	# Apply equipment chances and priorities for misc slots
 	var pool: Array[String] = ["mc", "hd", "tr", "ar", "lg", "fe"]
 	for _i in extras:
-		var selected_prefix = _select_prefix_by_priority_and_chance(pool)
+		var selected_prefix = _select_prefix_for_misc(pool)
 		if selected_prefix != "":
 			var ei2 := create_random_from_prefix(selected_prefix)
 			if ei2 != null:
@@ -109,31 +132,34 @@ func equip_random_set(ch: Character, extras: int = 2) -> void:
 	if ch.has_signal("equipment_changed"):
 		ch.emit_signal("equipment_changed")
 
-func _select_prefix_by_priority_and_chance(pool: Array[String]) -> String:
-	# Filter prefixes that pass their chance check
-	var viable_prefixes: Array[String] = []
-	var total_weight: float = 0.0
-	
-	for prefix in pool:
-		# Check if this prefix passes its chance check
-		if randf() <= StarquillData.get_equipment_prefix_chance(prefix):
-			viable_prefixes.append(prefix)
-			total_weight += StarquillData.get_equipment_prefix_misc_priority(prefix)
-	
-	if viable_prefixes.is_empty():
-		return ""  # No prefixes passed their chance checks
-	
-	# Select based on weighted priority
-	var roll = randf() * total_weight
-	var accumulated_weight: float = 0.0
-	
-	for prefix in viable_prefixes:
-		accumulated_weight += StarquillData.get_equipment_prefix_misc_priority(prefix)
-		if roll <= accumulated_weight:
-			return prefix
-	
-	# Fallback to last prefix (shouldn't happen)
-	return viable_prefixes[-1]
+func _select_prefix_for_misc(pool: Array[String]) -> String:
+	if StarquillData.get_use_misc_prefix_percentages():
+		# Use normalized per-prefix weights as selection chances
+		var total: float = 0.0
+		var weights: Dictionary = {}
+		for prefix in pool:
+			var w: float = float(max(0.0, StarquillData.get_equipment_prefix_misc_priority(prefix)))
+			weights[prefix] = w
+			total += w
+		if total <= 0.0:
+			return ""
+		var roll: float = randf() * total
+		var acc: float = 0.0
+		for prefix in pool:
+			acc += float(weights[prefix])
+			if roll <= acc:
+				return prefix
+		return pool[-1]
+	else:
+		# Chance-gated, uniform selection among those that passed
+		var viable: Array[String] = []
+		for prefix in pool:
+			if randf() <= StarquillData.get_equipment_prefix_chance(prefix):
+				viable.append(prefix)
+		if viable.is_empty():
+			return ""
+		viable.shuffle()
+		return viable[0]
 
 func _force_equip_to_misc_slot(character: Character, equipment_instance: EquipmentInstance) -> void:
 	# Directly assign to first available misc slot
