@@ -18,14 +18,14 @@ SPECIES hair with detail,h03,92,154,,,,n,
 SPECIES hair with detail and hairtop,h04,92,128,154,,,n,
 hat,hd01,130,,,,,n,62
 hat with detail,hd02,130,132,,,132,n,36
-large hat ,hd03,156,,,10 134 128,,n,77
-large hat with detail,hd04,156,158,,10 134 128,156,n,29
-quarter helmet no det,hd05,160,,,10 134 130 132 156 158 128 154,,n,41
-quarter helmet det,hd06,160,162,,10 134 130 132 156 158 128 154,160,n,27
-helmet no detail,hd07,160,,,10 134 130 132 156 158 128 154 96 122 123,,n,42
-helmet with detail,hd08,160,162,,10 134 130 132 156 158 128 154 96 122 123,160,n,34
+large hat ,hd03,156,,,10 134 128 152,,n,77
+large hat with detail,hd04,156,158,,10 134 128 152,156,n,29
+quarter helmet no det,hd05,160,,,10 134 130 132 156 158 128 154 152,,n,41
+quarter helmet det,hd06,160,162,,10 134 130 132 156 158 128 154 152,160,n,27
+helmet no detail,hd07,160,,,10 134 130 132 156 158 128 154 96 122 123 152,,n,42
+helmet with detail,hd08,160,162,,10 134 130 132 156 158 128 154 96 122 123 152,160,n,34
 eyemask/eyepatch,hd09,90,,,,,n,11
-headband,hd10,94,,,,,n,10
+headband,hd10,94,,,,,n,11
 glasses,hd11,96,,,,,n,12
 tight facemask,hd12,98,,,122 123 154,,n,13
 large facemask,hd13,136,,,122 123,,n,10
@@ -56,7 +56,8 @@ tabard,tr09,78,,,,,n,10
 overbelt,tr10,74,76,,,76,n,17
 light armor,tr11,22,50,108,,,n,22
 heavy armor,tr12,28,64,112,,,n,10
-hooded cloak,tr13,14,150,152,10 130 80 116 118 128 130 132 134 136 156 158 160 162,152,n,5
+hooded cloak,tr13,14,150,152,10 130 80 116 118 128 130 132 134 136 ,,n,5
+hoodless cloak,tr14,14,150,,,,n,15
 sword 1 hand,w01,164,166,168,,166 168,y,23 24 28
 axe 1 hand,w02,164,166,168,,166 168,y,12 27 
 mace 1 hand,w03,164,166,168,,166 168,y,11 23 
