@@ -113,7 +113,8 @@
 		"hidden_layers": [
 			10,
 			134,
-			128
+			128,
+			152
 		],
 		"item_type": "hd03",
 		"layer_codes": [
@@ -128,7 +129,8 @@
 		"hidden_layers": [
 			10,
 			134,
-			128
+			128,
+			152
 		],
 		"item_type": "hd04",
 		"layer_codes": [
@@ -151,7 +153,8 @@
 			156,
 			158,
 			128,
-			154
+			154,
+			152
 		],
 		"item_type": "hd05",
 		"layer_codes": [
@@ -171,7 +174,8 @@
 			156,
 			158,
 			128,
-			154
+			154,
+			152
 		],
 		"item_type": "hd06",
 		"layer_codes": [
@@ -197,7 +201,8 @@
 			154,
 			96,
 			122,
-			123
+			123,
+			152
 		],
 		"item_type": "hd07",
 		"layer_codes": [
@@ -220,7 +225,8 @@
 			154,
 			96,
 			122,
-			123
+			123,
+			152
 		],
 		"item_type": "hd08",
 		"layer_codes": [
@@ -244,7 +250,7 @@
 		"modular": false
 	},
 	{
-		"amount": 10,
+		"amount": 11,
 		"description": "headband",
 		"hidden_layers": [],
 		"item_type": "hd10",
@@ -631,11 +637,7 @@
 			130,
 			132,
 			134,
-			136,
-			156,
-			158,
-			160,
-			162
+			136
 		],
 		"item_type": "tr13",
 		"layer_codes": [
@@ -643,9 +645,19 @@
 			150,
 			152
 		],
-		"layer_color_variance": [
-			152
+		"layer_color_variance": [],
+		"modular": false
+	},
+	{
+		"amount": 15,
+		"description": "hoodless cloak",
+		"hidden_layers": [],
+		"item_type": "tr14",
+		"layer_codes": [
+			14,
+			150
 		],
+		"layer_color_variance": [],
 		"modular": false
 	},
 	{
