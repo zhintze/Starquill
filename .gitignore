@@ -32,3 +32,6 @@ __pycache__/
 
 # Local agent guide (unversioned)
 AGENTS.md
+
+# Claude Code project instructions
+CLAUDE.md
