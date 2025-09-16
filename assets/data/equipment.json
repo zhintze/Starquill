@@ -629,7 +629,6 @@
 		"description": "hooded cloak",
 		"hidden_layers": [
 			10,
-			130,
 			80,
 			116,
 			118,

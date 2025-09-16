@@ -24,14 +24,15 @@ static func filter_pieces_by_hidden_layers(pieces: Array[DisplayPiece], hidden_l
 	return pieces.filter(filter_func)
 
 static func merge_and_sort_pieces(species_pieces: Array[DisplayPiece], equipment_pieces: Array[DisplayPiece], hidden_layers: PackedInt32Array = PackedInt32Array()) -> Array[DisplayPiece]:
-	# Filter species pieces by hidden layers
+	# Filter both species and equipment pieces by hidden layers
 	var filtered_species: Array[DisplayPiece] = filter_pieces_by_hidden_layers(species_pieces, hidden_layers)
-	
+	var filtered_equipment: Array[DisplayPiece] = filter_pieces_by_hidden_layers(equipment_pieces, hidden_layers)
+
 	# Merge all pieces
 	var all_pieces: Array[DisplayPiece] = []
 	all_pieces.append_array(filtered_species)
-	all_pieces.append_array(equipment_pieces)
-	
+	all_pieces.append_array(filtered_equipment)
+
 	# Sort by layer
 	return sort_pieces_by_layer(all_pieces)
 
