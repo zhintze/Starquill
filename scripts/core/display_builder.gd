@@ -135,22 +135,37 @@ func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: P
 # Apply "latest wins" deduplication for identical item_type items
 func _deduplicate_equipment_by_type(equipment: Array[EquipmentInstance]) -> Array[EquipmentInstance]:
 	var item_type_tracker: Dictionary = {}  # item_type -> latest EquipmentInstance
-	
+	var hat_set_latest: EquipmentInstance = null  # Latest item from hd01-hd08 hat set
+
+	# Define the hat set (hd01-hd08)
+	var hat_set: PackedStringArray = ["hd01", "hd02", "hd03", "hd04", "hd05", "hd06", "hd07", "hd08"]
+
 	# Process in order - later items override earlier ones with same item_type
 	for ei in equipment:
 		if ei == null:
 			continue
+
+		# Special handling for hat set - track latest across the entire group
+		if hat_set.has(ei.item_type):
+			hat_set_latest = ei
+
 		item_type_tracker[ei.item_type] = ei
-	
+
 	# Return only the latest instance of each item_type
 	var deduplicated: Array[EquipmentInstance] = []
 	for ei in equipment:
 		if ei == null:
 			continue
-		# Only include if this is the latest instance of this item_type
-		if item_type_tracker[ei.item_type] == ei:
-			deduplicated.append(ei)
-	
+
+		# Special rule for hat set: only include if this is the latest hat set item
+		if hat_set.has(ei.item_type):
+			if ei == hat_set_latest:
+				deduplicated.append(ei)
+		else:
+			# Normal rule: only include if this is the latest instance of this item_type
+			if item_type_tracker[ei.item_type] == ei:
+				deduplicated.append(ei)
+
 	return deduplicated
 
 # ================================
