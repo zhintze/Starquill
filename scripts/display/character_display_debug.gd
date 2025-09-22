@@ -141,7 +141,7 @@ func _refresh_list_contents() -> void:
 		# Classify based on texture path directory (more reliable than key matching)
 		if path.begins_with("species/"):
 			species_list.append(p)
-		elif path.begins_with("equipment/"):
+		elif path.begins_with("equipment/") or path.begins_with("weapons/"):
 			equip_list.append(p)
 		else:
 			# Fallback to original key-based detection for unknown paths
@@ -240,10 +240,20 @@ func _gather_species_keys() -> Dictionary:
 func _get_hidden_layers_from_equipment(insts: Array[EquipmentInstance]) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for ei in insts:
-		var cat: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
-		if cat == null:
-			continue
-		for h in cat.hidden_layers:
+		var hidden_layers: Array = []
+
+		# Check if this is a weapon (handheld item)
+		if ei.item_type.begins_with("w"):
+			var handheld_dict = StarquillData.get_handheld_by_type(ei.item_type)
+			if not handheld_dict.is_empty():
+				hidden_layers = handheld_dict.get("hidden_layers", [])
+		else:
+			# Regular equipment
+			var cat: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
+			if cat != null:
+				hidden_layers = cat.hidden_layers
+
+		for h in hidden_layers:
 			out.append(int(h))
 	return out
 
