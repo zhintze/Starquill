@@ -108,7 +108,7 @@ func equip_instance(ei: EquipmentInstance) -> bool:
 		"feet":
 			feet = ei
 		"main_hand":
-			main_hand = ei
+			return _equip_weapon(ei)
 		"off_hand":
 			off_hand = ei
 		"misc":
@@ -161,6 +161,15 @@ func _items_conflict(new_item_type: String, existing_item: EquipmentInstance) ->
 		return true
 	
 	return false
+
+func _equip_weapon(ei: EquipmentInstance) -> bool:
+	# Always equip to main_hand, replacing any existing weapon
+	main_hand = ei
+
+	_assign_colors_for_equipment_variants()
+	_recalc_stats()
+	emit_signal("model_changed")
+	return true
 
 func _equip_misc_overflow(ei: EquipmentInstance) -> bool:
 	if misc1 == null: misc1 = ei

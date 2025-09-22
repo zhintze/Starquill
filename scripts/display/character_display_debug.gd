@@ -107,6 +107,11 @@ func _refresh_list_contents() -> void:
 	if not hidden_layers.is_empty():
 		_add_kv_into(summary, "Hidden Species Layers", _join_ints_sorted_unique(hidden_layers))
 
+	# Show weapon slots specifically
+	var weapon_info := _get_weapon_slot_info()
+	if weapon_info != "":
+		_add_kv_into(summary, "Weapon Slots", weapon_info)
+
 	# Get equipment with actual slot information
 	var equipment_with_slots = _character.get_all_equipment_with_slots()
 	if not equipment_with_slots.is_empty():
@@ -115,7 +120,13 @@ func _refresh_list_contents() -> void:
 		for entry in equipment_with_slots:
 			var ei: EquipmentInstance = entry.equipment
 			var actual_slot: String = entry.slot
-			_add_text_into(list, "• %s  :  %s  #%04d" % [actual_slot, ei.item_type, int(ei.item_num)])
+
+			# Enhanced display for handheld items (weapons) showing actual image filenames
+			if ei.item_type.begins_with("w") and ei.layer_variants.size() > 0:
+				var image_list := _get_weapon_image_filenames(ei)
+				_add_text_into(list, "• %s  :  %s" % [actual_slot, image_list])
+			else:
+				_add_text_into(list, "• %s  :  %s  #%04d" % [actual_slot, ei.item_type, int(ei.item_num)])
 		_add_section_divider_into(summary)
 		summary.add_child(list)
 
@@ -206,8 +217,15 @@ func _add_piece_row(parent: Control, tag: String, p: DisplayPiece) -> void:
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(chip)
 
-	# Description
+	# Description with enhanced weapon information
 	var desc := "%s  layer: %03d   %s    color: #%s" % [tag, int(p.layer), path, _color_to_hex(p.modulate)]
+
+	# Add weapon-specific information if this is from weapons directory
+	if path.begins_with("weapons/"):
+		var weapon_info := _extract_weapon_info_from_path(path)
+		if weapon_info != "":
+			desc += "  " + weapon_info
+
 	var lbl := Label.new()
 	lbl.text = desc
 	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -345,3 +363,72 @@ func _join_ints_sorted_unique(pia: PackedInt32Array) -> String:
 	for k in keys:
 		parts.append(str(int(k)))
 	return ",".join(parts)
+
+func _extract_weapon_info_from_path(path: String) -> String:
+	# Extract weapon information from path like "weapons/w01-164-0001.png"
+	# Return format: "[weapon_type layer:164 variant:1]"
+
+	var filename := path.get_file().get_basename()  # Remove directory and extension
+	var parts := filename.split("-")
+
+	if parts.size() != 3:
+		return ""
+
+	var weapon_type := parts[0]
+	var layer := parts[1]
+	var variant := parts[2]
+
+	# Get weapon description from handheld catalog
+	var handheld_dict := StarquillData.get_handheld_by_type(weapon_type)
+	var description: String = handheld_dict.get("description", weapon_type)
+
+	return "[%s layer:%s variant:%s]" % [description, layer, variant]
+
+func _get_weapon_slot_info() -> String:
+	# Return information about weapon slots (main_hand, off_hand)
+	if _character == null:
+		return ""
+
+	var weapon_parts: Array[String] = []
+
+	if _character.main_hand != null:
+		var mh_info := _get_weapon_image_filenames(_character.main_hand)
+		weapon_parts.append("main_hand: " + mh_info)
+
+	if _character.off_hand != null:
+		var oh_info := _get_weapon_image_filenames(_character.off_hand)
+		weapon_parts.append("off_hand: " + oh_info)
+
+	if weapon_parts.is_empty():
+		return ""
+
+	return ", ".join(weapon_parts)
+
+func _get_weapon_image_filenames(ei: EquipmentInstance) -> String:
+	# Generate actual weapon image filenames that would be loaded
+	# Returns format: "w01-164-0005.png w01-166-0012.png w01-168-0001.png"
+
+	if not ei.item_type.begins_with("w"):
+		return "%s #%04d" % [ei.item_type, int(ei.item_num)]
+
+	# Get weapon layer information from handheld catalog
+	var handheld_dict := StarquillData.get_handheld_by_type(ei.item_type)
+	if handheld_dict.is_empty():
+		return "%s #%04d (no catalog data)" % [ei.item_type, int(ei.item_num)]
+
+	var layer_codes: Array = handheld_dict.get("layer_codes", [])
+	var filenames: Array[String] = []
+
+	for i in range(layer_codes.size()):
+		var layer: int = int(layer_codes[i])
+		var variant_num: int = int(ei.item_num)  # Default to item_num
+
+		# Use layer variant if available for modular weapons
+		if ei.layer_variants.size() > i:
+			variant_num = ei.layer_variants[i]
+
+		# Generate filename using weapon naming convention: item_type-layer-variant.png
+		var filename := "%s-%03d-%04d.png" % [ei.item_type, layer, variant_num]
+		filenames.append(filename)
+
+	return " ".join(filenames)
