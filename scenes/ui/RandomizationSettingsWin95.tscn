@@ -6,7 +6,7 @@
 [node name="RandomizationSettingsWin95" type="Window"]
 title = "Randomization Settings"
 initial_position = 1
-size = Vector2i(500, 330)
+size = Vector2i(500, 380)
 visible = false
 unresizable = true
 theme = ExtResource("2_7t3y6")

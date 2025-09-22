@@ -475,28 +475,10 @@ func _build_equipment_variants_cache() -> void:
 			var variant_string = "%s-%04d" % [item_type, variant]
 			_all_equipment_variants.append(variant_string)
 
-	# Add weapon variants from handheld catalog
-	var handheld_items = StarquillData.get_all_handheld()
-	for handheld_item in handheld_items:
-			var item_type: String = handheld_item.get("item_type", "")
-			var amount_data = handheld_item.get("amount", 0)
+	# Note: Handheld weapons are intentionally excluded from force equip search
+	# Weapons should only be equipped through the randomization percentage system
 
-			# Handle both array (modular) and int (non-modular) amounts
-			var max_variants: int = 0
-			if typeof(amount_data) == TYPE_ARRAY:
-				# For modular weapons, use the first amount as max variants
-				var amount_array = amount_data as Array
-				if amount_array.size() > 0:
-					max_variants = int(amount_array[0])
-			else:
-				max_variants = int(amount_data)
-
-			# Generate all variants for this weapon type
-			for variant in range(1, max_variants + 1):
-				var variant_string = "%s-%04d" % [item_type, variant]
-				_all_equipment_variants.append(variant_string)
-
-	print("[Search] Built cache of ", _all_equipment_variants.size(), " equipment variants (including weapons)")
+	print("[Search] Built cache of ", _all_equipment_variants.size(), " equipment variants (excluding weapons)")
 
 func _on_search_text_changed(new_text: String) -> void:
 	if new_text.length() == 0:
@@ -546,11 +528,17 @@ func _on_search_item_selected(index: int) -> void:
 	search_bar.release_focus()
 
 func _add_forced_equipment(variant: String) -> void:
+	# Block weapons from force equipping
+	var item_type = _extract_item_type(variant)
+	if item_type.begins_with("w"):
+		_show_weapon_block_warning(variant)
+		return
+
 	# Check if already selected
 	if variant in _forced_equipment:
 		print("[ForceEquip] ", variant, " already selected")
 		return
-	
+
 	# Validate equipment limits
 	if not _validate_equipment_addition(variant):
 		return
@@ -683,7 +671,11 @@ func _apply_forced_equipment_to_character(character: Character) -> void:
 			continue
 		
 		# Smart slot assignment: first of each prefix goes to natural slot, subsequent ones go to misc
-		if prefixes_used.has(prefix):
+		# Exception: weapons always go to main_hand/off_hand, never misc
+		if prefix == "w":
+			# Weapons always use natural slot assignment (main_hand/off_hand)
+			character.equip_instance(equipment_instance)
+		elif prefixes_used.has(prefix):
 			# This prefix already used - force into misc slot
 			_force_equip_to_misc_slot(character, equipment_instance)
 		else:
@@ -756,3 +748,13 @@ func _position_dropdown_below_search_bar() -> void:
 		var local_pos = get_global_transform().affine_inverse() * global_rect.position
 		search_results.position = Vector2(local_pos.x, local_pos.y + search_bar.size.y)
 		search_results.size = Vector2(search_bar.size.x, 100)
+
+func _show_weapon_block_warning(variant: String) -> void:
+	var popup = AcceptDialog.new()
+	popup.title = "Weapons Not Allowed"
+	popup.dialog_text = "Cannot force equip weapon %s.\nWeapons are equipped automatically through the randomization percentage system.\nAdjust weapon percentage in Randomization Settings instead." % variant
+
+	get_tree().root.add_child(popup)
+	popup.popup_centered()
+	popup.connect("confirmed", func(): popup.queue_free())
+	popup.connect("canceled", func(): popup.queue_free())
