@@ -33,7 +33,8 @@ func convert_equipment_csv_to_json(csv_path: String, json_out_path: String) -> v
 		var hidden_layers: Array = _split_ints(_csv_get(line, idx, "hidden layer numbers", ""))
 		var layer_color_variance: Array = _split_ints(_csv_get(line, idx, "layer color variance", ""))
 		var modular: bool = _to_bool_y(_csv_get(line, idx, "modular", ""))
-		var amount: int = _to_int_default(_csv_get(line, idx, "amount", ""), 0)
+		var amount_raw: String = _csv_get(line, idx, "amount", "")
+		var amount = _parse_amount_field(amount_raw, modular)
 
 		if item_type == "" and layer_codes.is_empty():
 			continue
@@ -477,3 +478,11 @@ func _is_valid_hex(hex: String) -> bool:
 		if not valid:
 			return false
 	return true
+
+func _parse_amount_field(amount_text: String, is_modular: bool):
+	if is_modular:
+		# For modular equipment, parse space-separated amounts into array
+		return _split_ints(amount_text)
+	else:
+		# For non-modular equipment, parse as single integer
+		return _to_int_default(amount_text, 0)

@@ -10,15 +10,17 @@ var stats: Stats
 var species: SpeciesInstance
 
 # Equipment slots (instances, not defs)
-@export var head:  EquipmentInstance
-@export var torso: EquipmentInstance
-@export var arms:  EquipmentInstance
-@export var legs:  EquipmentInstance
-@export var feet:  EquipmentInstance
-@export var misc1: EquipmentInstance
-@export var misc2: EquipmentInstance
-@export var misc3: EquipmentInstance
-@export var misc4: EquipmentInstance
+@export var head:      EquipmentInstance
+@export var torso:     EquipmentInstance
+@export var arms:      EquipmentInstance
+@export var legs:      EquipmentInstance
+@export var feet:      EquipmentInstance
+@export var main_hand: EquipmentInstance
+@export var off_hand:  EquipmentInstance
+@export var misc1:     EquipmentInstance
+@export var misc2:     EquipmentInstance
+@export var misc3:     EquipmentInstance
+@export var misc4:     EquipmentInstance
 
 # Colors applied to equipment layers that are marked as color-variant in equipment.json
 # key: layer_code (int) -> Color
@@ -48,20 +50,22 @@ func set_species(s: SpeciesInstance) -> void:
 		species.stats.changed.connect(_on_stats_changed)
 	emit_signal("model_changed")
 
-enum EquipSlot { HEAD, TORSO, ARMS, LEGS, FEET, MISC1, MISC2, MISC3, MISC4 }
+enum EquipSlot { HEAD, TORSO, ARMS, LEGS, FEET, MAIN_HAND, OFF_HAND, MISC1, MISC2, MISC3, MISC4 }
 
 # Back-compat: explicit slot set/get using instances
 func set_equipment(slot: int, e: EquipmentInstance) -> void:
 	match slot:
-		EquipSlot.HEAD:  head = e
-		EquipSlot.TORSO: torso = e
-		EquipSlot.ARMS:  arms = e
-		EquipSlot.LEGS:  legs = e
-		EquipSlot.FEET:  feet = e
-		EquipSlot.MISC1: misc1 = e
-		EquipSlot.MISC2: misc2 = e
-		EquipSlot.MISC3: misc3 = e
-		EquipSlot.MISC4: misc4 = e
+		EquipSlot.HEAD:      head = e
+		EquipSlot.TORSO:     torso = e
+		EquipSlot.ARMS:      arms = e
+		EquipSlot.LEGS:      legs = e
+		EquipSlot.FEET:      feet = e
+		EquipSlot.MAIN_HAND: main_hand = e
+		EquipSlot.OFF_HAND:  off_hand = e
+		EquipSlot.MISC1:     misc1 = e
+		EquipSlot.MISC2:     misc2 = e
+		EquipSlot.MISC3:     misc3 = e
+		EquipSlot.MISC4:     misc4 = e
 		_: return
 	_assign_colors_for_equipment_variants()
 	_recalc_stats()
@@ -69,15 +73,17 @@ func set_equipment(slot: int, e: EquipmentInstance) -> void:
 
 func get_equipment(slot: int) -> EquipmentInstance:
 	match slot:
-		EquipSlot.HEAD:  return head
-		EquipSlot.TORSO: return torso
-		EquipSlot.ARMS:  return arms
-		EquipSlot.LEGS:  return legs
-		EquipSlot.FEET:  return feet
-		EquipSlot.MISC1: return misc1
-		EquipSlot.MISC2: return misc2
-		EquipSlot.MISC3: return misc3
-		EquipSlot.MISC4: return misc4
+		EquipSlot.HEAD:      return head
+		EquipSlot.TORSO:     return torso
+		EquipSlot.ARMS:      return arms
+		EquipSlot.LEGS:      return legs
+		EquipSlot.FEET:      return feet
+		EquipSlot.MAIN_HAND: return main_hand
+		EquipSlot.OFF_HAND:  return off_hand
+		EquipSlot.MISC1:     return misc1
+		EquipSlot.MISC2:     return misc2
+		EquipSlot.MISC3:     return misc3
+		EquipSlot.MISC4:     return misc4
 		_: return null
 
 # Safer API for controllers: route by item_type with misc overflow
@@ -101,6 +107,10 @@ func equip_instance(ei: EquipmentInstance) -> bool:
 			legs = ei
 		"feet":
 			feet = ei
+		"main_hand":
+			main_hand = ei
+		"off_hand":
+			off_hand = ei
 		"misc":
 			return _equip_misc_overflow(ei)
 		_:
@@ -120,8 +130,8 @@ func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
 	var new_item_type: String = new_item.item_type
 	
 	# Check all equipment slots for conflicts
-	var slots_to_check: Array[EquipmentInstance] = [head, torso, arms, legs, feet, misc1, misc2, misc3, misc4]
-	var slot_names: Array[String] = ["head", "torso", "arms", "legs", "feet", "misc1", "misc2", "misc3", "misc4"]
+	var slots_to_check: Array[EquipmentInstance] = [head, torso, arms, legs, feet, main_hand, off_hand, misc1, misc2, misc3, misc4]
+	var slot_names: Array[String] = ["head", "torso", "arms", "legs", "feet", "main_hand", "off_hand", "misc1", "misc2", "misc3", "misc4"]
 	
 	for i in range(slots_to_check.size()):
 		var existing_item: EquipmentInstance = slots_to_check[i]
@@ -135,8 +145,10 @@ func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
 				"head": head = null
 				"torso": torso = null
 				"arms": arms = null
-				"legs": legs = null  
+				"legs": legs = null
 				"feet": feet = null
+				"main_hand": main_hand = null
+				"off_hand": off_hand = null
 				"misc1": misc1 = null
 				"misc2": misc2 = null
 				"misc3": misc3 = null
@@ -169,6 +181,7 @@ func unequip(slot: int) -> void:
 func clear_equipment() -> void:
 	head = null; torso = null; arms = null
 	legs = null; feet = null
+	main_hand = null; off_hand = null
 	misc1 = null; misc2 = null; misc3 = null; misc4 = null
 	equipment_layer_colors.clear()
 	_recalc_stats()
@@ -181,6 +194,8 @@ func get_all_equipment_instances() -> Array[EquipmentInstance]:
 	if arms: out.append(arms)
 	if legs: out.append(legs)
 	if feet: out.append(feet)
+	if main_hand: out.append(main_hand)
+	if off_hand: out.append(off_hand)
 	for m in [misc1, misc2, misc3, misc4]:
 		if m: out.append(m)
 	return out
@@ -192,6 +207,8 @@ func get_all_equipment_with_slots() -> Array[Dictionary]:
 	if arms: out.append({"equipment": arms, "slot": "arms"})
 	if legs: out.append({"equipment": legs, "slot": "legs"})
 	if feet: out.append({"equipment": feet, "slot": "feet"})
+	if main_hand: out.append({"equipment": main_hand, "slot": "main_hand"})
+	if off_hand: out.append({"equipment": off_hand, "slot": "off_hand"})
 	if misc1: out.append({"equipment": misc1, "slot": "misc1"})
 	if misc2: out.append({"equipment": misc2, "slot": "misc2"})
 	if misc3: out.append({"equipment": misc3, "slot": "misc3"})

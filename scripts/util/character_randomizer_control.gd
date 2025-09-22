@@ -88,6 +88,14 @@ func _ensure_equipment_catalog_loaded() -> void:
 		else:
 			print("[Equip] Loaded items: ", StarquillData.get_equipment_count())
 
+	# Load handheld items (weapons and shields)
+	if StarquillData.get_handheld_count() == 0:
+		StarquillData.load_handheld_catalog_from_json("res://assets/data/weapons.json")
+		if StarquillData.get_handheld_count() == 0:
+			push_warning("[Handheld] weapons.json failed to load or is empty.")
+		else:
+			print("[Handheld] Loaded items: ", StarquillData.get_handheld_count())
+
 func _on_equip_random_pressed() -> void:
 	var changed_count: int = 0
 	for c in _characters:
@@ -455,18 +463,40 @@ func _on_equipment_chance_changed(prefix: String, value: float) -> void:
 
 func _build_equipment_variants_cache() -> void:
 	_all_equipment_variants.clear()
+
+	# Add regular equipment variants
 	var equipment_items = StarquillData.get_all_equipment()
-	
 	for item in equipment_items:
 		var item_type: String = item.item_type
 		var amount: int = item.amount
-		
+
 		# Generate all variants for this equipment type
 		for variant in range(1, amount + 1):
 			var variant_string = "%s-%04d" % [item_type, variant]
 			_all_equipment_variants.append(variant_string)
-	
-	print("[Search] Built cache of ", _all_equipment_variants.size(), " equipment variants")
+
+	# Add weapon variants from handheld catalog
+	var handheld_items = StarquillData.get_all_handheld()
+	for handheld_item in handheld_items:
+			var item_type: String = handheld_item.get("item_type", "")
+			var amount_data = handheld_item.get("amount", 0)
+
+			# Handle both array (modular) and int (non-modular) amounts
+			var max_variants: int = 0
+			if typeof(amount_data) == TYPE_ARRAY:
+				# For modular weapons, use the first amount as max variants
+				var amount_array = amount_data as Array
+				if amount_array.size() > 0:
+					max_variants = int(amount_array[0])
+			else:
+				max_variants = int(amount_data)
+
+			# Generate all variants for this weapon type
+			for variant in range(1, max_variants + 1):
+				var variant_string = "%s-%04d" % [item_type, variant]
+				_all_equipment_variants.append(variant_string)
+
+	print("[Search] Built cache of ", _all_equipment_variants.size(), " equipment variants (including weapons)")
 
 func _on_search_text_changed(new_text: String) -> void:
 	if new_text.length() == 0:
@@ -629,14 +659,25 @@ func _apply_forced_equipment_to_character(character: Character) -> void:
 		var item_type = _extract_item_type(variant)
 		var item_num = _extract_item_num(variant)
 		var prefix = item_type.substr(0, 2).to_lower()
-		
+
 		# Use EquipmentFactory to create the equipment instance properly
-		var catalog_item = StarquillData.get_equipment_by_type(item_type)
-		if catalog_item == null:
-			push_warning("ForceEquip: No catalog item found for type: %s" % item_type)
-			continue
-		
-		var equipment_instance = equipment_factory.create_from_catalog(catalog_item, int(item_num))
+		var equipment_instance: EquipmentInstance = null
+
+		# Check if this is a weapon (handheld item)
+		if item_type.begins_with("w"):
+			var handheld_dict = StarquillData.get_handheld_by_type(item_type)
+			if not handheld_dict.is_empty():
+				equipment_instance = equipment_factory.create_from_handheld_dict(handheld_dict, int(item_num))
+			else:
+				push_warning("ForceEquip: No handheld item found for type: %s" % item_type)
+				continue
+		else:
+			# Regular equipment
+			var catalog_item = StarquillData.get_equipment_by_type(item_type)
+			if catalog_item == null:
+				push_warning("ForceEquip: No catalog item found for type: %s" % item_type)
+				continue
+			equipment_instance = equipment_factory.create_from_catalog(catalog_item, int(item_num))
 		if equipment_instance == null:
 			push_warning("ForceEquip: Failed to create equipment instance for: %s" % variant)
 			continue
@@ -655,18 +696,30 @@ func _apply_forced_equipment_only_to_character(character: Character) -> void:
 	for variant in _forced_equipment:
 		var item_type = _extract_item_type(variant)
 		var item_num = _extract_item_num(variant)
-		
+
 		# Use EquipmentFactory to create the equipment instance properly
-		var catalog_item = StarquillData.get_equipment_by_type(item_type)
-		if catalog_item == null:
-			push_warning("ForceEquip: No catalog item found for type: %s" % item_type)
-			continue
-		
-		var equipment_instance = equipment_factory.create_from_catalog(catalog_item, int(item_num))
+		var equipment_instance: EquipmentInstance = null
+
+		# Check if this is a weapon (handheld item)
+		if item_type.begins_with("w"):
+			var handheld_dict = StarquillData.get_handheld_by_type(item_type)
+			if not handheld_dict.is_empty():
+				equipment_instance = equipment_factory.create_from_handheld_dict(handheld_dict, int(item_num))
+			else:
+				push_warning("ForceEquip: No handheld item found for type: %s" % item_type)
+				continue
+		else:
+			# Regular equipment
+			var catalog_item = StarquillData.get_equipment_by_type(item_type)
+			if catalog_item == null:
+				push_warning("ForceEquip: No catalog item found for type: %s" % item_type)
+				continue
+			equipment_instance = equipment_factory.create_from_catalog(catalog_item, int(item_num))
+
 		if equipment_instance == null:
 			push_warning("ForceEquip: Failed to create equipment instance for: %s" % variant)
 			continue
-		
+
 		character.equip_instance(equipment_instance)
 
 func _extract_item_num(variant: String) -> String:

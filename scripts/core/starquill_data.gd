@@ -9,12 +9,16 @@ class_name StarquillDataManager
 var _species_all: Array[Species] = []
 var _species_by_id: Dictionary = {} # String -> Species
 
-# Equipment catalog data  
+# Equipment catalog data
 var _equipment_all: Array[EquipmentCatalog.CatalogItem] = []
 var _equipment_by_type: Dictionary = {} # String -> CatalogItem
 var _equipment_by_slot_prefix: Dictionary = {
 	"hd": [], "tr": [], "ar": [], "lg": [], "fe": [], "mc": []
 }
+
+# Handheld catalog data (weapons and shields)
+var _handheld_all: Array = []
+var _handheld_by_type: Dictionary = {} # String -> Dictionary
 
 # Equipment template data (if needed - currently unused in codebase)
 var _equipment_templates_all: Array[Equipment] = []
@@ -33,7 +37,8 @@ var randomization_constants: Dictionary = {
 		"ar": 0.8,  # arms - 80% chance
 		"lg": 1.0,  # legs - 100% chance (always equipped)
 		"fe": 0.7,  # feet - 70% chance
-		"mc": 0.3   # misc - 30% chance per misc slot
+		"mc": 0.3,  # misc - 30% chance per misc slot
+		"w": 0.6    # weapons - 60% chance for main hand
 	},
 	
 	# Main-slot equip priorities (1 = highest priority; 0 = no priority -> falls back to percentage)
@@ -42,7 +47,8 @@ var randomization_constants: Dictionary = {
 		"tr": 2,
 		"ar": 0,
 		"lg": 1,
-		"fe": 0
+		"fe": 0,
+		"w": 0   # weapons use chance-based selection, not priority
 	},
 
 	# Misc selection weights (interpreted as percentages after normalization when toggle is enabled)
@@ -170,7 +176,34 @@ func get_slot_for_item_type(item_type: String) -> String:
 		"lg": return "legs"
 		"fe": return "feet"
 		"mc": return "misc"
+		"w":  return "main_hand"
 		_: return "misc"
+
+# ================================
+# Handheld Catalog API (weapons and shields)
+# ================================
+
+func get_handheld_count() -> int:
+	return _handheld_all.size()
+
+func get_handheld_by_type(item_type: String) -> Dictionary:
+	return _handheld_by_type.get(item_type, {})
+
+func get_all_handheld() -> Array:
+	return _handheld_all.duplicate()
+
+func clear_handheld() -> void:
+	_handheld_all.clear()
+	_handheld_by_type.clear()
+
+func register_handheld_catalog_item(item_dict: Dictionary) -> void:
+	if item_dict.is_empty():
+		return
+
+	_handheld_all.append(item_dict)
+	var item_type = item_dict.get("item_type", "")
+	if item_type != "":
+		_handheld_by_type[item_type] = item_dict
 
 # ================================
 # Equipment Template API (replaces equipment_loader, if needed)
@@ -250,6 +283,47 @@ func load_equipment_catalog_from_json(path: String) -> void:
 		register_equipment_catalog_item(item)
 	
 	print("StarquillData: Loaded %d equipment items from %s" % [get_equipment_count(), path])
+
+func load_handheld_catalog_from_json(path: String) -> void:
+	if not FileAccess.file_exists(path):
+		push_error("StarquillData: Handheld JSON not found: %s" % path)
+		return
+
+	clear_handheld()
+
+	var text = FileAccess.get_file_as_string(path)
+	var data = JSON.parse_string(text)
+
+	if typeof(data) != TYPE_ARRAY:
+		push_error("StarquillData: Handheld JSON root must be an array: %s" % path)
+		return
+
+	for row_variant in data:
+		if typeof(row_variant) != TYPE_DICTIONARY:
+			continue
+
+		var item_dict = row_variant as Dictionary
+
+		# Validate required fields
+		var valid = true
+		var item_type = item_dict.get("item_type", "")
+		var layer_codes = item_dict.get("layer_codes", [])
+		var modular = item_dict.get("modular", false)
+		var amount_data = item_dict.get("amount", 0)
+
+		if item_type == "" or (layer_codes as Array).is_empty():
+			valid = false
+		elif modular:
+			valid = typeof(amount_data) == TYPE_ARRAY and (amount_data as Array).size() > 0
+		else:
+			valid = (typeof(amount_data) == TYPE_INT or typeof(amount_data) == TYPE_FLOAT) and int(amount_data) > 0
+
+		if not valid:
+			continue
+
+		register_handheld_catalog_item(item_dict)
+
+	print("StarquillData: Loaded %d handheld items from %s" % [get_handheld_count(), path])
 
 # ================================
 # Helper Methods (from SpeciesLoader)

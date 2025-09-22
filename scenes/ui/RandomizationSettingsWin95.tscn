@@ -170,6 +170,19 @@ custom_minimum_size = Vector2(64, 0)
 layout_mode = 2
 step = 5.0
 
+[node name="WeaponRow" type="HBoxContainer" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox"]
+layout_mode = 2
+
+[node name="WeaponLabel" type="Label" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/WeaponRow"]
+custom_minimum_size = Vector2(88, 0)
+layout_mode = 2
+text = "Weapon (w)"
+
+[node name="WeaponSpin" type="SpinBox" parent="Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/WeaponRow"]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+step = 5.0
+
 [node name="Profiles" type="VBoxContainer" parent="Root/Tabs"]
 visible = false
 layout_mode = 2
