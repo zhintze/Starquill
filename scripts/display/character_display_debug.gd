@@ -107,10 +107,8 @@ func _refresh_list_contents() -> void:
 	if not hidden_layers.is_empty():
 		_add_kv_into(summary, "Hidden Species Layers", _join_ints_sorted_unique(hidden_layers))
 
-	# Show weapon slots specifically
-	var weapon_info := _get_weapon_slot_info()
-	if weapon_info != "":
-		_add_kv_into(summary, "Weapon Slots", weapon_info)
+	# Show weapon slots specifically with detailed info
+	_add_weapon_slot_details(summary)
 
 	# Get equipment with actual slot information
 	var equipment_with_slots = _character.get_all_equipment_with_slots()
@@ -323,6 +321,12 @@ func _add_h1_into(parent: Control, title: String) -> void:
 	l.add_theme_font_size_override("font_size", 18)
 	parent.add_child(l)
 
+func _add_h2_into(parent: Control, title: String) -> void:
+	var l := Label.new()
+	l.text = title
+	l.add_theme_font_size_override("font_size", 15)
+	parent.add_child(l)
+
 func _add_kv_into(parent: Control, k: String, v: String) -> void:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 6)
@@ -383,6 +387,47 @@ func _extract_weapon_info_from_path(path: String) -> String:
 	var description: String = handheld_dict.get("description", weapon_type)
 
 	return "[%s layer:%s variant:%s]" % [description, layer, variant]
+
+func _add_weapon_slot_details(parent: VBoxContainer) -> void:
+	# Show detailed information about weapon slots including transformations
+	if _character == null:
+		return
+
+	var has_weapons := _character.main_hand != null or _character.off_hand != null
+	if not has_weapons:
+		return
+
+	_add_section_divider_into(parent)
+	_add_h2_into(parent, "Hand Slots")
+
+	# Main Hand
+	if _character.main_hand != null:
+		var mh := _character.main_hand
+		var is_two_handed: bool = StarquillData.is_handheld_two_handed(mh.item_type)
+		var mh_type := "Two-Handed" if is_two_handed else "One-Handed"
+		var mh_desc: String = StarquillData.get_handheld_by_type(mh.item_type).get("description", "unknown")
+		_add_kv_into(parent, "Main Hand", "%s (%s - %s)" % [mh.item_type, mh_type, mh_desc])
+		_add_text_into(parent, "  Images: %s" % _get_weapon_image_filenames(mh))
+		_add_text_into(parent, "  Transform: offset=(0, 0), rotation=0°")
+	else:
+		_add_kv_into(parent, "Main Hand", "(empty)")
+
+	# Off Hand
+	if _character.off_hand != null:
+		var oh := _character.off_hand
+		var is_shield: bool = StarquillData.is_handheld_shield(oh.item_type)
+		var oh_type := "Shield" if is_shield else "Weapon"
+		var oh_desc: String = StarquillData.get_handheld_by_type(oh.item_type).get("description", "unknown")
+		_add_kv_into(parent, "Off Hand", "%s (%s - %s)" % [oh.item_type, oh_type, oh_desc])
+		_add_text_into(parent, "  Images: %s" % _get_weapon_image_filenames(oh))
+
+		# Show the actual transformation applied to off-hand items
+		if is_shield:
+			_add_text_into(parent, "  Transform: offset=(40, -2), rotation=0°")
+		else:
+			_add_text_into(parent, "  Transform: offset=(-21, 78), rotation=-40°")
+	else:
+		_add_kv_into(parent, "Off Hand", "(empty)")
 
 func _get_weapon_slot_info() -> String:
 	# Return information about weapon slots (main_hand, off_hand)

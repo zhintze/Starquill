@@ -40,6 +40,10 @@ var randomization_constants: Dictionary = {
 		"mc": 0.3,  # misc - 30% chance per misc slot
 		"w": 0.6    # weapons - 60% chance for main hand
 	},
+
+	# Off-hand weapon chance (0.0 = never equipped, 1.0 = always equipped)
+	# Only applies if main_hand has a one-handed weapon (or no weapon)
+	"off_hand_chance": 0.3,  # 30% chance to equip off-hand weapon/shield
 	
 	# Main-slot equip priorities (1 = highest priority; 0 = no priority -> falls back to percentage)
 	"equipment_prefix_priorities": {
@@ -168,15 +172,18 @@ func register_equipment_catalog_item(item: EquipmentCatalog.CatalogItem) -> void
 
 # Slot mapping helper (replaces EquipmentCatalog.slot_for_item_type)
 func get_slot_for_item_type(item_type: String) -> String:
+	# Weapons have 1-char prefix, other equipment has 2-char prefix
+	if item_type.begins_with("w"):
+		return "main_hand"
+
 	var prefix = item_type.substr(0, 2).to_lower()
 	match prefix:
 		"hd": return "head"
-		"tr": return "torso" 
+		"tr": return "torso"
 		"ar": return "arms"
 		"lg": return "legs"
 		"fe": return "feet"
 		"mc": return "misc"
-		"w":  return "main_hand"
 		_: return "misc"
 
 # ================================
@@ -204,6 +211,33 @@ func register_handheld_catalog_item(item_dict: Dictionary) -> void:
 	var item_type = item_dict.get("item_type", "")
 	if item_type != "":
 		_handheld_by_type[item_type] = item_dict
+
+# Handheld helpers for weapon/shield detection
+func is_handheld_two_handed(item_type: String) -> bool:
+	var handheld = get_handheld_by_type(item_type)
+	if handheld.is_empty():
+		return false
+	return handheld.get("hand_type", "") == "two_handed"
+
+func is_handheld_one_handed(item_type: String) -> bool:
+	var handheld = get_handheld_by_type(item_type)
+	if handheld.is_empty():
+		return false
+	return handheld.get("hand_type", "") == "one_handed"
+
+func is_handheld_shield(item_type: String) -> bool:
+	var handheld = get_handheld_by_type(item_type)
+	if handheld.is_empty():
+		return false
+	var description = handheld.get("description", "")
+	return description.contains("shield")
+
+func get_one_handed_handheld() -> Array:
+	var result: Array = []
+	for handheld in _handheld_all:
+		if handheld.get("hand_type", "") == "one_handed":
+			result.append(handheld)
+	return result
 
 # ================================
 # Equipment Template API (replaces equipment_loader, if needed)
@@ -474,6 +508,12 @@ func set_equipment_prefix_chance(prefix: String, value: float) -> void:
 	var chances = randomization_constants.get("equipment_prefix_chances", {}) as Dictionary
 	chances[prefix] = clamp(value, 0.0, 1.0)
 	randomization_constants["equipment_prefix_chances"] = chances
+
+func get_off_hand_chance() -> float:
+	return randomization_constants.get("off_hand_chance", 0.3)
+
+func set_off_hand_chance(value: float) -> void:
+	randomization_constants["off_hand_chance"] = clamp(value, 0.0, 1.0)
 
 func get_equipment_prefix_misc_priority(prefix: String) -> float:
 	var priorities = randomization_constants.get("equipment_prefix_misc_priorities", {}) as Dictionary

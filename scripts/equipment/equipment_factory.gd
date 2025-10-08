@@ -155,6 +155,34 @@ func equip_random_set(ch: Character, extras: int = 2) -> void:
 			if ei != null:
 				ch.equip_instance(ei)
 
+	# Equip off-hand weapon/shield if main_hand allows it
+	# Only equip off_hand if main_hand is empty OR has a one-handed weapon
+	if ch.main_hand == null:
+		# No main hand weapon - check off_hand chance (can equip shield/weapon)
+		if randf() <= StarquillData.get_off_hand_chance():
+			var off_hand_items: Array = StarquillData.get_one_handed_handheld()
+			if not off_hand_items.is_empty():
+				var random_handheld: Dictionary = off_hand_items[randi() % off_hand_items.size()]
+				var off_hand_weapon := create_from_handheld_dict(random_handheld)
+				if off_hand_weapon != null:
+					ch.equip_to_hand_slot(off_hand_weapon, "off_hand")
+	elif ch.main_hand != null and StarquillData.is_handheld_one_handed(ch.main_hand.item_type):
+		# Main hand has one-handed weapon - check off_hand chance
+		if randf() <= StarquillData.get_off_hand_chance():
+			var off_hand_items: Array = StarquillData.get_one_handed_handheld()
+			if not off_hand_items.is_empty():
+				var random_handheld: Dictionary = off_hand_items[randi() % off_hand_items.size()]
+				var off_hand_weapon := create_from_handheld_dict(random_handheld)
+				if off_hand_weapon != null:
+					ch.equip_to_hand_slot(off_hand_weapon, "off_hand")
+	# else: main_hand has two-handed weapon, skip off_hand equipping
+
+	# Validate weapon slot consistency
+	if ch.main_hand != null and ch.off_hand != null:
+		if StarquillData.is_handheld_two_handed(ch.main_hand.item_type):
+			push_warning("EquipmentFactory: Two-handed weapon in main_hand with off_hand equipped - clearing off_hand")
+			ch.off_hand = null
+
 	# Apply equipment chances and priorities for misc slots
 	var pool: Array[String] = ["mc", "hd", "tr", "ar", "lg", "fe"]
 	for _i in extras:
@@ -198,6 +226,11 @@ func _select_prefix_for_misc(pool: Array[String]) -> String:
 		return viable[0]
 
 func _force_equip_to_misc_slot(character: Character, equipment_instance: EquipmentInstance) -> void:
+	# Weapons (including shields) should not go into misc slots
+	if equipment_instance.item_type.begins_with("w"):
+		push_warning("EquipmentFactory: Cannot force weapon '%s' into misc slot" % equipment_instance.item_type)
+		return
+
 	# Directly assign to first available misc slot
 	if character.misc1 == null:
 		character.misc1 = equipment_instance

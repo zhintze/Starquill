@@ -6,6 +6,7 @@
 			28
 		],
 		"description": "sword 1 hand",
+		"hand_type": "one_handed",
 		"hidden_layers": [],
 		"item_type": "w01",
 		"layer_codes": [
@@ -26,6 +27,7 @@
 			1
 		],
 		"description": "axe 1 hand",
+		"hand_type": "one_handed",
 		"hidden_layers": [],
 		"item_type": "w02",
 		"layer_codes": [
@@ -46,6 +48,7 @@
 			1
 		],
 		"description": "mace 1 hand",
+		"hand_type": "one_handed",
 		"hidden_layers": [],
 		"item_type": "w03",
 		"layer_codes": [
@@ -66,6 +69,7 @@
 			2
 		],
 		"description": "two hand sword",
+		"hand_type": "two_handed",
 		"hidden_layers": [],
 		"item_type": "w04",
 		"layer_codes": [
@@ -86,6 +90,7 @@
 			3
 		],
 		"description": "two hand axe",
+		"hand_type": "two_handed",
 		"hidden_layers": [],
 		"item_type": "w05",
 		"layer_codes": [
@@ -106,6 +111,7 @@
 			1
 		],
 		"description": "magic",
+		"hand_type": "one_handed",
 		"hidden_layers": [],
 		"item_type": "w06",
 		"layer_codes": [
@@ -126,6 +132,7 @@
 			1
 		],
 		"description": "ranged",
+		"hand_type": "two_handed",
 		"hidden_layers": [],
 		"item_type": "w07",
 		"layer_codes": [
@@ -142,6 +149,7 @@
 	{
 		"amount": 3,
 		"description": "shield",
+		"hand_type": "one_handed",
 		"hidden_layers": [],
 		"item_type": "w08",
 		"layer_codes": [
@@ -153,6 +161,7 @@
 	{
 		"amount": 3,
 		"description": "shield with detail",
+		"hand_type": "one_handed",
 		"hidden_layers": [],
 		"item_type": "w09",
 		"layer_codes": [
