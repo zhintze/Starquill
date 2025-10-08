@@ -82,6 +82,7 @@ func _redraw() -> void:
 		tr.modulate = p.modulate
 		tr.position = p.offset
 		tr.scale = p.scale
+		tr.rotation_degrees = p.rotation_degrees
 		tr.flip_h = p.flip_h
 		tr.flip_v = p.flip_v
 
@@ -89,9 +90,13 @@ func _redraw() -> void:
 		tr.z_index = 0
 		layer_root.move_child(tr, i)
 
-		var ts: Vector2 = p.texture.get_size()
-		_content_size.x = max(_content_size.x, tr.position.x + ts.x * tr.scale.x)
-		_content_size.y = max(_content_size.y, tr.position.y + ts.y * tr.scale.y)
+		# Only include pieces with zero offset in content size calculation
+		# Pieces with offsets (like off-hand weapons) are positioned relative to the base character
+		# and shouldn't affect the overall character bounds/pivot
+		if p.offset == Vector2.ZERO:
+			var ts: Vector2 = p.texture.get_size()
+			_content_size.x = max(_content_size.x, tr.position.x + ts.x * tr.scale.x)
+			_content_size.y = max(_content_size.y, tr.position.y + ts.y * tr.scale.y)
 
 	for i in range(pieces.size(), _piece_nodes.size()):
 		_piece_nodes[i].visible = false

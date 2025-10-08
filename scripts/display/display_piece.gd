@@ -6,6 +6,7 @@ class_name DisplayPiece
 @export var modulate: Color = Color(1, 1, 1, 1)
 @export var offset: Vector2 = Vector2.ZERO
 @export var scale: Vector2 = Vector2.ONE
+@export var rotation_degrees: float = 0.0
 @export var flip_h: bool = false
 @export var flip_v: bool = false
 

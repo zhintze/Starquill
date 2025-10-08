@@ -56,8 +56,8 @@ tabard,tr09,78,,,,,n,10
 overbelt,tr10,74,76,,,76,n,17
 light armor,tr11,22,50,108,,,n,22
 heavy armor,tr12,28,64,112,,,n,10
-hooded cloak,tr13,14,150,152,10 80 116 118 128 130 132 134 136 ,,n,5
-hoodless cloak,tr14,14,150,,,,n,15
+hooded cloak,tr13,14,150,152,10 130 80 116 118 128 130 132 134 136 ,,n,5
+hoodless cloak,tr14,14,150,,,,n,17
 sword 1 hand,w01,164,166,168,,166 168,y,23 24 28
 axe 1 hand,w02,164,166,168,,166 168,y,12 27 
 mace 1 hand,w03,164,166,168,,166 168,y,11 23 

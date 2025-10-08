@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Starquill"
 run/main_scene="uid://drq7m22alyebb"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
