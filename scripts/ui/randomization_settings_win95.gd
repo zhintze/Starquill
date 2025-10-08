@@ -17,6 +17,7 @@ signal canceled
 @onready var legs_spin: SpinBox = $Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/LegsRow/LegsSpin
 @onready var feet_spin: SpinBox = $Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/FeetRow/FeetSpin
 @onready var misc_spin: SpinBox = $Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/MiscRow/MiscSpin
+@onready var weapon_spin: SpinBox = $Root/Tabs/Equipment/EquipMargin/EquipGroup/EquipVBox/WeaponRow/WeaponSpin
 
 # Profiles
 @onready var profile_select: OptionButton = $Root/Tabs/Profiles/ProfilesMargin/ProfilesVBox/ProfilesRow/ProfileSelect
@@ -46,6 +47,7 @@ func _populate_from_data() -> void:
 	legs_spin.value = StarquillData.get_equipment_prefix_chance("lg") * 100.0
 	feet_spin.value = StarquillData.get_equipment_prefix_chance("fe") * 100.0
 	misc_spin.value = StarquillData.get_equipment_prefix_chance("mc") * 100.0
+	weapon_spin.value = StarquillData.get_equipment_prefix_chance("w") * 100.0
 
 	_try_load_user_profile()
 	_refresh_preset_list()
@@ -92,6 +94,7 @@ func _apply_profile(p: Dictionary) -> void:
 	legs_spin.value = float(p.get("lg", legs_spin.value / 100.0)) * 100.0
 	feet_spin.value = float(p.get("fe", feet_spin.value / 100.0)) * 100.0
 	misc_spin.value = float(p.get("mc", misc_spin.value / 100.0)) * 100.0
+	weapon_spin.value = float(p.get("w", weapon_spin.value / 100.0)) * 100.0
 
 var _saved_presets: Array[String] = [] # file paths 1:1 with OptionButton items
 ## Preset location notes (platform examples):
@@ -120,6 +123,7 @@ func _on_save_preset_pressed() -> void:
 		"lg": legs_spin.value / 100.0,
 		"fe": feet_spin.value / 100.0,
 		"mc": misc_spin.value / 100.0,
+		"w": weapon_spin.value / 100.0,
 		"preset_dir": _preset_dir
 	}
 	var f = FileAccess.open(path, FileAccess.WRITE)
@@ -211,6 +215,7 @@ func _on_apply() -> void:
 	StarquillData.set_equipment_prefix_chance("lg", float(legs_spin.value) / 100.0)
 	StarquillData.set_equipment_prefix_chance("fe", float(feet_spin.value) / 100.0)
 	StarquillData.set_equipment_prefix_chance("mc", float(misc_spin.value) / 100.0)
+	StarquillData.set_equipment_prefix_chance("w", float(weapon_spin.value) / 100.0)
 	_save_user_profile()
 	emit_signal("applied")
 
@@ -218,7 +223,7 @@ func _reset_defaults() -> void:
 	var defaults = {
 		"facial_hair": 0.7,
 		"facial_detail": 0.8,
-		"hd": 0.9, "tr": 1.0, "ar": 0.8, "lg": 1.0, "fe": 0.7, "mc": 0.3
+		"hd": 0.9, "tr": 1.0, "ar": 0.8, "lg": 1.0, "fe": 0.7, "mc": 0.3, "w": 0.6
 	}
 	_apply_profile(defaults)
 
@@ -247,6 +252,7 @@ func _save_user_profile() -> void:
 		"lg": float(legs_spin.value) / 100.0,
 		"fe": float(feet_spin.value) / 100.0,
 		"mc": float(misc_spin.value) / 100.0,
+		"w": float(weapon_spin.value) / 100.0,
 		"preset_dir": _preset_dir
 	}
 	var f = FileAccess.open(PROFILE_FILE, FileAccess.WRITE)

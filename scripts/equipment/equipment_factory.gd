@@ -27,7 +27,27 @@ func create_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int = -1) 
 	ei._init_from_catalog(cat, chosen_num, _main_palette)
 	return ei
 
-# Create a random EquipmentInstance from a slot prefix (e.g., "hd","tr","ar","lg","fe","mc","w").
+# Create an EquipmentInstance from a handheld catalog dictionary (weapons/shields).
+func create_from_handheld_dict(handheld_dict: Dictionary, item_num: int = -1) -> EquipmentInstance:
+	if handheld_dict.is_empty():
+		push_error("EquipmentFactory.create_from_handheld_dict: empty handheld dict")
+		return null
+
+	var amount_data = handheld_dict.get("amount", 1)
+	var amt: int = 1
+	if typeof(amount_data) == TYPE_ARRAY:
+		amt = max(1, (amount_data as Array).size())
+	else:
+		amt = max(1, int(amount_data))
+
+	var chosen_num: int = item_num if item_num > 0 else ((randi() % amt) + 1)
+
+	var ei := EquipmentInstance.new()
+	ei._init_from_handheld_dict(handheld_dict, chosen_num, _main_palette)
+	return ei
+
+# Create a random EquipmentInstance from a slot prefix (e.g., "hd","tr","ar","lg","fe","mc").
+# For weapons ("w" prefix), use create_random_weapon() instead.
 func create_random_from_prefix(prefix: String) -> EquipmentInstance:
 	var bucket: Array = StarquillData.get_equipment_by_slot_prefix(prefix)
 	if bucket.is_empty():
@@ -39,8 +59,24 @@ func create_random_from_prefix(prefix: String) -> EquipmentInstance:
 
 	return create_from_catalog(cat)
 
+# Create a random weapon from handheld catalog
+func create_random_weapon() -> EquipmentInstance:
+	var all_handheld: Array = StarquillData.get_all_handheld()
+	if all_handheld.is_empty():
+		return null
+
+	var handheld_dict: Dictionary = all_handheld[randi() % all_handheld.size()]
+	if handheld_dict.is_empty():
+		return null
+
+	return create_from_handheld_dict(handheld_dict)
+
 # Create random equipment with slot-specific restrictions
 func create_random_from_prefix_restricted(prefix: String) -> EquipmentInstance:
+	# Handle weapons separately
+	if prefix == "w":
+		return create_random_weapon()
+
 	var bucket: Array = StarquillData.get_equipment_by_slot_prefix(prefix)
 	if bucket.is_empty():
 		return null
@@ -88,7 +124,7 @@ func equip_random_set(ch: Character, extras: int = 2) -> void:
 	ch.clear_equipment()
 
 	# Determine main slot priorities and equip in order
-	var main_prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe"]
+	var main_prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe", "w"]
 	var prioritized: Array[String] = []
 	var normal: Array[String] = []
 	var by_priority: Dictionary = {}
@@ -118,6 +154,34 @@ func equip_random_set(ch: Character, extras: int = 2) -> void:
 			var ei := create_random_from_prefix_restricted(p)
 			if ei != null:
 				ch.equip_instance(ei)
+
+	# Equip off-hand weapon/shield if main_hand allows it
+	# Only equip off_hand if main_hand is empty OR has a one-handed weapon
+	if ch.main_hand == null:
+		# No main hand weapon - check off_hand chance (can equip shield/weapon)
+		if randf() <= StarquillData.get_off_hand_chance():
+			var off_hand_items: Array = StarquillData.get_one_handed_handheld()
+			if not off_hand_items.is_empty():
+				var random_handheld: Dictionary = off_hand_items[randi() % off_hand_items.size()]
+				var off_hand_weapon := create_from_handheld_dict(random_handheld)
+				if off_hand_weapon != null:
+					ch.equip_to_hand_slot(off_hand_weapon, "off_hand")
+	elif ch.main_hand != null and StarquillData.is_handheld_one_handed(ch.main_hand.item_type):
+		# Main hand has one-handed weapon - check off_hand chance
+		if randf() <= StarquillData.get_off_hand_chance():
+			var off_hand_items: Array = StarquillData.get_one_handed_handheld()
+			if not off_hand_items.is_empty():
+				var random_handheld: Dictionary = off_hand_items[randi() % off_hand_items.size()]
+				var off_hand_weapon := create_from_handheld_dict(random_handheld)
+				if off_hand_weapon != null:
+					ch.equip_to_hand_slot(off_hand_weapon, "off_hand")
+	# else: main_hand has two-handed weapon, skip off_hand equipping
+
+	# Validate weapon slot consistency
+	if ch.main_hand != null and ch.off_hand != null:
+		if StarquillData.is_handheld_two_handed(ch.main_hand.item_type):
+			push_warning("EquipmentFactory: Two-handed weapon in main_hand with off_hand equipped - clearing off_hand")
+			ch.off_hand = null
 
 	# Apply equipment chances and priorities for misc slots
 	var pool: Array[String] = ["mc", "hd", "tr", "ar", "lg", "fe"]
@@ -162,6 +226,11 @@ func _select_prefix_for_misc(pool: Array[String]) -> String:
 		return viable[0]
 
 func _force_equip_to_misc_slot(character: Character, equipment_instance: EquipmentInstance) -> void:
+	# Weapons (including shields) should not go into misc slots
+	if equipment_instance.item_type.begins_with("w"):
+		push_warning("EquipmentFactory: Cannot force weapon '%s' into misc slot" % equipment_instance.item_type)
+		return
+
 	# Directly assign to first available misc slot
 	if character.misc1 == null:
 		character.misc1 = equipment_instance

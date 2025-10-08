@@ -10,15 +10,17 @@ var stats: Stats
 var species: SpeciesInstance
 
 # Equipment slots (instances, not defs)
-@export var head:  EquipmentInstance
-@export var torso: EquipmentInstance
-@export var arms:  EquipmentInstance
-@export var legs:  EquipmentInstance
-@export var feet:  EquipmentInstance
-@export var misc1: EquipmentInstance
-@export var misc2: EquipmentInstance
-@export var misc3: EquipmentInstance
-@export var misc4: EquipmentInstance
+@export var head:      EquipmentInstance
+@export var torso:     EquipmentInstance
+@export var arms:      EquipmentInstance
+@export var legs:      EquipmentInstance
+@export var feet:      EquipmentInstance
+@export var main_hand: EquipmentInstance
+@export var off_hand:  EquipmentInstance
+@export var misc1:     EquipmentInstance
+@export var misc2:     EquipmentInstance
+@export var misc3:     EquipmentInstance
+@export var misc4:     EquipmentInstance
 
 # Colors applied to equipment layers that are marked as color-variant in equipment.json
 # key: layer_code (int) -> Color
@@ -48,20 +50,31 @@ func set_species(s: SpeciesInstance) -> void:
 		species.stats.changed.connect(_on_stats_changed)
 	emit_signal("model_changed")
 
-enum EquipSlot { HEAD, TORSO, ARMS, LEGS, FEET, MISC1, MISC2, MISC3, MISC4 }
+enum EquipSlot { HEAD, TORSO, ARMS, LEGS, FEET, MAIN_HAND, OFF_HAND, MISC1, MISC2, MISC3, MISC4 }
 
 # Back-compat: explicit slot set/get using instances
 func set_equipment(slot: int, e: EquipmentInstance) -> void:
 	match slot:
-		EquipSlot.HEAD:  head = e
-		EquipSlot.TORSO: torso = e
-		EquipSlot.ARMS:  arms = e
-		EquipSlot.LEGS:  legs = e
-		EquipSlot.FEET:  feet = e
-		EquipSlot.MISC1: misc1 = e
-		EquipSlot.MISC2: misc2 = e
-		EquipSlot.MISC3: misc3 = e
-		EquipSlot.MISC4: misc4 = e
+		EquipSlot.HEAD:      head = e
+		EquipSlot.TORSO:     torso = e
+		EquipSlot.ARMS:      arms = e
+		EquipSlot.LEGS:      legs = e
+		EquipSlot.FEET:      feet = e
+		EquipSlot.MAIN_HAND:
+			main_hand = e
+			# Clear off_hand if equipping two-handed weapon
+			if e != null and e.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(e.item_type):
+				off_hand = null
+		EquipSlot.OFF_HAND:
+			# Prevent equipping off_hand if main_hand has two-handed weapon
+			if main_hand != null and main_hand.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(main_hand.item_type):
+				push_warning("Character: Cannot equip off_hand when main_hand has two-handed weapon")
+				return
+			off_hand = e
+		EquipSlot.MISC1:     misc1 = e
+		EquipSlot.MISC2:     misc2 = e
+		EquipSlot.MISC3:     misc3 = e
+		EquipSlot.MISC4:     misc4 = e
 		_: return
 	_assign_colors_for_equipment_variants()
 	_recalc_stats()
@@ -69,27 +82,30 @@ func set_equipment(slot: int, e: EquipmentInstance) -> void:
 
 func get_equipment(slot: int) -> EquipmentInstance:
 	match slot:
-		EquipSlot.HEAD:  return head
-		EquipSlot.TORSO: return torso
-		EquipSlot.ARMS:  return arms
-		EquipSlot.LEGS:  return legs
-		EquipSlot.FEET:  return feet
-		EquipSlot.MISC1: return misc1
-		EquipSlot.MISC2: return misc2
-		EquipSlot.MISC3: return misc3
-		EquipSlot.MISC4: return misc4
+		EquipSlot.HEAD:      return head
+		EquipSlot.TORSO:     return torso
+		EquipSlot.ARMS:      return arms
+		EquipSlot.LEGS:      return legs
+		EquipSlot.FEET:      return feet
+		EquipSlot.MAIN_HAND: return main_hand
+		EquipSlot.OFF_HAND:  return off_hand
+		EquipSlot.MISC1:     return misc1
+		EquipSlot.MISC2:     return misc2
+		EquipSlot.MISC3:     return misc3
+		EquipSlot.MISC4:     return misc4
 		_: return null
 
 # Safer API for controllers: route by item_type with misc overflow
 func equip_instance(ei: EquipmentInstance) -> bool:
 	if ei == null:
 		return false
-	
+
 	# Apply equipment duplicate rule: remove all conflicting items first
 	_clear_conflicting_equipment(ei)
-	
+
 	# Now equip the new item in its preferred slot
 	var slot_name: String = StarquillData.get_slot_for_item_type(ei.item_type)
+
 	match slot_name:
 		"head":
 			head = ei
@@ -101,11 +117,15 @@ func equip_instance(ei: EquipmentInstance) -> bool:
 			legs = ei
 		"feet":
 			feet = ei
+		"main_hand":
+			return _equip_weapon(ei)
+		"off_hand":
+			off_hand = ei
 		"misc":
 			return _equip_misc_overflow(ei)
 		_:
 			return _equip_misc_overflow(ei)
-	
+
 	_assign_colors_for_equipment_variants()
 	_recalc_stats()
 	emit_signal("model_changed")
@@ -115,42 +135,110 @@ func equip_instance(ei: EquipmentInstance) -> bool:
 func _clear_conflicting_equipment(new_item: EquipmentInstance) -> void:
 	if new_item == null:
 		return
-	
+
 	# Get new item's properties for conflict detection
 	var new_item_type: String = new_item.item_type
-	
+	var new_is_weapon: bool = new_item_type.begins_with("w")
+
 	# Check all equipment slots for conflicts
-	var slots_to_check: Array[EquipmentInstance] = [head, torso, arms, legs, feet, misc1, misc2, misc3, misc4]
-	var slot_names: Array[String] = ["head", "torso", "arms", "legs", "feet", "misc1", "misc2", "misc3", "misc4"]
-	
+	var slots_to_check: Array[EquipmentInstance] = [head, torso, arms, legs, feet, main_hand, off_hand, misc1, misc2, misc3, misc4]
+	var slot_names: Array[String] = ["head", "torso", "arms", "legs", "feet", "main_hand", "off_hand", "misc1", "misc2", "misc3", "misc4"]
+
 	for i in range(slots_to_check.size()):
 		var existing_item: EquipmentInstance = slots_to_check[i]
 		if existing_item == null:
 			continue
-		
+
 		# Check for conflicts
-		if _items_conflict(new_item_type, existing_item):
+		if _items_conflict(new_item_type, existing_item, new_is_weapon):
 			# Remove conflicting item
 			match slot_names[i]:
 				"head": head = null
 				"torso": torso = null
 				"arms": arms = null
-				"legs": legs = null  
+				"legs": legs = null
 				"feet": feet = null
+				"main_hand": main_hand = null
+				"off_hand": off_hand = null
 				"misc1": misc1 = null
 				"misc2": misc2 = null
 				"misc3": misc3 = null
 				"misc4": misc4 = null
 
-# Check if two equipment items conflict (same exact item_type only)
-func _items_conflict(new_item_type: String, existing_item: EquipmentInstance) -> bool:
-	# Only conflict if exact same item_type identifier
+# Check if two equipment items conflict
+func _items_conflict(new_item_type: String, existing_item: EquipmentInstance, new_is_weapon: bool) -> bool:
+	# Weapons don't use global conflict checking - they're handled by direct slot assignment
+	# This allows dual-wielding the same weapon type in different hands
+	if new_is_weapon or existing_item.item_type.begins_with("w"):
+		return false
+
+	# Conflict if exact same item_type identifier (non-weapons only)
 	if existing_item.item_type == new_item_type:
 		return true
-	
+
 	return false
 
+func _equip_weapon(ei: EquipmentInstance) -> bool:
+	if ei == null:
+		push_warning("Character._equip_weapon: null weapon passed")
+		return false
+
+	# Check if weapon is two-handed
+	if StarquillData.is_handheld_two_handed(ei.item_type):
+		# Two-handed weapons require both hands - clear off_hand and equip to main_hand
+		off_hand = null
+		main_hand = ei
+	else:
+		# One-handed weapon - equip to main_hand by default
+		# Clear main_hand if it has a two-handed weapon
+		if main_hand != null and StarquillData.is_handheld_two_handed(main_hand.item_type):
+			main_hand = null
+		main_hand = ei
+
+	_assign_colors_for_equipment_variants()
+	_recalc_stats()
+	emit_signal("model_changed")
+	return true
+
+# Explicit hand slot equipping (for future inventory UI)
+func equip_to_hand_slot(ei: EquipmentInstance, hand_slot: String) -> bool:
+	if ei == null or not ei.item_type.begins_with("w"):
+		return false
+
+	# Apply equipment duplicate rule first
+	_clear_conflicting_equipment(ei)
+
+	if hand_slot == "off_hand":
+		# Can only equip one-handed weapons to off_hand
+		if StarquillData.is_handheld_two_handed(ei.item_type):
+			push_warning("Character: Cannot equip two-handed weapon '%s' to off_hand" % ei.item_type)
+			return false
+
+		# Cannot equip to off_hand if main_hand has a two-handed weapon
+		if main_hand != null and StarquillData.is_handheld_two_handed(main_hand.item_type):
+			push_warning("Character: Cannot equip to off_hand while main_hand has two-handed weapon")
+			return false
+
+		off_hand = ei
+	elif hand_slot == "main_hand":
+		# Two-handed weapons clear off_hand
+		if StarquillData.is_handheld_two_handed(ei.item_type):
+			off_hand = null
+		main_hand = ei
+	else:
+		return false
+
+	_assign_colors_for_equipment_variants()
+	_recalc_stats()
+	emit_signal("model_changed")
+	return true
+
 func _equip_misc_overflow(ei: EquipmentInstance) -> bool:
+	# Weapons (including shields) should not go into misc slots
+	if ei.item_type.begins_with("w"):
+		push_warning("Character: Cannot equip weapon '%s' to misc slot" % ei.item_type)
+		return false
+
 	if misc1 == null: misc1 = ei
 	elif misc2 == null: misc2 = ei
 	elif misc3 == null: misc3 = ei
@@ -169,6 +257,7 @@ func unequip(slot: int) -> void:
 func clear_equipment() -> void:
 	head = null; torso = null; arms = null
 	legs = null; feet = null
+	main_hand = null; off_hand = null
 	misc1 = null; misc2 = null; misc3 = null; misc4 = null
 	equipment_layer_colors.clear()
 	_recalc_stats()
@@ -181,6 +270,8 @@ func get_all_equipment_instances() -> Array[EquipmentInstance]:
 	if arms: out.append(arms)
 	if legs: out.append(legs)
 	if feet: out.append(feet)
+	if main_hand: out.append(main_hand)
+	if off_hand: out.append(off_hand)
 	for m in [misc1, misc2, misc3, misc4]:
 		if m: out.append(m)
 	return out
@@ -192,6 +283,8 @@ func get_all_equipment_with_slots() -> Array[Dictionary]:
 	if arms: out.append({"equipment": arms, "slot": "arms"})
 	if legs: out.append({"equipment": legs, "slot": "legs"})
 	if feet: out.append({"equipment": feet, "slot": "feet"})
+	if main_hand: out.append({"equipment": main_hand, "slot": "main_hand"})
+	if off_hand: out.append({"equipment": off_hand, "slot": "off_hand"})
 	if misc1: out.append({"equipment": misc1, "slot": "misc1"})
 	if misc2: out.append({"equipment": misc2, "slot": "misc2"})
 	if misc3: out.append({"equipment": misc3, "slot": "misc3"})

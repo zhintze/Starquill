@@ -8,6 +8,7 @@ var layer_codes: PackedInt32Array          : set = _no_set, get = _get_layer_cod
 var layer_color_variance: PackedInt32Array : set = _no_set, get = _get_layer_color_variance
 var hidden_layers: PackedInt32Array        : set = _no_set, get = _get_hidden_layers
 var modular: bool                          : set = _no_set, get = _get_modular
+var layer_variants: PackedInt32Array       : set = _no_set, get = _get_layer_variants
 
 var base_color: Color                      : set = _no_set, get = _get_base_color
 var variance_colors: Dictionary = {}       # int -> Color; read-only by convention
@@ -23,6 +24,7 @@ var _layer_codes: PackedInt32Array = PackedInt32Array()
 var _layer_color_variance: PackedInt32Array = PackedInt32Array()
 var _hidden_layers: PackedInt32Array = PackedInt32Array()
 var _modular: bool = false
+var _layer_variants: PackedInt32Array = PackedInt32Array()
 var _base_color: Color = Color(1, 1, 1, 1)
 var _stat_mods: Dictionary = {}    # e.g., {"armor": 3, "str": 1}
 
@@ -35,6 +37,7 @@ func _get_layer_codes() -> PackedInt32Array: return _layer_codes
 func _get_layer_color_variance() -> PackedInt32Array: return _layer_color_variance
 func _get_hidden_layers() -> PackedInt32Array: return _hidden_layers
 func _get_modular() -> bool: return _modular
+func _get_layer_variants() -> PackedInt32Array: return _layer_variants
 func _get_base_color() -> Color: return _base_color
 func _get_stat_mods() -> Dictionary: return _stat_mods
 func _get_stats() -> Dictionary: return _stat_mods   # alias for legacy code
@@ -56,6 +59,9 @@ func _init_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int, palett
 	_hidden_layers = PackedInt32Array(cat.hidden_layers)
 	_modular = cat.modular
 
+	# Generate layer variants for modular equipment (non-modular equipment doesn't use variants)
+	_layer_variants = PackedInt32Array()
+
 	# Pull stat mods from the catalog item, supporting either 'stats' or 'stat_mods'
 	_stat_mods.clear()
 	if cat is Object:
@@ -66,6 +72,43 @@ func _init_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int, palett
 			var sm_any: Variant = (cat as Object).get("stat_mods")
 			if typeof(sm_any) == TYPE_DICTIONARY:
 				_stat_mods = (sm_any as Dictionary).duplicate()
+
+	_initialize_colors(palette)
+
+# --------- Factory-only initializer for handheld items (private) ---------
+func _init_from_handheld_dict(handheld_dict: Dictionary, item_num: int, palette: PackedStringArray) -> void:
+	_item_type = handheld_dict.get("item_type", "")
+	_item_num = max(1, item_num)
+
+	_layer_codes = PackedInt32Array(handheld_dict.get("layer_codes", []))
+	_layer_color_variance = PackedInt32Array(handheld_dict.get("layer_color_variance", []))
+	_hidden_layers = PackedInt32Array(handheld_dict.get("hidden_layers", []))
+	_modular = handheld_dict.get("modular", false)
+
+	# Generate layer variants for modular handheld items
+	var amount_data = handheld_dict.get("amount", 0)
+	if _modular and typeof(amount_data) == TYPE_ARRAY:
+		var amount_array = amount_data as Array
+		_layer_variants = PackedInt32Array()
+		for i in range(_layer_codes.size()):
+			if i < amount_array.size():
+				var max_variants = int(amount_array[i])
+				var chosen_variant = (randi() % max_variants) + 1  # 1-indexed
+				_layer_variants.append(chosen_variant)
+			else:
+				_layer_variants.append(1)  # fallback
+	else:
+		_layer_variants = PackedInt32Array()
+
+	# Pull stat mods from the handheld item (if any)
+	_stat_mods.clear()
+	var stats_data = handheld_dict.get("stats", {})
+	if typeof(stats_data) == TYPE_DICTIONARY:
+		_stat_mods = (stats_data as Dictionary).duplicate()
+	else:
+		var stat_mods_data = handheld_dict.get("stat_mods", {})
+		if typeof(stat_mods_data) == TYPE_DICTIONARY:
+			_stat_mods = (stat_mods_data as Dictionary).duplicate()
 
 	_initialize_colors(palette)
 

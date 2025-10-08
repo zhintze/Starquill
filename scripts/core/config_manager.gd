@@ -119,10 +119,8 @@ func _initialize_application() -> void:
 	var ok_all := true
 	ok_all = ok_all and _task_load_species()
 	ok_all = ok_all and _task_verify_palette_hint()
-
-	# Hook: place any additional boot tasks here now or later
-	# ok_all = ok_all and _task_load_equipment()
-	# ok_all = ok_all and _task_load_items()
+	ok_all = ok_all and _task_load_equipment()
+	ok_all = ok_all and _task_load_weapons()
 
 	# If nothing loaded at all, shout loudly
 	if StarquillData.get_species_count() == 0:
@@ -165,12 +163,44 @@ func _task_load_species() -> bool:
 func _task_verify_palette_hint() -> bool:
 	# Non-blocking sanity check: warn if no palette JSON is present.
 	var palette_path = get_data_path("color_palettes_path")
-	
+
 	if FileAccess.file_exists(palette_path):
 		print("Color palettes JSON detected: ", palette_path)
 		return true
 	push_warning("ConfigManager: No color palettes JSON found; ColorManager will use fallback defaults.")
 	return true  # never blocks
+
+func _task_load_equipment() -> bool:
+	# Load equipment catalog (non-weapon equipment)
+	var equipment_json_candidates = get_data_paths("equipment_json_candidates")
+	var fail_fast = get_fail_fast()
+
+	for p in equipment_json_candidates:
+		if FileAccess.file_exists(p):
+			StarquillData.load_equipment_catalog_from_json(p)
+			if StarquillData.get_equipment_count() > 0:
+				return true
+			elif fail_fast:
+				push_error("ConfigManager: Equipment JSON '%s' parsed but no items added; stopping (fail_fast)." % p)
+				return false
+
+	push_warning("ConfigManager: No equipment sources found in any configured paths.")
+	return not fail_fast
+
+func _task_load_weapons() -> bool:
+	# Load handheld catalog (weapons and shields)
+	var weapons_path = "res://assets/data/weapons.json"
+
+	if FileAccess.file_exists(weapons_path):
+		StarquillData.load_handheld_catalog_from_json(weapons_path)
+		if StarquillData.get_handheld_count() > 0:
+			return true
+		else:
+			push_error("ConfigManager: Weapons JSON '%s' parsed but no items added." % weapons_path)
+			return false
+
+	push_warning("ConfigManager: Weapons JSON not found: %s" % weapons_path)
+	return false
 
 # -------------------------
 # Scene Launch Helpers

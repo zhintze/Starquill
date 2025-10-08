@@ -6,6 +6,7 @@ class_name StarquillDisplayBuilder
 
 const SPECIES_IMG_DIR := "res://assets/images/species"
 const EQUIPMENT_IMG_DIR := "res://assets/images/equipment"
+const WEAPONS_IMG_DIR := "res://assets/images/weapons"
 
 # Result wrapper for equipment building (includes hidden layers)
 class EquipmentResult:
@@ -20,14 +21,14 @@ class EquipmentResult:
 func build_character_display(character: Character) -> Array[DisplayPiece]:
 	if character == null or character.species == null:
 		return []
-	
+
 	# Apply equipment color assignments first
 	character._assign_colors_for_equipment_variants()
-	
+
 	# Build equipment pieces and get hidden layers (filter out species-restricted items)
-	var equipment_instances: Array[EquipmentInstance] = character.get_all_equipment_instances()
+	var equipment_with_slots: Array[Dictionary] = character.get_all_equipment_with_slots()
 	var species_restrictions: PackedStringArray = character.species.itemRestrictions
-	var equipment_result: EquipmentResult = build_equipment_pieces(equipment_instances, species_restrictions)
+	var equipment_result: EquipmentResult = build_equipment_pieces_with_slots(equipment_with_slots, species_restrictions)
 	var equipment_pieces: Array[DisplayPiece] = equipment_result.pieces
 	var hidden_layers: PackedInt32Array = equipment_result.hidden_species_layers
 	
@@ -86,6 +87,112 @@ func build_species_pieces(species_instance: SpeciesInstance) -> Array[DisplayPie
 	
 	return StarquillLayerManager.sort_pieces_by_layer(pieces)
 
+# Build display pieces for equipment with slot information (for off-hand transformations)
+func build_equipment_pieces_with_slots(equipment_with_slots: Array[Dictionary], restrictions: PackedStringArray = PackedStringArray()) -> EquipmentResult:
+	var result := EquipmentResult.new()
+
+	# Build slot map using item_type as key (more reliable than object reference)
+	var slot_map: Dictionary = {}  # item_type (String) -> slot_name (String)
+	var equipment_instances: Array[EquipmentInstance] = []
+
+	for item_dict in equipment_with_slots:
+		var ei: EquipmentInstance = item_dict.get("equipment", null)
+		var slot: String = item_dict.get("slot", "")
+		if ei != null:
+			equipment_instances.append(ei)
+			# Use item_type as key since deduplication might change instance references
+			slot_map[ei.item_type] = slot
+
+	# Apply "latest wins" deduplication for identical item_types
+	var deduplicated_equipment: Array[EquipmentInstance] = _deduplicate_equipment_by_type(equipment_instances)
+
+	for ei in deduplicated_equipment:
+		if ei == null:
+			continue
+
+		# Skip equipment that is restricted by species
+		if restrictions.has(ei.item_type):
+			continue
+
+		# Get slot for this equipment using item_type as key
+		var slot_name: String = slot_map.get(ei.item_type, "")
+
+		# Check for equipment in regular catalog first, then handheld catalog for weapons
+		var catalog_item: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
+		var handheld_dict: Dictionary = {}
+		var layer_codes: Array = []
+		var hidden_layers: Array = []
+
+		if catalog_item != null:
+			# Regular equipment from EquipmentCatalog
+			layer_codes = catalog_item.layer_codes
+			hidden_layers = catalog_item.hidden_layers
+		elif ei.item_type.begins_with("w"):
+			# Check handheld catalog for weapons
+			handheld_dict = StarquillData.get_handheld_by_type(ei.item_type)
+			if not handheld_dict.is_empty():
+				layer_codes = handheld_dict.get("layer_codes", [])
+				hidden_layers = handheld_dict.get("hidden_layers", [])
+			else:
+				push_warning("DisplayBuilder: unknown weapon type '%s'" % ei.item_type)
+				continue
+		else:
+			push_warning("DisplayBuilder: unknown equipment type '%s'" % ei.item_type)
+			continue
+
+		# Collect hidden species layers
+		for hidden_layer in hidden_layers:
+			result.hidden_species_layers.append(int(hidden_layer))
+
+		# Build pieces for each layer of this equipment item
+		var item_code: String = ei.item_type
+		var item_num: int = int(ei.item_num)
+
+		for i in range(layer_codes.size()):
+			var layer_code = layer_codes[i]
+			var layer: int = int(layer_code)
+
+			# For modular weapons, use layer variants; for non-modular items (including non-modular weapons), use item_num
+			var variant_num: int = item_num
+			if not handheld_dict.is_empty() and handheld_dict.get("modular", false) and ei.modular:
+				# Use layer variant for modular weapons if available
+				if ei.layer_variants.size() > i:
+					variant_num = ei.layer_variants[i]
+
+			# Use weapons directory for weapons, equipment directory for equipment
+			var img_dir: String = WEAPONS_IMG_DIR if item_code.begins_with("w") else EQUIPMENT_IMG_DIR
+
+			# Weapons use different naming convention: w01-164-0001.png vs equipment: hd01-0001-160.png
+			var path: String
+			if item_code.begins_with("w"):
+				path = "%s/%s-%03d-%04d.png" % [img_dir, item_code, layer, variant_num]
+			else:
+				path = "%s/%s-%04d-%03d.png" % [img_dir, item_code, variant_num, layer]
+
+			# Get color tint for this layer
+			var tint: Color = ei.tint_for_layer(layer_code)
+
+			# Create display piece (let load() handle missing files rather than FileAccess.file_exists)
+			var piece: DisplayPiece = DisplayPiece.from_path(path, layer, tint)
+			if piece != null:
+				# Apply off-hand transformations
+				if slot_name == "off_hand":
+					if StarquillData.is_handheld_shield(ei.item_type):
+						# Shields: translate position to align with off-hand
+						piece.offset = Vector2(42, 0)
+					else:
+						# One-handed weapons: rotate counter-clockwise and translate
+						piece.rotation_degrees = -40.0
+						piece.offset = Vector2(-21, 78)
+
+				result.pieces.append(piece)
+			else:
+				# Only warn if in debug build, since FileAccess.file_exists() doesn't work reliably in exports
+				if OS.is_debug_build():
+					push_warning("DisplayBuilder: equipment texture not found: %s" % path)
+
+	return result
+
 # Build display pieces for equipment instances
 func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: PackedStringArray = PackedStringArray()) -> EquipmentResult:
 	var result := EquipmentResult.new()
@@ -101,22 +208,57 @@ func build_equipment_pieces(equipment: Array[EquipmentInstance], restrictions: P
 		if restrictions.has(ei.item_type):
 			continue
 		
+		# Check for equipment in regular catalog first, then handheld catalog for weapons
 		var catalog_item: EquipmentCatalog.CatalogItem = StarquillData.get_equipment_by_type(ei.item_type)
-		if catalog_item == null:
+		var handheld_dict: Dictionary = {}
+		var layer_codes: Array = []
+		var hidden_layers: Array = []
+
+		if catalog_item != null:
+			# Regular equipment from EquipmentCatalog
+			layer_codes = catalog_item.layer_codes
+			hidden_layers = catalog_item.hidden_layers
+		elif ei.item_type.begins_with("w"):
+			# Check handheld catalog for weapons
+			handheld_dict = StarquillData.get_handheld_by_type(ei.item_type)
+			if not handheld_dict.is_empty():
+				layer_codes = handheld_dict.get("layer_codes", [])
+				hidden_layers = handheld_dict.get("hidden_layers", [])
+			else:
+				push_warning("DisplayBuilder: unknown weapon type '%s'" % ei.item_type)
+				continue
+		else:
 			push_warning("DisplayBuilder: unknown equipment type '%s'" % ei.item_type)
 			continue
-		
+
 		# Collect hidden species layers
-		for hidden_layer in catalog_item.hidden_layers:
+		for hidden_layer in hidden_layers:
 			result.hidden_species_layers.append(int(hidden_layer))
-		
+
 		# Build pieces for each layer of this equipment item
 		var item_code: String = ei.item_type
 		var item_num: int = int(ei.item_num)
-		
-		for layer_code in catalog_item.layer_codes:
+
+		for i in range(layer_codes.size()):
+			var layer_code = layer_codes[i]
 			var layer: int = int(layer_code)
-			var path := "%s/%s-%04d-%03d.png" % [EQUIPMENT_IMG_DIR, item_code, item_num, layer]
+
+			# For modular weapons, use layer variants; for non-modular items (including non-modular weapons), use item_num
+			var variant_num: int = item_num
+			if not handheld_dict.is_empty() and handheld_dict.get("modular", false) and ei.modular:
+				# Use layer variant for modular weapons if available
+				if ei.layer_variants.size() > i:
+					variant_num = ei.layer_variants[i]
+
+			# Use weapons directory for weapons, equipment directory for equipment
+			var img_dir: String = WEAPONS_IMG_DIR if item_code.begins_with("w") else EQUIPMENT_IMG_DIR
+
+			# Weapons use different naming convention: w01-164-0001.png vs equipment: hd01-0001-160.png
+			var path: String
+			if item_code.begins_with("w"):
+				path = "%s/%s-%03d-%04d.png" % [img_dir, item_code, layer, variant_num]
+			else:
+				path = "%s/%s-%04d-%03d.png" % [img_dir, item_code, variant_num, layer]
 			
 			# Get color tint for this layer
 			var tint: Color = ei.tint_for_layer(layer_code)
