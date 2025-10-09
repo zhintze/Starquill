@@ -93,7 +93,7 @@ func _initialize_default_config() -> void:
 		"min_id_length": 1
 	},
 	"boot_settings": {
-		"target_scene_path": "res://scenes/CharacterRandomizer.tscn",
+		"target_scene_path": "res://scenes/main_menu.tscn",
 		"fail_fast": false
 	}
 }
