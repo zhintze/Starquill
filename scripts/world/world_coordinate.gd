@@ -33,8 +33,8 @@ static func pixel_to_tile(pixel_pos: Vector2) -> Vector2i:
 	)
 
 # Convert screen position to world tile position
-static func screen_to_world(screen_pos: Vector2, camera_pos: Vector2, camera_zoom: Vector2) -> Vector2i:
-	var world_pixel_pos = (screen_pos / camera_zoom) + camera_pos - (get_viewport().size / 2.0 / camera_zoom)
+static func screen_to_world(screen_pos: Vector2, camera_pos: Vector2, camera_zoom: Vector2, viewport_size: Vector2) -> Vector2i:
+	var world_pixel_pos = (screen_pos / camera_zoom) + camera_pos - (viewport_size / 2.0 / camera_zoom)
 	return pixel_to_tile(world_pixel_pos)
 
 # Check if position is within world bounds
