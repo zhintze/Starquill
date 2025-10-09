@@ -122,8 +122,8 @@ func _update_debug_info() -> void:
 	if debug_label:
 		var info = "World: %s\n" % world_map.world_name
 		info += "Position: %v\n" % world_map.party_position
-		info += "Chunk: %v\n" % WorldConstants.world_to_chunk(world_map.party_position)
-		info += "Loaded Chunks: %d\n" % world_map.loaded_chunks.size()
+		info += "Chunk: %v\n" % WorldCoordinate.world_to_chunk(world_map.party_position)
+		info += "Loaded Chunks: %d\n" % world_map.chunk_manager.loaded_chunks.size()
 		info += "Visible Tiles: %d\n" % world_map.visible_tiles.size()
 
 		var tile = world_map.get_tile(world_map.party_position)
