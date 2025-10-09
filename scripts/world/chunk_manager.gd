@@ -105,6 +105,14 @@ func _process_generation_queue() -> void:
 	is_generating = true
 	var chunk_pos = generation_queue.pop_front()
 
+	# Prepare data for thread
+	var thread_data = {
+		"chunk_pos": chunk_pos,
+		"world_seed": world_map.world_seed,
+		"location_density": world_map.location_density,
+		"biome_seed_points": world_map.biome_seed_points.duplicate()
+	}
+
 	# Find available thread
 	for thread in thread_pool:
 		if not thread.is_started() or not thread.is_alive():
@@ -113,31 +121,35 @@ func _process_generation_queue() -> void:
 
 			active_threads += 1
 			chunk_generation_started.emit(chunk_pos)
-			thread.start(_generate_chunk_threaded.bind(chunk_pos))
+			thread.start(_generate_chunk_threaded.bind(thread_data))
 			break
 
-func _generate_chunk_threaded(chunk_pos: Vector2i) -> Chunk:
+func _generate_chunk_threaded(thread_data: Dictionary) -> Chunk:
 	var start_time = Time.get_ticks_msec()
+	var chunk_pos = thread_data["chunk_pos"]
+	var world_seed = thread_data["world_seed"]
+	var location_density = thread_data["location_density"]
+	var biome_seed_points = thread_data["biome_seed_points"]
 
 	# Generate chunk data
 	var chunk = Chunk.new(chunk_pos)
 	var world_pos = WorldCoordinate.chunk_to_world(chunk_pos)
 	var rng = RandomNumberGenerator.new()
-	rng.seed = hash(Vector3i(world_map.world_seed, chunk_pos.x, chunk_pos.y))
+	rng.seed = hash(Vector3i(world_seed, chunk_pos.x, chunk_pos.y))
 
 	# Get biome for this chunk
-	var biome_type = _determine_chunk_biome(world_pos, rng)
+	var biome_type = _determine_chunk_biome(world_pos, biome_seed_points, rng)
 	chunk.dominant_biome = biome_type
 
 	# Generate tiles
 	for x in range(WorldConstants.CHUNK_SIZE):
 		for y in range(WorldConstants.CHUNK_SIZE):
 			var tile_world_pos = Vector2i(world_pos.x + x, world_pos.y + y)
-			var tile = _generate_tile(tile_world_pos, biome_type, rng)
+			var tile = _generate_tile(tile_world_pos, biome_type, world_seed, rng)
 			chunk.set_tile(x, y, tile)
 
 	# Check for location spawning
-	_check_chunk_locations(chunk, rng)
+	_check_chunk_locations(chunk, location_density, rng)
 
 	var generation_time = (Time.get_ticks_msec() - start_time) / 1000.0
 	generation_time_total += generation_time
@@ -233,16 +245,16 @@ func _rebuild_cache_lookup() -> void:
 	for i in range(chunk_cache.size()):
 		cache_lookup[chunk_cache[i].chunk_position] = i
 
-func _determine_chunk_biome(world_pos: Vector2i, rng: RandomNumberGenerator) -> int:
+func _determine_chunk_biome(world_pos: Vector2i, biome_seed_points: Dictionary, rng: RandomNumberGenerator) -> int:
 	# Find nearest biome seed point
 	var nearest_biome = WorldConstants.BiomeType.PLAINS
 	var nearest_distance = INF
 
-	for seed_pos in world_map.biome_seed_points:
+	for seed_pos in biome_seed_points:
 		var distance = WorldCoordinate.euclidean_distance(world_pos, seed_pos)
 		if distance < nearest_distance:
 			nearest_distance = distance
-			nearest_biome = world_map.biome_seed_points[seed_pos]
+			nearest_biome = biome_seed_points[seed_pos]
 
 	# Add some variation at biome edges
 	if nearest_distance > 100 and rng.randf() < 0.3:
@@ -252,11 +264,11 @@ func _determine_chunk_biome(world_pos: Vector2i, rng: RandomNumberGenerator) -> 
 
 	return nearest_biome
 
-func _generate_tile(world_pos: Vector2i, biome: int, rng: RandomNumberGenerator) -> Tile:
+func _generate_tile(world_pos: Vector2i, biome: int, world_seed: int, rng: RandomNumberGenerator) -> Tile:
 	var tile = Tile.new()
 
 	# Simple noise-based generation
-	var noise_value = _simple_noise(world_pos, world_map.world_seed)
+	var noise_value = _simple_noise(world_pos, world_seed)
 
 	# Apply biome-specific rules
 	_apply_biome_rules(tile, biome, noise_value)
@@ -319,9 +331,9 @@ func _apply_biome_rules(tile: Tile, biome: int, noise_value: float) -> void:
 		_:
 			tile.type = WorldConstants.TileType.GROUND
 
-func _check_chunk_locations(chunk: Chunk, rng: RandomNumberGenerator) -> void:
+func _check_chunk_locations(chunk: Chunk, location_density: float, rng: RandomNumberGenerator) -> void:
 	# Check if we should spawn a location in this chunk
-	var spawn_chance = world_map.location_density * WorldConstants.CHUNK_SIZE * WorldConstants.CHUNK_SIZE
+	var spawn_chance = location_density * WorldConstants.CHUNK_SIZE * WorldConstants.CHUNK_SIZE
 
 	if rng.randf() < spawn_chance:
 		# Try to find a valid spawn position
