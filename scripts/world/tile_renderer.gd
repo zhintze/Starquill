@@ -81,13 +81,10 @@ func _create_tileset() -> void:
 
 func _create_terrain_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
-
-	# Load placeholder texture or actual terrain tiles
-	var texture = _load_or_create_texture("terrain")
+	var texture = _create_terrain_atlas_texture()
 	atlas_source.texture = texture
 
-	# Define terrain tiles (assuming 64x64 tiles in atlas)
-	# Ground variations
+	# Define terrain tiles
 	for i in range(4):
 		atlas_source.create_tile(Vector2i(i, 0), Vector2i(1, 1))
 		tile_atlas_coords["ground_%d" % i] = Vector2i(i, 0)
@@ -109,8 +106,7 @@ func _create_terrain_atlas() -> void:
 
 func _create_feature_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
-
-	var texture = _load_or_create_texture("features")
+	var texture = _create_features_atlas_texture()
 	atlas_source.texture = texture
 
 	# Tree variations
@@ -127,8 +123,7 @@ func _create_feature_atlas() -> void:
 
 func _create_location_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
-
-	var texture = _load_or_create_texture("locations")
+	var texture = _create_locations_atlas_texture()
 	atlas_source.texture = texture
 
 	# Location type icons
@@ -145,50 +140,145 @@ func _create_location_atlas() -> void:
 
 func _create_fog_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
-
-	var texture = _load_or_create_texture("fog")
+	var texture = _create_fog_atlas_texture()
 	atlas_source.texture = texture
 
 	# Fog states
-	atlas_source.create_tile(Vector2i(0, 0), Vector2i(1, 1))  # Full fog
+	atlas_source.create_tile(Vector2i(0, 0), Vector2i(1, 1))
 	tile_atlas_coords["fog_full"] = Vector2i(0, 0)
 
-	atlas_source.create_tile(Vector2i(1, 0), Vector2i(1, 1))  # Partial fog (revealed)
+	atlas_source.create_tile(Vector2i(1, 0), Vector2i(1, 1))
 	tile_atlas_coords["fog_revealed"] = Vector2i(1, 0)
 
 	tileset.add_source(atlas_source, fog_source_id)
 
-func _load_or_create_texture(type: String) -> Texture2D:
-	# Try to load actual texture
-	var texture_path = "res://assets/images/tiles/%s_atlas.png" % type
+func _create_terrain_atlas_texture() -> Texture2D:
+	var tile_size = WorldConstants.TILE_SIZE
+	var atlas_image = Image.create(tile_size * 4, tile_size * 3, false, Image.FORMAT_RGBA8)
+	atlas_image.fill(Color(0, 0, 0, 0))  # Transparent
 
-	if ResourceLoader.exists(texture_path):
-		return load(texture_path)
+	# Load flat tile variations (worldmap-flat1 through flat7)
+	var flat_tiles = []
+	for i in range(1, 8):
+		var tile_image = _load_worldmap_texture("flat%d" % i)
+		if tile_image:
+			flat_tiles.append(tile_image)
 
-	# Create placeholder texture
+	# If no tiles loaded, use placeholder
+	if flat_tiles.is_empty():
+		return _create_placeholder_atlas()
+
+	# Row 0: Ground variations (use flat1-4)
+	for i in range(4):
+		var tile_idx = i % flat_tiles.size()
+		_blit_tile_to_atlas(atlas_image, flat_tiles[tile_idx], i * tile_size, 0)
+
+	# Row 1: Road and bridge tiles (use flat5-6)
+	var road_idx = mini(4, flat_tiles.size() - 1)
+	var bridge_idx = mini(5, flat_tiles.size() - 1)
+	_blit_tile_to_atlas(atlas_image, flat_tiles[road_idx], 0, tile_size)
+	_blit_tile_to_atlas(atlas_image, flat_tiles[bridge_idx], tile_size, tile_size)
+
+	# Row 2: Water tiles (use flat7 or last available)
+	var water_idx = mini(6, flat_tiles.size() - 1)
+	for i in range(4):
+		_blit_tile_to_atlas(atlas_image, flat_tiles[water_idx], i * tile_size, tile_size * 2)
+
+	return ImageTexture.create_from_image(atlas_image)
+
+func _create_features_atlas_texture() -> Texture2D:
+	var tile_size = WorldConstants.TILE_SIZE
+	var atlas_image = Image.create(tile_size * 4, tile_size * 2, false, Image.FORMAT_RGBA8)
+	atlas_image.fill(Color(0, 0, 0, 0))  # Transparent
+
+	var forest_texture = _load_worldmap_texture("forest")
+	var mountains_texture = _load_worldmap_texture("mountains")
+
+	# Row 0: Tree variations (forest texture)
+	for i in range(4):
+		if forest_texture:
+			_blit_tile_to_atlas(atlas_image, forest_texture, i * tile_size, 0)
+
+	# Row 1: Mountain variations (mountains texture)
+	for i in range(4):
+		if mountains_texture:
+			_blit_tile_to_atlas(atlas_image, mountains_texture, i * tile_size, tile_size)
+
+	return ImageTexture.create_from_image(atlas_image)
+
+func _create_locations_atlas_texture() -> Texture2D:
+	var tile_size = WorldConstants.TILE_SIZE
+	var atlas_image = Image.create(tile_size * 7, tile_size, false, Image.FORMAT_RGBA8)
+	atlas_image.fill(Color(0, 0, 0, 0))  # Transparent
+
+	var village_texture = _load_worldmap_texture("village")
+	var dungeon_texture = _load_worldmap_texture("dungeon")
+
+	var location_textures = [
+		village_texture,   # VILLAGE
+		dungeon_texture,   # CAVE
+		dungeon_texture,   # DUNGEON
+		village_texture,   # SHRINE
+		village_texture,   # CASTLE
+		dungeon_texture,   # RUIN
+		village_texture    # CAMP
+	]
+
+	for i in range(7):
+		var texture = location_textures[i]
+		if texture:
+			_blit_tile_to_atlas(atlas_image, texture, i * tile_size, 0)
+
+	return ImageTexture.create_from_image(atlas_image)
+
+func _create_fog_atlas_texture() -> Texture2D:
+	var tile_size = WorldConstants.TILE_SIZE
+	var image = Image.create(tile_size * 2, tile_size, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.1, 0.1, 0.1, 0.9))  # Dark fog
+
+	# Second tile: semi-transparent for revealed
+	for x in range(tile_size, tile_size * 2):
+		for y in range(tile_size):
+			image.set_pixel(x, y, Color(0.1, 0.1, 0.1, 0.5))
+
+	return ImageTexture.create_from_image(image)
+
+func _create_placeholder_atlas() -> Texture2D:
 	var image = Image.create(256, 256, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.3, 0.3, 0.3))
+	return ImageTexture.create_from_image(image)
 
-	# Fill with debug pattern based on type
-	match type:
-		"terrain":
-			image.fill(Color(0.3, 0.5, 0.2))  # Green for terrain
-		"features":
-			image.fill(Color(0.4, 0.3, 0.2))  # Brown for features
-		"locations":
-			image.fill(Color(0.8, 0.6, 0.2))  # Gold for locations
-		"fog":
-			image.fill(Color(0.1, 0.1, 0.1))  # Dark for fog
-		_:
-			image.fill(Color(0.5, 0.5, 0.5))  # Gray default
+func _load_worldmap_texture(type: String) -> Image:
+	var texture_path = "res://assets/images/ui/worldmap-%s.png" % type
+	if ResourceLoader.exists(texture_path):
+		var texture = load(texture_path) as Texture2D
+		if texture:
+			var image = texture.get_image()
+			if image:
+				print("TileRenderer: Loaded %s texture %dx%d" % [type, image.get_width(), image.get_height()])
+				return image
+	print("TileRenderer: Failed to load %s texture" % type)
+	return null
 
-	# Add grid lines for debugging
-	for x in range(0, 256, 64):
-		for y in range(256):
-			image.set_pixel(x, y, Color.BLACK)
-	for y in range(0, 256, 64):
-		for x in range(256):
-			image.set_pixel(x, y, Color.BLACK)
 
+func _blit_tile_to_atlas(atlas: Image, tile: Image, x_offset: int, y_offset: int) -> void:
+	if not tile:
+		return
+
+	var tile_width = tile.get_width()
+	var tile_height = tile.get_height()
+
+	# Blit the tile directly without scaling
+	for x in range(tile_width):
+		for y in range(tile_height):
+			if x + x_offset < atlas.get_width() and y + y_offset < atlas.get_height():
+				var pixel = tile.get_pixel(x, y)
+				if pixel.a > 0.1:  # Only copy non-transparent pixels
+					atlas.set_pixel(x + x_offset, y + y_offset, pixel)
+
+func _create_placeholder_texture() -> Texture2D:
+	var image = Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.5, 0.5, 0.5))
 	return ImageTexture.create_from_image(image)
 
 func _setup_batch_timer() -> void:

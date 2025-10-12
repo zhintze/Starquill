@@ -15,6 +15,18 @@ var party_position: Vector2i = Vector2i.ZERO
 var visible_tiles: Array[Vector2i] = []
 var revealed_tiles: Array[Vector2i] = []
 
+# Party movement animation
+var party_member_positions: Array[Vector2i] = []  # Current tile positions for each member
+var party_member_trail: Array[Vector2i] = []  # Movement history trail
+var party_member_facing: Array[bool] = []  # True = facing right, False = facing left
+var party_member_hop_offsets: Array[float] = []  # Phase offset for each character's hop
+var party_member_hop_speeds: Array[float] = []  # Slight speed variation for each character
+var is_party_moving: bool = false
+var movement_progress: float = 0.0
+var movement_duration: float = 0.6  # seconds per tile (doubled from 0.3)
+var hop_height: float = 20.0  # pixels to hop up
+var hop_frequency: float = 3.0  # hops per tile movement (stays same, so hops are slower)
+
 # Generation parameters
 var location_density: float = WorldConstants.LOCATION_DENSITY
 var biome_seed_points: Dictionary = {}  # position -> biome_type
@@ -36,6 +48,7 @@ func _ready():
 	_setup_containers()
 	_connect_signals()
 	initialize_world()
+	set_process(true)
 
 func _setup_containers() -> void:
 	# Container for chunks
@@ -65,10 +78,27 @@ func _setup_containers() -> void:
 	effect_container.z_index = 20
 	add_child(effect_container)
 
+	_setup_party_visuals()
+
+func _setup_party_visuals() -> void:
+	# Create CharacterDisplay nodes for each party member
+	# Higher slot numbers render on top (reverse z-index)
+	var display_size = WorldConstants.TILE_SIZE
+	for i in range(WorldConstants.MAX_PARTY_SIZE):
+		var char_display = CharacterDisplay.new()
+		char_display.name = "PartyMember%d" % i
+		char_display.z_index = 10 + (WorldConstants.MAX_PARTY_SIZE - i)  # Reverse order
+		char_display.visible = false
+		char_display.custom_minimum_size = Vector2(display_size, display_size)
+		char_display.size = Vector2(display_size, display_size)
+		party_container.add_child(char_display)
+
 func _connect_signals() -> void:
 	# Connect to party bus signals
 	BusParty.party_moved.connect(_on_party_moved)
 	BusParty.party_teleported.connect(_on_party_teleported)
+	BusParty.member_added.connect(_on_party_member_added)
+	BusParty.member_removed.connect(_on_party_member_removed)
 
 	# Connect to world bus signals
 	BusWorld.world_saved.connect(_on_world_saved)
@@ -91,12 +121,18 @@ func initialize_world() -> void:
 	# Set initial party position (center of world)
 	party_position = Vector2i(world_size.x / 2, world_size.y / 2)
 
+	# Initialize party member positions
+	_initialize_party_positions()
+
 	# Load initial chunks around party
 	var party_chunk = WorldCoordinate.world_to_chunk(party_position)
 	chunk_manager.update_loaded_chunks(party_chunk)
 
 	# Calculate initial visibility
 	_update_visibility()
+
+	# Update party visuals
+	_update_party_visuals()
 
 	is_initialized = true
 	BusWorld.world_created.emit(world_name, world_seed)
@@ -180,7 +216,42 @@ func _update_visibility() -> void:
 
 	BusWorld.visibility_updated.emit(visible_tiles)
 
+func _process(delta: float) -> void:
+	if is_party_moving:
+		_update_movement_animation(delta)
+
+func _initialize_party_positions() -> void:
+	party_member_positions.clear()
+	party_member_trail.clear()
+	party_member_facing.clear()
+	party_member_hop_offsets.clear()
+	party_member_hop_speeds.clear()
+
+	if not PlayerData or not PlayerData.party:
+		return
+
+	var party_size = PlayerData.party.members.size()
+
+	# Initialize all members at leader position, facing right
+	for i in range(party_size):
+		party_member_positions.append(party_position)
+		party_member_facing.append(true)  # Start facing right
+
+		# Add slight phase offset (staggered by 15% of a hop cycle)
+		var phase_offset = (i * 0.15) * PI * 2.0
+		party_member_hop_offsets.append(phase_offset)
+
+		# Add tiny random speed variation (±5% of base frequency)
+		var speed_variance = randf_range(0.95, 1.05)
+		party_member_hop_speeds.append(speed_variance)
+
+	# Add initial position to trail
+	party_member_trail.append(party_position)
+
 func move_party(new_position: Vector2i) -> bool:
+	if is_party_moving:
+		return false  # Can't move while already moving
+
 	if not WorldCoordinate.is_valid_position(new_position):
 		return false
 
@@ -188,8 +259,18 @@ func move_party(new_position: Vector2i) -> bool:
 	if not tile or not tile.is_passable:
 		return false
 
+	# Start movement animation
 	var old_position = party_position
 	party_position = new_position
+
+	# Update trail for followers
+	party_member_trail.insert(0, new_position)
+	if party_member_trail.size() > WorldConstants.MAX_PARTY_SIZE:
+		party_member_trail.resize(WorldConstants.MAX_PARTY_SIZE)
+
+	# Start animation
+	is_party_moving = true
+	movement_progress = 0.0
 
 	# Update chunks if needed
 	_update_loaded_chunks()
@@ -201,14 +282,118 @@ func move_party(new_position: Vector2i) -> bool:
 
 	return true
 
+func _update_movement_animation(delta: float) -> void:
+	movement_progress += delta / movement_duration
+
+	if movement_progress >= 1.0:
+		# Animation complete
+		movement_progress = 1.0
+		is_party_moving = false
+
+		# Update final positions
+		for i in range(party_member_positions.size()):
+			if i < party_member_trail.size():
+				party_member_positions[i] = party_member_trail[i]
+
+	# Update visual positions with animation
+	_update_party_visuals_animated()
+
+func _update_party_visuals() -> void:
+	if not PlayerData or not PlayerData.party:
+		return
+
+	var party_members = PlayerData.party.members
+
+	for i in range(WorldConstants.MAX_PARTY_SIZE):
+		var char_display = party_container.get_node("PartyMember%d" % i) as CharacterDisplay
+		if i < party_members.size():
+			var character = party_members[i]
+			char_display.set_character(character)
+			char_display.visible = true
+
+			# Use stored position for this member
+			var member_world_pos = party_member_positions[i] if i < party_member_positions.size() else party_position
+			var pixel_pos = WorldConstants.tile_to_pixel(member_world_pos)
+
+			# Center the character display on the tile
+			var half_tile = WorldConstants.TILE_SIZE / 2
+			char_display.position = pixel_pos - Vector2(half_tile, half_tile)
+		else:
+			char_display.visible = false
+
+func _update_party_visuals_animated() -> void:
+	if not PlayerData or not PlayerData.party:
+		return
+
+	var party_members = PlayerData.party.members
+	var t = movement_progress  # 0.0 to 1.0
+
+	for i in range(WorldConstants.MAX_PARTY_SIZE):
+		var char_display = party_container.get_node("PartyMember%d" % i) as CharacterDisplay
+		if i < party_members.size() and i < party_member_positions.size():
+			# Get start and end positions for this member
+			var start_pos = party_member_positions[i]
+			var end_pos = party_member_trail[i] if i < party_member_trail.size() else start_pos
+
+			# Get this character's hop timing
+			var phase_offset = party_member_hop_offsets[i] if i < party_member_hop_offsets.size() else 0.0
+			var speed_variance = party_member_hop_speeds[i] if i < party_member_hop_speeds.size() else 1.0
+
+			# Calculate continuous hopping with per-character variation
+			var hop_progress = (t * hop_frequency * speed_variance) + (phase_offset / (PI * 2.0))
+			var hop_offset = abs(sin(hop_progress * PI)) * hop_height
+
+			# Linear interpolation for sliding movement
+			var lerp_x = lerp(float(start_pos.x), float(end_pos.x), t)
+			var lerp_y = lerp(float(start_pos.y), float(end_pos.y), t)
+
+			var pixel_pos = Vector2(
+				lerp_x * WorldConstants.TILE_SIZE,
+				lerp_y * WorldConstants.TILE_SIZE
+			)
+
+			# Apply hop offset (vertical only, upward)
+			var half_tile = WorldConstants.TILE_SIZE / 2
+			char_display.position = pixel_pos - Vector2(half_tile, half_tile + hop_offset)
+
+			# Update horizontal flip based on movement direction
+			_update_character_flip(char_display, i, start_pos, end_pos)
+		else:
+			char_display.visible = false
+
+func _update_character_flip(char_display: CharacterDisplay, member_index: int, start_pos: Vector2i, end_pos: Vector2i) -> void:
+	if member_index >= party_member_facing.size():
+		return
+
+	var movement_dir = end_pos.x - start_pos.x
+
+	# Only update facing if there's actual horizontal movement
+	if movement_dir < 0:  # Moving left
+		# Face left
+		char_display.set_facing_left(true)
+		party_member_facing[member_index] = false
+	elif movement_dir > 0:  # Moving right
+		# Face right
+		char_display.set_facing_left(false)
+		party_member_facing[member_index] = true
+	# If movement_dir == 0, maintain current facing direction
+
 # Signal handlers
 func _on_party_moved(from: Vector2i, to: Vector2i) -> void:
 	move_party(to)
+	_update_party_visuals()
 
 func _on_party_teleported(to: Vector2i) -> void:
 	party_position = to
 	_update_loaded_chunks()
 	_update_visibility()
+	_update_party_visuals()
+
+func _on_party_member_added(_character, _position: int) -> void:
+	_update_party_visuals()
+
+func _on_party_member_removed(_character) -> void:
+	_update_party_visuals()
 
 func _on_world_saved(_world_name: String) -> void:
 	print("World saved: %s" % _world_name)

@@ -7,10 +7,23 @@ var debug_label: Label
 
 func _ready():
 	print("World Test Scene initializing...")
+	_setup_test_party()
 	_setup_world()
 	_setup_camera()
 	_setup_debug_ui()
 	_connect_signals()
+
+func _setup_test_party() -> void:
+	# Initialize party if not already created
+	if PlayerData.party.members.is_empty():
+		PlayerData.initialize_new_game()
+		for i in range(4):
+			var species_instance = StarquillData.create_random_species_instance()
+			var character = CharacterFactory.create_from_species_instance(species_instance)
+			character.display_name = "Hero %d" % (i + 1)
+			equipment_factory.equip_random_set(character)
+			PlayerData.add_character(character)
+		print("Created test party with %d members" % PlayerData.party.members.size())
 
 func _setup_world() -> void:
 	# Create world map instance
