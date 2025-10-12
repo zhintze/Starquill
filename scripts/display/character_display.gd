@@ -9,6 +9,7 @@ class_name CharacterDisplay
 var _character: Character
 var _piece_nodes: Array[TextureRect] = []
 var _content_size: Vector2 = Vector2.ZERO   # unscaled assembled bounds
+var _is_facing_left: bool = false
 
 func _ready() -> void:
 	# Root is pickable. Children ignore input so nothing steals events.
@@ -26,6 +27,11 @@ func set_character(c: Character) -> void:
 	if _character and not _character.model_changed.is_connected(_on_model_changed):
 		_character.model_changed.connect(_on_model_changed)
 	_redraw()
+
+func set_facing_left(facing_left: bool) -> void:
+	if _is_facing_left != facing_left:
+		_is_facing_left = facing_left
+		_update_flip_state()
 
 # ---------- Signals ----------
 func _on_model_changed() -> void:
@@ -83,7 +89,19 @@ func _redraw() -> void:
 		tr.position = p.offset
 		tr.scale = p.scale
 		tr.rotation_degrees = p.rotation_degrees
-		tr.flip_h = p.flip_h
+
+		# Apply horizontal flip based on facing direction
+		# Off-hand weapons/shields need extra flip on their x-axis when character flips
+		if p.is_offhand_weapon:
+			# Off-hand items: flip their scale.x in addition to normal flip
+			var base_flip = p.flip_h != _is_facing_left
+			tr.flip_h = base_flip
+			# Also flip the scale.x to mirror the item position
+			tr.scale.x = p.scale.x * (-1 if _is_facing_left else 1)
+		else:
+			# Normal pieces: just apply flip
+			tr.flip_h = p.flip_h != _is_facing_left
+
 		tr.flip_v = p.flip_v
 
 		tr.z_as_relative = true
@@ -118,6 +136,24 @@ func _ensure_piece_nodes(count: int) -> void:
 func _hide_all_pieces() -> void:
 	for n in _piece_nodes:
 		n.visible = false
+
+func _update_flip_state() -> void:
+	# Update flip on all visible pieces without full redraw
+	if _character == null or _character.species == null:
+		return
+
+	var pieces: Array[DisplayPiece] = _character.get_display_pieces()
+	for i in range(min(pieces.size(), _piece_nodes.size())):
+		var p: DisplayPiece = pieces[i]
+		var tr: TextureRect = _piece_nodes[i]
+		if tr.visible:
+			# Off-hand weapons/shields need extra flip handling
+			if p.is_offhand_weapon:
+				var base_flip = p.flip_h != _is_facing_left
+				tr.flip_h = base_flip
+				tr.scale.x = p.scale.x * (-1 if _is_facing_left else 1)
+			else:
+				tr.flip_h = p.flip_h != _is_facing_left
 
 # ---------- Scaling & Anchoring ----------
 func _update_global_scale() -> void:

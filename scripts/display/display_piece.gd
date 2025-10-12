@@ -9,6 +9,7 @@ class_name DisplayPiece
 @export var rotation_degrees: float = 0.0
 @export var flip_h: bool = false
 @export var flip_v: bool = false
+@export var is_offhand_weapon: bool = false  # Special flag for off-hand weapons/shields
 
 static func make(tex: Texture2D, layer_value: int, col: Color) -> DisplayPiece:
 	var dp := DisplayPiece.new()
