@@ -83,6 +83,7 @@ func _create_terrain_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
 	var texture = _create_terrain_atlas_texture()
 	atlas_source.texture = texture
+	atlas_source.texture_region_size = Vector2i(WorldConstants.TILE_SIZE, WorldConstants.TILE_SIZE)
 
 	# Define terrain tiles
 	for i in range(4):
@@ -108,6 +109,7 @@ func _create_feature_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
 	var texture = _create_features_atlas_texture()
 	atlas_source.texture = texture
+	atlas_source.texture_region_size = Vector2i(WorldConstants.TILE_SIZE, WorldConstants.TILE_SIZE)
 
 	# Tree variations
 	for i in range(4):
@@ -125,6 +127,7 @@ func _create_location_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
 	var texture = _create_locations_atlas_texture()
 	atlas_source.texture = texture
+	atlas_source.texture_region_size = Vector2i(WorldConstants.TILE_SIZE, WorldConstants.TILE_SIZE)
 
 	# Location type icons
 	var location_types = [
@@ -142,6 +145,7 @@ func _create_fog_atlas() -> void:
 	var atlas_source = TileSetAtlasSource.new()
 	var texture = _create_fog_atlas_texture()
 	atlas_source.texture = texture
+	atlas_source.texture_region_size = Vector2i(WorldConstants.TILE_SIZE, WorldConstants.TILE_SIZE)
 
 	# Fog states
 	atlas_source.create_tile(Vector2i(0, 0), Vector2i(1, 1))
@@ -265,16 +269,16 @@ func _blit_tile_to_atlas(atlas: Image, tile: Image, x_offset: int, y_offset: int
 	if not tile:
 		return
 
-	var tile_width = tile.get_width()
-	var tile_height = tile.get_height()
+	var tile_size = WorldConstants.TILE_SIZE
 
-	# Blit the tile directly without scaling
-	for x in range(tile_width):
-		for y in range(tile_height):
-			if x + x_offset < atlas.get_width() and y + y_offset < atlas.get_height():
-				var pixel = tile.get_pixel(x, y)
-				if pixel.a > 0.1:  # Only copy non-transparent pixels
-					atlas.set_pixel(x + x_offset, y + y_offset, pixel)
+	# Scale tile to match TILE_SIZE if needed
+	var scaled_tile = tile
+	if tile.get_width() != tile_size or tile.get_height() != tile_size:
+		scaled_tile = tile.duplicate()
+		scaled_tile.resize(tile_size, tile_size, Image.INTERPOLATE_NEAREST)
+
+	# Blit the scaled tile
+	atlas.blit_rect(scaled_tile, Rect2i(0, 0, tile_size, tile_size), Vector2i(x_offset, y_offset))
 
 func _create_placeholder_texture() -> Texture2D:
 	var image = Image.create(64, 64, false, Image.FORMAT_RGBA8)

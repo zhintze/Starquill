@@ -1,6 +1,9 @@
 extends Node2D
 class_name WorldMap
 
+
+const CHARACTER_TILE_OFFSET: float = 0.55;
+
 # World properties
 var world_seed: int = 0
 var world_size: Vector2i = Vector2i(WorldConstants.WORLD_SIZE, WorldConstants.WORLD_SIZE)
@@ -130,6 +133,10 @@ func initialize_world() -> void:
 
 	# Calculate initial visibility
 	_update_visibility()
+
+	# Force re-render chunks with updated visibility
+	for chunk in chunk_manager.loaded_chunks.values():
+		tile_renderer.render_chunk(chunk)
 
 	# Update party visuals
 	_update_party_visuals()
@@ -315,9 +322,10 @@ func _update_party_visuals() -> void:
 			var member_world_pos = party_member_positions[i] if i < party_member_positions.size() else party_position
 			var pixel_pos = WorldConstants.tile_to_pixel(member_world_pos)
 
-			# Center the character display on the tile
+			# Position character at bottom-center of tile
 			var half_tile = WorldConstants.TILE_SIZE / 2
-			char_display.position = pixel_pos - Vector2(half_tile, half_tile)
+			var vertical_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET  # Move down to bottom third of tile
+			char_display.position = pixel_pos - Vector2(half_tile, half_tile - vertical_offset)
 		else:
 			char_display.visible = false
 
@@ -352,9 +360,10 @@ func _update_party_visuals_animated() -> void:
 				lerp_y * WorldConstants.TILE_SIZE
 			)
 
-			# Apply hop offset (vertical only, upward)
+			# Apply hop offset and position at bottom of tile
 			var half_tile = WorldConstants.TILE_SIZE / 2
-			char_display.position = pixel_pos - Vector2(half_tile, half_tile + hop_offset)
+			var vertical_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET # Move down to bottom third of tile
+			char_display.position = pixel_pos - Vector2(half_tile, half_tile - vertical_offset + hop_offset)
 
 			# Update horizontal flip based on movement direction
 			_update_character_flip(char_display, i, start_pos, end_pos)

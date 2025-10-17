@@ -3,7 +3,7 @@ extends Node
 # World dimensions
 const WORLD_SIZE := 10000  # 10,000x10,000 tiles
 const CHUNK_SIZE := 32  # 32x32 tiles per chunk
-const TILE_SIZE := 202  # Display size in pixels (matches source images)
+const TILE_SIZE := 201  # Display size in pixels
 
 # Movement and visibility
 const MOVEMENT_SPEED := 2.0  # Tiles per second

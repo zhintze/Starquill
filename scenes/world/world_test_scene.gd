@@ -4,6 +4,7 @@ extends Node2D
 var world_map: WorldMap
 var camera: Camera2D
 var debug_label: Label
+var debug_dead_zone: bool = false  # Set to true to visualize camera dead zone
 
 func _ready():
 	print("World Test Scene initializing...")
@@ -36,12 +37,17 @@ func _setup_camera() -> void:
 	camera = Camera2D.new()
 	camera.name = "WorldCamera"
 	camera.enabled = true
-	camera.zoom = Vector2(1.0, 1.0)
+	camera.zoom = Vector2(.75, .75)  # Zoom out more - tiles appear at ~17px (201/12)
 	add_child(camera)
 
-	# Position camera at party location
-	var party_pixel_pos = WorldConstants.tile_to_pixel(world_map.party_position)
-	camera.position = party_pixel_pos
+	# Start camera slightly offset so it smoothly slides to character on load
+	# This prevents snapping and creates a nice entrance effect
+	if world_map.party_member_positions.size() > 0:
+		var target = WorldConstants.tile_to_pixel(world_map.party_member_positions[0])
+		camera.position = target + Vector2(0, -WorldConstants.TILE_SIZE * 2)  # Start above, slide down
+	else:
+		var target = WorldConstants.tile_to_pixel(world_map.party_position)
+		camera.position = target + Vector2(0, -WorldConstants.TILE_SIZE * 2)
 
 func _setup_debug_ui() -> void:
 	# Create debug label
@@ -69,8 +75,9 @@ func _connect_signals() -> void:
 	BusWorld.biome_entered.connect(_on_biome_entered)
 	BusParty.party_moved.connect(_on_party_moved)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_debug_info()
+	_smooth_camera_follow(delta)
 
 func _input(event: InputEvent) -> void:
 	# Handle movement input
@@ -105,7 +112,7 @@ func _move_party(direction: Vector2i) -> void:
 	var new_position = world_map.party_position + direction
 	if world_map.move_party(new_position):
 		BusParty.party_moved.emit(world_map.party_position - direction, new_position)
-		_update_camera_position()
+		# Camera smoothly follows via _smooth_camera_follow in _process
 	else:
 		BusParty.party_movement_blocked.emit("Impassable terrain")
 		print("Movement blocked at position: %v" % new_position)
@@ -127,9 +134,56 @@ func _interact_with_current_tile() -> void:
 		BusWorld.location_entered.emit(tile.location_data)
 
 func _update_camera_position() -> void:
-	# Smooth camera follow
-	var target_pos = WorldConstants.tile_to_pixel(world_map.party_position)
-	camera.position = camera.position.lerp(target_pos, 0.2)
+	# Update target position to first party member
+	pass  # Now handled by _smooth_camera_follow()
+
+func _smooth_camera_follow(delta: float) -> void:
+	# Dead zone camera - only moves when character reaches edge of center box
+	var character_pos: Vector2
+
+	# Get character position (without hop animation)
+	if world_map.is_party_moving and world_map.party_member_trail.size() > 0:
+		# During movement, interpolate between tiles (no hop tracking)
+		var t = world_map.movement_progress
+		var start_pos = world_map.party_member_positions[0] if world_map.party_member_positions.size() > 0 else world_map.party_position
+		var end_pos = world_map.party_member_trail[0] if world_map.party_member_trail.size() > 0 else start_pos
+
+		var lerp_x = lerp(float(start_pos.x), float(end_pos.x), t)
+		var lerp_y = lerp(float(start_pos.y), float(end_pos.y), t)
+		character_pos = Vector2(lerp_x * WorldConstants.TILE_SIZE, lerp_y * WorldConstants.TILE_SIZE)
+	elif world_map.party_member_positions.size() > 0:
+		# Static position
+		character_pos = WorldConstants.tile_to_pixel(world_map.party_member_positions[0])
+	else:
+		character_pos = WorldConstants.tile_to_pixel(world_map.party_position)
+
+	# Define dead zone (in pixels) - adjust this to change camera behavior
+	# Smaller = camera moves more often, Larger = camera moves less often
+	var dead_zone_tiles = 2.5  # Number of tiles for dead zone width/height
+	var dead_zone_size = WorldConstants.TILE_SIZE * dead_zone_tiles
+	var half_dead_zone = dead_zone_size / 2
+
+	# Calculate if character is outside dead zone
+	var cam_to_char = character_pos - camera.position
+	var target_pos = camera.position
+
+	# Check horizontal bounds
+	if cam_to_char.x > half_dead_zone:
+		target_pos.x = character_pos.x - half_dead_zone
+	elif cam_to_char.x < -half_dead_zone:
+		target_pos.x = character_pos.x + half_dead_zone
+
+	# Check vertical bounds
+	if cam_to_char.y > half_dead_zone:
+		target_pos.y = character_pos.y - half_dead_zone
+	elif cam_to_char.y < -half_dead_zone:
+		target_pos.y = character_pos.y + half_dead_zone
+
+	# Always smoothly interpolate camera position for silky smooth movement
+	# Even tiny adjustments are smoothed out
+	if target_pos != camera.position:
+		var lerp_speed = 1.5 * delta  # Very slow, smooth camera movement
+		camera.position = camera.position.lerp(target_pos, lerp_speed)
 
 func _update_debug_info() -> void:
 	if debug_label:
