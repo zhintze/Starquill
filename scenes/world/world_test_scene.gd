@@ -3,6 +3,7 @@ extends Node2D
 # Test scene for world map system
 var world_map: WorldMap
 var camera: Camera2D
+var camera_controller: CameraController
 var debug_label: Label
 var debug_dead_zone: bool = false  # Set to true to visualize camera dead zone
 
@@ -37,8 +38,14 @@ func _setup_camera() -> void:
 	camera = Camera2D.new()
 	camera.name = "WorldCamera"
 	camera.enabled = true
-	camera.zoom = Vector2(.75, .75)  # Zoom out more - tiles appear at ~17px (201/12)
 	add_child(camera)
+
+	# Create camera controller for smooth following and pinch-zoom
+	camera_controller = CameraController.new()
+	camera_controller.name = "CameraController"
+	camera_controller.camera = camera
+	camera_controller.world_map = self  # Pass self so controller can call get_party_pixel_position
+	add_child(camera_controller)
 
 	# Start camera slightly offset so it smoothly slides to character on load
 	# This prevents snapping and creates a nice entrance effect
@@ -65,7 +72,7 @@ func _setup_debug_ui() -> void:
 	var controls_label = Label.new()
 	controls_label.name = "ControlsLabel"
 	controls_label.position = Vector2(10, 100)
-	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\nM - Toggle Minimap\nEsc - Menu"
+	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\nM - Toggle Minimap\nEsc - Menu\n+/- - Zoom In/Out\n0 - Reset Zoom\nPinch - Zoom (Touch)"
 	controls_label.add_theme_font_size_override("font_size", 12)
 	canvas_layer.add_child(controls_label)
 
@@ -77,7 +84,7 @@ func _connect_signals() -> void:
 
 func _process(delta: float) -> void:
 	_update_debug_info()
-	_smooth_camera_follow(delta)
+	# Camera movement now handled by CameraController
 
 func _input(event: InputEvent) -> void:
 	# Handle movement input
@@ -99,6 +106,15 @@ func _input(event: InputEvent) -> void:
 				_toggle_minimap()
 			KEY_ESCAPE:
 				_open_menu()
+			KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:  # + key
+				if camera_controller:
+					camera_controller.zoom_in(0.1)
+			KEY_MINUS, KEY_KP_SUBTRACT:  # - key
+				if camera_controller:
+					camera_controller.zoom_out(0.1)
+			KEY_0, KEY_KP_0:  # 0 key
+				if camera_controller:
+					camera_controller.reset_zoom()
 
 		if movement != Vector2i.ZERO:
 			_move_party(movement)
@@ -133,12 +149,9 @@ func _interact_with_current_tile() -> void:
 		print("Interacting with location: %s" % tile.location_data.get_display_name())
 		BusWorld.location_entered.emit(tile.location_data)
 
-func _update_camera_position() -> void:
-	# Update target position to first party member
-	pass  # Now handled by _smooth_camera_follow()
-
-func _smooth_camera_follow(delta: float) -> void:
-	# Dead zone camera - only moves when character reaches edge of center box
+func get_party_pixel_position() -> Vector2:
+	# Get character position (with movement interpolation)
+	# This method is called by CameraController
 	var character_pos: Vector2
 
 	# Get character position (without hop animation)
@@ -157,33 +170,7 @@ func _smooth_camera_follow(delta: float) -> void:
 	else:
 		character_pos = WorldConstants.tile_to_pixel(world_map.party_position)
 
-	# Define dead zone (in pixels) - adjust this to change camera behavior
-	# Smaller = camera moves more often, Larger = camera moves less often
-	var dead_zone_tiles = 2.5  # Number of tiles for dead zone width/height
-	var dead_zone_size = WorldConstants.TILE_SIZE * dead_zone_tiles
-	var half_dead_zone = dead_zone_size / 2
-
-	# Calculate if character is outside dead zone
-	var cam_to_char = character_pos - camera.position
-	var target_pos = camera.position
-
-	# Check horizontal bounds
-	if cam_to_char.x > half_dead_zone:
-		target_pos.x = character_pos.x - half_dead_zone
-	elif cam_to_char.x < -half_dead_zone:
-		target_pos.x = character_pos.x + half_dead_zone
-
-	# Check vertical bounds
-	if cam_to_char.y > half_dead_zone:
-		target_pos.y = character_pos.y - half_dead_zone
-	elif cam_to_char.y < -half_dead_zone:
-		target_pos.y = character_pos.y + half_dead_zone
-
-	# Always smoothly interpolate camera position for silky smooth movement
-	# Even tiny adjustments are smoothed out
-	if target_pos != camera.position:
-		var lerp_speed = 1.5 * delta  # Very slow, smooth camera movement
-		camera.position = camera.position.lerp(target_pos, lerp_speed)
+	return character_pos
 
 func _update_debug_info() -> void:
 	if debug_label:
@@ -192,6 +179,8 @@ func _update_debug_info() -> void:
 		info += "Chunk: %v\n" % WorldCoordinate.world_to_chunk(world_map.party_position)
 		info += "Loaded Chunks: %d\n" % world_map.chunk_manager.loaded_chunks.size()
 		info += "Visible Tiles: %d\n" % world_map.visible_tiles.size()
+		if camera_controller:
+			info += "Zoom: %.2f\n" % camera_controller.get_current_zoom()
 
 		var tile = world_map.get_tile(world_map.party_position)
 		if tile:

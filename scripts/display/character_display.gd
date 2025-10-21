@@ -86,21 +86,25 @@ func _redraw() -> void:
 		tr.visible = true
 		tr.texture = p.texture
 		tr.modulate = p.modulate
-		tr.position = p.offset
 		tr.scale = p.scale
 		tr.rotation_degrees = p.rotation_degrees
 
 		# Apply horizontal flip based on facing direction
 		# Off-hand weapons/shields need extra flip on their x-axis when character flips
 		if p.is_offhand_weapon:
-			# Off-hand items: flip their scale.x in addition to normal flip
+			# Off-hand items: flip their scale.x and mirror position
 			var base_flip = p.flip_h != _is_facing_left
 			tr.flip_h = base_flip
-			# Also flip the scale.x to mirror the item position
-			tr.scale.x = p.scale.x * (-1 if _is_facing_left else 1)
+			# Flip the scale.x to mirror the item
+			tr.scale.x = p.scale.x * (-0.5 if _is_facing_left else 1)
+			# Mirror rotation for weapons when facing left
+			tr.rotation_degrees = -p.rotation_degrees if _is_facing_left else p.rotation_degrees
+			# Mirror the X offset when facing left
+			tr.position = Vector2(-p.offset.x if _is_facing_left else p.offset.x, p.offset.y)
 		else:
 			# Normal pieces: just apply flip
 			tr.flip_h = p.flip_h != _is_facing_left
+			tr.position = p.offset
 
 		tr.flip_v = p.flip_v
 
@@ -151,7 +155,11 @@ func _update_flip_state() -> void:
 			if p.is_offhand_weapon:
 				var base_flip = p.flip_h != _is_facing_left
 				tr.flip_h = base_flip
-				tr.scale.x = p.scale.x * (-1 if _is_facing_left else 1)
+				tr.scale.x = p.scale.x * (-0.5 if _is_facing_left else 1)
+				# Mirror rotation for weapons when facing left
+				tr.rotation_degrees = -p.rotation_degrees if _is_facing_left else p.rotation_degrees
+				# Mirror the X offset when facing left
+				tr.position = Vector2(-p.offset.x/2 if _is_facing_left else p.offset.x, p.offset.y)
 			else:
 				tr.flip_h = p.flip_h != _is_facing_left
 
