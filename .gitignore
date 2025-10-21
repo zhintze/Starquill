@@ -39,3 +39,8 @@ CLAUDE.md
 # Godot MCP server (local only)
 godot-mcp/
 addons/godot_mcp/
+
+# Build artifacts
+build/
+*.apk
+*.apk.idsig
