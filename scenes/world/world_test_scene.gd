@@ -7,6 +7,26 @@ var camera_controller: CameraController
 var debug_label: Label
 var debug_dead_zone: bool = false  # Set to true to visualize camera dead zone
 
+# Pathfinding and movement
+var current_path: Array[Vector2i] = []
+var path_index: int = 0
+var auto_move_delay: float = 0.0
+var auto_move_interval: float = 0.15  # Seconds between auto-moves
+
+# Swipe gesture detection
+var swipe_start_pos: Vector2 = Vector2.ZERO
+var swipe_min_distance: float = 50.0  # Minimum pixels for a swipe
+var is_swiping: bool = false
+var continuous_move_direction: Vector2i = Vector2i.ZERO  # For continuous movement on swipe
+var continuous_move_delay: float = 0.0
+var continuous_move_interval: float = 0.2  # Seconds between continuous moves
+
+# Double-tap detection
+var last_tap_time: float = 0.0
+var last_tap_position: Vector2 = Vector2.ZERO
+var double_tap_threshold: float = 0.4  # Max seconds between taps
+var double_tap_distance: float = 30.0  # Max pixels between taps
+
 func _ready():
 	print("World Test Scene initializing...")
 	_setup_test_party()
@@ -47,14 +67,13 @@ func _setup_camera() -> void:
 	camera_controller.world_map = self  # Pass self so controller can call get_party_pixel_position
 	add_child(camera_controller)
 
-	# Start camera slightly offset so it smoothly slides to character on load
-	# This prevents snapping and creates a nice entrance effect
+	# Start camera centered on character
 	if world_map.party_member_positions.size() > 0:
 		var target = WorldConstants.tile_to_pixel(world_map.party_member_positions[0])
-		camera.position = target + Vector2(0, -WorldConstants.TILE_SIZE * 2)  # Start above, slide down
+		camera.position = target
 	else:
 		var target = WorldConstants.tile_to_pixel(world_map.party_position)
-		camera.position = target + Vector2(0, -WorldConstants.TILE_SIZE * 2)
+		camera.position = target
 
 func _setup_debug_ui() -> void:
 	# Create debug label
@@ -72,7 +91,7 @@ func _setup_debug_ui() -> void:
 	var controls_label = Label.new()
 	controls_label.name = "ControlsLabel"
 	controls_label.position = Vector2(10, 100)
-	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\nM - Toggle Minimap\nEsc - Menu\n+/- - Zoom In/Out\n0 - Reset Zoom\nPinch - Zoom (Touch)"
+	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\n+/- - Zoom In/Out\n0 - Reset Zoom\n\nTouch:\nTap - Path to tile\nSwipe - Move direction\nPinch - Zoom"
 	controls_label.add_theme_font_size_override("font_size", 12)
 	canvas_layer.add_child(controls_label)
 
@@ -84,7 +103,60 @@ func _connect_signals() -> void:
 
 func _process(delta: float) -> void:
 	_update_debug_info()
+	_update_path_following(delta)
+	_update_continuous_movement(delta)
 	# Camera movement now handled by CameraController
+
+func _update_continuous_movement(delta: float) -> void:
+	if continuous_move_direction == Vector2i.ZERO:
+		return
+
+	# Wait for movement animation to complete
+	if world_map.is_party_moving:
+		return
+
+	# Delay between continuous moves
+	continuous_move_delay -= delta
+	if continuous_move_delay > 0:
+		return
+
+	# Move in the continuous direction
+	if _move_party(continuous_move_direction):
+		continuous_move_delay = continuous_move_interval
+	else:
+		# Movement blocked, stop continuous movement
+		continuous_move_direction = Vector2i.ZERO
+
+func _update_path_following(delta: float) -> void:
+	if current_path.is_empty():
+		return
+
+	# Wait for movement animation to complete
+	if world_map.is_party_moving:
+		return
+
+	# Auto-move delay between steps
+	auto_move_delay -= delta
+	if auto_move_delay > 0:
+		return
+
+	# Move to next tile in path
+	if path_index < current_path.size():
+		var next_tile = current_path[path_index]
+		var direction = next_tile - world_map.party_position
+
+		if _move_party(direction):
+			path_index += 1
+			auto_move_delay = auto_move_interval
+		else:
+			# Movement blocked, cancel path
+			print("Path blocked at %v, cancelling" % next_tile)
+			current_path.clear()
+			path_index = 0
+	else:
+		# Path complete
+		current_path.clear()
+		path_index = 0
 
 func _input(event: InputEvent) -> void:
 	# Handle movement input
@@ -124,24 +196,148 @@ func _input(event: InputEvent) -> void:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			_handle_click(event.position)
 
-func _move_party(direction: Vector2i) -> void:
+	# Handle touch gestures (swipe and double-tap)
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			# Touch started - stop all movement (both continuous and pathfinding)
+			var was_moving = continuous_move_direction != Vector2i.ZERO or not current_path.is_empty()
+			continuous_move_direction = Vector2i.ZERO
+			current_path.clear()
+			path_index = 0
+
+			# Store whether we were moving to decide tap behavior later
+			metadata["was_moving_on_touch"] = was_moving
+
+			# Touch started
+			swipe_start_pos = event.position
+			is_swiping = true
+		else:
+			# Touch ended - check if it was a swipe or tap
+			if is_swiping:
+				var swipe_end_pos = event.position
+				var swipe_vector = swipe_end_pos - swipe_start_pos
+				var swipe_distance = swipe_vector.length()
+
+				if swipe_distance >= swipe_min_distance:
+					# It's a swipe - start continuous movement
+					_handle_swipe(swipe_vector)
+				else:
+					# It's a tap
+					# If we were already moving, the touch already stopped us - don't start pathfinding
+					var was_moving = metadata.get("was_moving_on_touch", false)
+					if not was_moving:
+						# Only check for double-tap if we weren't moving
+						_handle_tap(event.position)
+
+				is_swiping = false
+
+	elif event is InputEventScreenDrag:
+		# Dragging cancels all movement
+		continuous_move_direction = Vector2i.ZERO
+		current_path.clear()
+		path_index = 0
+
+func _move_party(direction: Vector2i) -> bool:
+	# Cancel any existing path when manually moving (but not continuous movement)
+	if continuous_move_direction == Vector2i.ZERO:
+		current_path.clear()
+		path_index = 0
+
 	var new_position = world_map.party_position + direction
 	if world_map.move_party(new_position):
 		BusParty.party_moved.emit(world_map.party_position - direction, new_position)
-		# Camera smoothly follows via _smooth_camera_follow in _process
+		# Camera smoothly follows via CameraController
+		return true
 	else:
 		BusParty.party_movement_blocked.emit("Impassable terrain")
 		print("Movement blocked at position: %v" % new_position)
+		return false
+
+func _handle_swipe(swipe_vector: Vector2) -> void:
+	# Convert swipe to a continuous movement direction
+	# Determine primary direction (horizontal or vertical)
+	var abs_x = abs(swipe_vector.x)
+	var abs_y = abs(swipe_vector.y)
+
+	var direction = Vector2i.ZERO
+	if abs_x > abs_y:
+		# Horizontal swipe
+		direction = Vector2i(1 if swipe_vector.x > 0 else -1, 0)
+	else:
+		# Vertical swipe
+		# Swipe down (positive Y) should move character down (positive Y)
+		# Swipe up (negative Y) should move character up (negative Y)
+		direction = Vector2i(0, 1 if swipe_vector.y > 0 else -1)
+
+	print("Swipe: %v -> Continuous Direction: %v" % [swipe_vector, direction])
+
+	# Start continuous movement in this direction
+	continuous_move_direction = direction
+	continuous_move_delay = 0.0  # Start immediately
+
+	# Also do one immediate move
+	_move_party(direction)
+
+func _handle_tap(screen_position: Vector2) -> void:
+	# Check if this is a double-tap
+	var current_time = Time.get_ticks_msec() / 1000.0
+	var time_since_last_tap = current_time - last_tap_time
+	var distance_from_last_tap = screen_position.distance_to(last_tap_position)
+
+	if time_since_last_tap < double_tap_threshold and distance_from_last_tap < double_tap_distance:
+		# This is a double-tap! Path to this tile
+		print("Double-tap detected at: %v" % screen_position)
+		_handle_click(screen_position)
+		# Reset tap tracking
+		last_tap_time = 0.0
+		last_tap_position = Vector2.ZERO
+	else:
+		# Single tap - just record it
+		print("Single tap at: %v (waiting for double-tap)" % screen_position)
+		last_tap_time = current_time
+		last_tap_position = screen_position
 
 func _handle_click(screen_position: Vector2) -> void:
-	# Convert screen position to world tile position
-	var world_position = camera.get_global_mouse_position()
+	# Convert screen position to world position
+	# Use camera's screen center position for more accurate conversion
+	var viewport = get_viewport()
+	var screen_center = viewport.get_visible_rect().size / 2.0
+	var screen_center_world = camera.get_screen_center_position()
+
+	# Calculate offset from screen center and convert to world space
+	var offset_from_center = screen_position - screen_center
+	var world_position = screen_center_world + (offset_from_center / camera.zoom)
+
+	# Convert to tile coordinates (pixel_to_tile does floor division)
 	var tile_position = WorldConstants.pixel_to_tile(world_position)
 
-	print("Clicked tile: %v" % tile_position)
+	print("=== DOUBLE-TAP DEBUG ===")
+	print("Screen pos: %v" % screen_position)
+	print("Viewport size: %v" % viewport.get_visible_rect().size)
+	print("Screen center: %v" % screen_center)
+	print("Screen center world: %v" % screen_center_world)
+	print("Offset from center: %v" % offset_from_center)
+	print("Camera zoom: %v" % camera.zoom)
+	print("World pos: %v" % world_position)
+	print("Tile pos: %v" % tile_position)
+	print("Party at: %v" % world_map.party_position)
+	print("Distance: %d tiles" % WorldConstants.manhattan_distance(tile_position, world_map.party_position))
+	print("========================")
+
 	BusWorld.tile_clicked.emit(tile_position)
 
-	# TODO: Implement pathfinding to clicked tile
+	# Find path to clicked tile
+	var path = Pathfinder.find_path(world_map, world_map.party_position, tile_position)
+
+	if path.is_empty():
+		print("No path found to tile %v" % tile_position)
+		return
+
+	# Start auto-movement along path
+	current_path = path
+	path_index = 0
+	auto_move_delay = 0.0
+	print("Path found with %d steps to tile %v" % [path.size(), tile_position])
 
 func _interact_with_current_tile() -> void:
 	var tile = world_map.get_tile(world_map.party_position)
@@ -181,6 +377,10 @@ func _update_debug_info() -> void:
 		info += "Visible Tiles: %d\n" % world_map.visible_tiles.size()
 		if camera_controller:
 			info += "Zoom: %.2f\n" % camera_controller.get_current_zoom()
+
+		# Show path info
+		if not current_path.is_empty():
+			info += "Path: %d/%d tiles\n" % [path_index, current_path.size()]
 
 		var tile = world_map.get_tile(world_map.party_position)
 		if tile:
