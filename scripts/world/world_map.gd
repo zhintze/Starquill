@@ -122,7 +122,8 @@ func initialize_world() -> void:
 	_generate_biome_seeds(rng)
 
 	# Set initial party position (center of world)
-	party_position = Vector2i(world_size.x / 2, world_size.y / 2)
+	var initial_pos = Vector2i(world_size.x / 2, world_size.y / 2)
+	party_position = _find_valid_spawn_position(initial_pos)
 
 	# Initialize party member positions
 	_initialize_party_positions()
@@ -143,6 +144,66 @@ func initialize_world() -> void:
 
 	is_initialized = true
 	BusWorld.world_created.emit(world_name, world_seed)
+
+func _find_valid_spawn_position(start_pos: Vector2i, max_search_radius: int = 50) -> Vector2i:
+	# First, ensure chunks are loaded around the start position
+	var start_chunk = WorldCoordinate.world_to_chunk(start_pos)
+	chunk_manager.update_loaded_chunks(start_chunk)
+
+	# Check if start position is valid
+	if _is_valid_spawn_tile(start_pos):
+		return start_pos
+
+	# Search in expanding square spiral pattern
+	for radius in range(1, max_search_radius + 1):
+		# Check tiles in a square ring at this radius
+		for dx in range(-radius, radius + 1):
+			for dy in range(-radius, radius + 1):
+				# Only check the perimeter of the square (not interior)
+				if abs(dx) != radius and abs(dy) != radius:
+					continue
+
+				var check_pos = start_pos + Vector2i(dx, dy)
+
+				# Load chunk if needed
+				var check_chunk = WorldCoordinate.world_to_chunk(check_pos)
+				if check_chunk != start_chunk:
+					chunk_manager.get_chunk(check_chunk)  # Ensure chunk is loaded
+
+				if _is_valid_spawn_tile(check_pos):
+					print("Found valid spawn position at %v (offset %v from center)" % [check_pos, Vector2i(dx, dy)])
+					return check_pos
+
+	# Fallback: return start position even if invalid (shouldn't happen)
+	print("WARNING: Could not find valid spawn position, using %v" % start_pos)
+	return start_pos
+
+func _is_valid_spawn_tile(pos: Vector2i) -> bool:
+	if not WorldCoordinate.is_valid_position(pos):
+		return false
+
+	# Check if tile is passable
+	var tile = get_tile(pos)
+	if not tile or not tile.is_passable:
+		return false
+
+	# Check that at least 2 cardinal neighbors are passable (so player can move)
+	var passable_neighbors = 0
+	var cardinal_directions = [
+		Vector2i(0, -1),  # North
+		Vector2i(1, 0),   # East
+		Vector2i(0, 1),   # South
+		Vector2i(-1, 0)   # West
+	]
+
+	for direction in cardinal_directions:
+		var neighbor_pos = pos + direction
+		var neighbor_tile = get_tile(neighbor_pos)
+		if neighbor_tile and neighbor_tile.is_passable:
+			passable_neighbors += 1
+
+	# Require at least 2 passable neighbors to ensure player isn't stuck
+	return passable_neighbors >= 2
 
 func _generate_biome_seeds(rng: RandomNumberGenerator) -> void:
 	# Generate biome seed points across the world
