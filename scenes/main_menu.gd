@@ -47,7 +47,10 @@ func _on_character_pressed() -> void:
 
 func _on_world_pressed() -> void:
 	print("Loading World Test Scene...")
-	get_tree().change_scene_to_file("res://scenes/world/world_test_scene.tscn")
+	var error = get_tree().change_scene_to_file("res://scenes/world/world_test_scene.tscn")
+	if error != OK:
+		print("ERROR: Failed to load world scene! Error code: ", error)
+		push_error("Failed to change to world scene: " + str(error))
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()

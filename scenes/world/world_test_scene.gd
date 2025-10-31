@@ -27,13 +27,34 @@ var last_tap_position: Vector2 = Vector2.ZERO
 var double_tap_threshold: float = 0.4  # Max seconds between taps
 var double_tap_distance: float = 30.0  # Max pixels between taps
 
+# Touch state tracking
+var was_moving_on_touch: bool = false
+
 func _ready():
+	print("=== WORLD TEST SCENE _ready() CALLED ===")
 	print("World Test Scene initializing...")
+
+	print("Step 1: Setting up test party...")
 	_setup_test_party()
+	print("Step 1: DONE")
+
+	print("Step 2: Setting up world...")
 	_setup_world()
+	print("Step 2: DONE")
+
+	print("Step 3: Setting up camera...")
 	_setup_camera()
+	print("Step 3: DONE")
+
+	print("Step 4: Setting up debug UI...")
 	_setup_debug_ui()
+	print("Step 4: DONE")
+
+	print("Step 5: Connecting signals...")
 	_connect_signals()
+	print("Step 5: DONE")
+
+	print("=== WORLD TEST SCENE READY COMPLETE ===")
 
 func _setup_test_party() -> void:
 	# Initialize party if not already created
@@ -206,7 +227,7 @@ func _input(event: InputEvent) -> void:
 			path_index = 0
 
 			# Store whether we were moving to decide tap behavior later
-			metadata["was_moving_on_touch"] = was_moving
+			was_moving_on_touch = was_moving
 
 			# Touch started
 			swipe_start_pos = event.position
@@ -224,8 +245,7 @@ func _input(event: InputEvent) -> void:
 				else:
 					# It's a tap
 					# If we were already moving, the touch already stopped us - don't start pathfinding
-					var was_moving = metadata.get("was_moving_on_touch", false)
-					if not was_moving:
+					if not was_moving_on_touch:
 						# Only check for double-tap if we weren't moving
 						_handle_tap(event.position)
 
