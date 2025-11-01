@@ -3,6 +3,7 @@ class_name WorldMap
 
 
 const CHARACTER_TILE_OFFSET: float = 0.55;
+const CHARACTER_SPRITE_HEIGHT: int = 200;  # Height of character sprites in pixels
 
 # World properties
 var world_seed: int = 0
@@ -384,9 +385,11 @@ func _update_party_visuals() -> void:
 			var pixel_pos = WorldConstants.tile_to_pixel(member_world_pos)
 
 			# Position character at bottom-center of tile
+			# Calculate where character's feet should be (at CHARACTER_TILE_OFFSET% down the tile)
 			var half_tile = WorldConstants.TILE_SIZE / 2
-			var vertical_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET  # Move down to bottom third of tile
-			char_display.position = pixel_pos - Vector2(half_tile, half_tile - vertical_offset)
+			var feet_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET
+			# Character's top-left position = feet position - 2 tiles (character visual height)
+			char_display.position = pixel_pos + Vector2(-half_tile, feet_offset - WorldConstants.TILE_SIZE * 2)
 		else:
 			char_display.visible = false
 
@@ -422,9 +425,11 @@ func _update_party_visuals_animated() -> void:
 			)
 
 			# Apply hop offset and position at bottom of tile
+			# Calculate where character's feet should be (at CHARACTER_TILE_OFFSET% down the tile)
 			var half_tile = WorldConstants.TILE_SIZE / 2
-			var vertical_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET # Move down to bottom third of tile
-			char_display.position = pixel_pos - Vector2(half_tile, half_tile - vertical_offset + hop_offset)
+			var feet_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET
+			# Character's top-left position = feet position - 2 tiles (character visual height) - hop offset
+			char_display.position = pixel_pos + Vector2(-half_tile, feet_offset - WorldConstants.TILE_SIZE * 2 - hop_offset)
 
 			# Update horizontal flip based on movement direction
 			_update_character_flip(char_display, i, start_pos, end_pos)
