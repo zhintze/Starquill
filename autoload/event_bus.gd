@@ -73,8 +73,14 @@ signal stat_changed(actor: Variant, stat: String, old_value: int, new_value: int
 signal world_created(world_name: String, seed: int)
 signal world_saved(world_name: String)
 signal tile_modified(pos: Vector2i, tile: Tile)
+signal tile_clicked(tile_pos: Vector2i)
 signal location_entered(location_data: LocationData)
+signal location_discovered(location_data: LocationData)
+signal location_spawned(world_pos: Vector2i, location_data: LocationData)
+signal biome_entered(biome_type: int, biome_name: String)
 signal visibility_updated(visible_tiles: Array[Vector2i])
+signal chunk_loaded(chunk_pos: Vector2i, chunk: Chunk)
+signal chunk_unloaded(chunk_pos: Vector2i)
 
 # Debug signals
 signal debug_teleport(tile_pos: Vector2i)
