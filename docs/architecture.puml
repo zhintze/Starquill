@@ -16,16 +16,10 @@ caption Generated PlantUML documentation for Starquill project
 title Package Structure and Dependencies
 
 package "Autoload Singletons" as autoload {
-  package "Bus System" as buses {
-    [BusFlow]
-    [BusActors]
-    [BusCombat]
-    [BusInventory]
-    [BusUi]
-    [BusSave]
-    [BusAudio]
-    [BusWorld]
-    [BusParty]
+  package "MVC Architecture Layer" as mvc {
+    [GameManager] #LightBlue
+    [EventBus] #LightBlue
+    [UIManager] #LightBlue
   }
 
   package "Core Managers" as managers {
@@ -44,6 +38,17 @@ package "Autoload Singletons" as autoload {
 
   [WorldConstants]
 }
+
+note right of mvc
+  **New MVC Architecture (Refactored 2025)**
+  - GameManager: State management (pause, mode, input mode)
+  - EventBus: Unified event system (57 signals)
+  - UIManager: Modal menu management with LIFO stack
+
+  **Replaced 9 separate bus autoloads:**
+  BusFlow, BusActors, BusCombat, BusInventory,
+  BusUi, BusSave, BusAudio, BusWorld, BusParty
+end note
 
 package "scripts/" as scripts {
   package "character/" as character {
@@ -90,8 +95,35 @@ package "scripts/" as scripts {
   }
 
   package "ui/" as ui {
+    package "MVC UI Components" as mvc_ui {
+      [BaseMenu] #LightGreen
+      [PauseMenu]
+      [PartyMenu]
+      [InventoryPanel]
+      [CharacterSheetPanel]
+      [ItemSlotUI]
+      [EquipmentSlotUI]
+    }
     [HUD]
     [RandomizationSettings]
+  }
+
+  package "input/" as input {
+    [InputHandler] #LightGreen
+  }
+
+  package "model/" as model {
+    package "items/" {
+      [ItemData] #LightYellow
+      [ItemStack] #LightYellow
+    }
+    package "inventory/" {
+      [Inventory] #LightYellow
+    }
+  }
+
+  package "controller/" as controller {
+    [InventoryController] #Orange
   }
 
   package "verbs/" as verbs {
@@ -170,17 +202,46 @@ component "Game Entry Point" as GameEntry {
   component "Game\n(Autoload)" as Game <<autoload>>
 }
 
-component "Event Bus System" as BusSystem <<autoload>> {
-  component "BusFlow\n(Level transitions)" as BusFlow
-  component "BusActors\n(Character events)" as BusActors
-  component "BusCombat\n(Combat events)" as BusCombat
-  component "BusWorld\n(World events)" as BusWorld
-  component "BusParty\n(Party events)" as BusParty
-  component "BusUi\n(UI events)" as BusUi
-  component "BusSave\n(Save/Load)" as BusSave
-  component "BusAudio\n(Music/SFX)" as BusAudio
-  component "BusInventory\n(Inventory)" as BusInventory
+component "MVC Architecture Layer" as MVCSystem <<autoload>> {
+  component "GameManager\n(State Management)" as GameMgr {
+    note right
+      **Responsibilities:**
+      - Scene state tracking
+      - Pause management
+      - Mode control (gameplay/menu/dialogue)
+      - Input mode routing
+    end note
+  }
+
+  component "EventBus\n(Unified Events)" as EventBus {
+    note right
+      **57 Signals Covering:**
+      - Flow/Scene (boot, level transitions)
+      - Party (movement, members, data)
+      - Inventory (items, equipment)
+      - UI (modals, tooltips)
+      - World (chunks, tiles, locations, biomes)
+      - Combat, Actor, Save/Load, Audio
+    end note
+  }
+
+  component "UIManager\n(Modal Management)" as UIMgr {
+    note right
+      **Responsibilities:**
+      - LIFO menu stack
+      - Modal lifecycle management
+      - Automatic pause/focus handling
+      - Scene-based menu loading
+    end note
+  }
 }
+
+note bottom of MVCSystem
+  **Architecture Refactor 2025**
+  Replaced 9 fragmented bus autoloads with
+  unified MVC pattern for better maintainability
+  and clearer separation of concerns
+end note
 
 component "Core Management Layer" as CoreLayer <<manager>> {
   component "ConfigManager\n(Config & Boot)" as ConfigMgr <<autoload>>
@@ -231,10 +292,18 @@ component "MCP Integration" as MCPSys <<system>> {
   component "Node/Scene/Script\nCommands" as MCPCommands
 }
 
-' Connections
-Game --> BusFlow
-Game --> BusAudio
+' MVC Architecture Connections
+Game --> EventBus : emit signals
 Game --> PlayerMgr
+Game --> GameMgr : state changes
+
+GameMgr --> EventBus : mode events
+UIMgr --> EventBus : modal events
+UIMgr --> GameMgr : mode coordination
+
+WorldMap --> EventBus : world events
+PlayerMgr --> EventBus : party events
+CharClass --> EventBus : character events
 
 ConfigMgr --> DataMgr : loads data
 ConfigMgr --> DataSources : reads JSON
@@ -267,18 +336,17 @@ CharDisplay --> DisplayMgr : builds pieces
 CharDisplay --> DisplayPiece
 DisplayMgr --> LayerMgr : z-sorting
 
-WorldMap --> BusWorld : events
-WorldMap --> BusParty : party movement
-
 MCPServer --> MCPHandler
 MCPHandler --> MCPCommands
 MCPCommands --> WorldMap
 MCPCommands --> CharClass
 
-note right of BusSystem
-  Event bus pattern for
-  decoupled communication
-  between systems
+note right of MVCSystem
+  **Unified Event Architecture**
+  - Single EventBus replaces 9 buses
+  - GameManager coordinates state
+  - UIManager handles modal lifecycle
+  - Clear separation of concerns
 end note
 
 note right of DataMgr
@@ -1199,6 +1267,247 @@ note left of ScriptCommands
   - create_script: Write new script
   - edit_script: Modify existing script
   - create_script_template: Generate boilerplate
+end note
+
+@enduml
+
+' ================================================================================
+' MVC ARCHITECTURE DIAGRAM - New 2025 Refactor
+' ================================================================================
+@startuml MVC-Architecture
+!theme plain
+title MVC Architecture - Event-Driven UI System (2025 Refactor)
+
+skinparam component {
+  BackgroundColor<<model>> LightYellow
+  BackgroundColor<<view>> LightGreen
+  BackgroundColor<<controller>> Orange
+  BackgroundColor<<manager>> LightBlue
+}
+
+package "Model Layer (Resources)" as ModelLayer {
+  component "ItemData\n(Item Definition)" as ItemData <<model>> {
+    note right
+      Properties:
+      - id, display_name
+      - max_stack, is_stackable
+      - item_type, is_usable
+      - effect_script, stat_effects
+    end note
+  }
+
+  component "ItemStack\n(Quantity Manager)" as ItemStack <<model>> {
+    note right
+      Properties:
+      - item_data: ItemData
+      - quantity: int
+
+      Methods:
+      - add(amount): int (returns overflow)
+      - remove(amount): bool
+      - is_full(): bool
+    end note
+  }
+
+  component "Inventory\n(24-slot Container)" as Inventory <<model>> {
+    note right
+      Properties:
+      - capacity: int = 24
+      - slots: Array[ItemStack]
+
+      Methods:
+      - add_item(item, amount): bool
+      - remove_item(item, amount): bool
+      - has_item(item, amount): bool
+      - clear(), sort()
+      - serialize/deserialize
+    end note
+  }
+
+  component "Character\n(Stats + Equipment)" as CharModel <<model>>
+  component "Party\n(Member List)" as PartyModel <<model>>
+}
+
+package "View Layer (UI Nodes)" as ViewLayer {
+  component "BaseMenu\n(Template Pattern)" as BaseMenu <<view>> {
+    note right
+      Lifecycle:
+      - open() / close()
+      - _on_open() / _on_close()
+      - Handles escape key
+      - Emits opened/closed signals
+    end note
+  }
+
+  component "PauseMenu\nextends BaseMenu" as PauseMenu <<view>>
+  component "PartyMenu\nextends BaseMenu" as PartyMenu <<view>>
+
+  component "InventoryPanel\n(Grid Display)" as InventoryPanel <<view>> {
+    note right
+      UI Components:
+      - GridContainer (6 columns)
+      - ScrollContainer
+      - Sort/Clear buttons
+
+      Renders ItemSlotUI for each slot
+    end note
+  }
+
+  component "CharacterSheetPanel\n(Stats Display)" as CharSheetPanel <<view>> {
+    note right
+      UI Components:
+      - Name/Level header
+      - Stats grid (STR/DEX/CON/INT/WIS/CHA)
+      - Equipment grid
+      - Skills list
+    end note
+  }
+
+  component "ItemSlotUI\n(Slot Component)" as ItemSlotUI <<view>>
+  component "EquipmentSlotUI\n(Equip Slot)" as EquipSlotUI <<view>>
+}
+
+package "Controller Layer" as ControllerLayer {
+  component "InventoryController\n(Logic Handler)" as InvController <<controller>> {
+    note right
+      Operations:
+      - use_item(item, target): bool
+      - equip_equipment(equip, char): bool
+      - sort_inventory(type): void
+      - transfer_item(from, to): bool
+
+      Mediates between Model and View
+    end note
+  }
+
+  component "InputHandler\n(Mode Router)" as InputHandler <<controller>> {
+    note right
+      Routes input based on mode:
+      - world: Game controls
+      - ui: Menu navigation
+      - dialogue: Dialogue choices
+
+      Prevents input conflicts
+    end note
+  }
+}
+
+package "Manager Layer (Autoloads)" as ManagerLayer {
+  component "GameManager\n(State Manager)" as GameMgr <<manager>> {
+    note right
+      **Central State:**
+      - current_scene: StringName
+      - is_paused: bool
+      - mode: StringName
+      - input_mode: StringName
+
+      **Signals:**
+      - scene_changed
+      - paused_changed
+      - mode_changed
+      - input_mode_changed
+    end note
+  }
+
+  component "EventBus\n(Unified Events)" as EventBus <<manager>> {
+    note right
+      **57 Signals:**
+
+      Flow/Scene (5):
+      - boot_completed, level_will_change,
+        level_loaded, level_unloaded
+
+      Party (8):
+      - party_moved, party_member_added,
+        party_size_changed, party_data_loaded
+
+      Inventory (5):
+      - item_added, item_removed,
+        equipment_equipped, equipment_unequipped
+
+      UI (4):
+      - modal_opened, modal_closed,
+        tooltip_requested, tooltip_hidden
+
+      World (11):
+      - world_created, tile_modified,
+        location_discovered, location_entered,
+        chunk_loaded, chunk_unloaded, etc.
+
+      Combat, Actor, Save/Load, Audio (24)
+    end note
+  }
+
+  component "UIManager\n(Modal Manager)" as UIMgr <<manager>> {
+    note right
+      **LIFO Menu Stack:**
+      - _menu_stack: Array[Control]
+
+      **Methods:**
+      - open_menu(scene): Control
+      - close_top_menu(): void
+      - close_all_menus(): void
+      - get_active_menu(): Control
+
+      **Automatic:**
+      - Pause on open
+      - Focus management
+      - Mode coordination with GameManager
+    end note
+  }
+}
+
+' Model connections
+ItemStack --> ItemData : contains
+Inventory --> ItemStack : manages array
+PartyModel --> CharModel : contains members
+CharModel --> Inventory : has shared_inventory
+
+' View connections
+PauseMenu --|> BaseMenu : extends
+PartyMenu --|> BaseMenu : extends
+PartyMenu --> InventoryPanel : contains
+PartyMenu --> CharSheetPanel : contains
+InventoryPanel --> ItemSlotUI : instantiates 24
+CharSheetPanel --> EquipSlotUI : instantiates 11
+
+' Controller connections
+InvController --> Inventory : manipulates
+InvController --> CharModel : updates equipment
+InvController --> EventBus : emits events
+InputHandler --> GameMgr : queries mode
+InputHandler --> EventBus : emits input events
+
+' Manager connections
+GameMgr --> EventBus : emits state changes
+UIMgr --> GameMgr : coordinates modes
+UIMgr --> EventBus : emits modal events
+UIMgr --> BaseMenu : manages lifecycle
+
+' View to Controller
+InventoryPanel --> InvController : calls methods
+CharSheetPanel --> InvController : equip/unequip
+
+' View to EventBus
+BaseMenu --> EventBus : subscribes to events
+InventoryPanel --> EventBus : listens item_added
+CharSheetPanel --> EventBus : listens equipment_equipped
+
+note top of ManagerLayer
+  **Architecture Refactor 2025**
+
+  Replaced 9 fragmented bus autoloads with unified MVC pattern:
+  ❌ BusFlow, BusActors, BusCombat, BusInventory, BusUi, BusSave, BusAudio, BusWorld, BusParty
+
+  ✅ GameManager (state) + EventBus (events) + UIManager (modals)
+
+  **Benefits:**
+  - Single source of truth for state
+  - Unified event system (57 signals)
+  - Clear MVC separation
+  - Modal lifecycle management
+  - Mode-based input routing
+  - Better testability and maintainability
 end note
 
 @enduml
