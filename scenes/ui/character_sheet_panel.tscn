@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3 uid="uid://dpq8h5k3m7n2v"]
+
+[ext_resource type="Script" path="res://scripts/ui/character_sheet_panel.gd" id="1_character_sheet"]
+
+[node name="CharacterSheetPanel" type="VBoxContainer"]
+script = ExtResource("1_character_sheet")
+
+[node name="HeaderContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Character Name"
+
+[node name="LevelLabel" type="Label" parent="HeaderContainer"]
+layout_mode = 2
+text = "Level 1"
+
+[node name="HSeparator1" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContentVBox" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsLabel" type="Label" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+text = "STATS"
+
+[node name="StatsGrid" type="GridContainer" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+columns = 4
+
+[node name="HSeparator2" type="HSeparator" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="EquipmentLabel" type="Label" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+text = "EQUIPMENT"
+
+[node name="EquipmentGrid" type="GridContainer" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+columns = 3
+
+[node name="HSeparator3" type="HSeparator" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+
+[node name="SkillsLabel" type="Label" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2
+text = "SKILLS"
+
+[node name="SkillsList" type="VBoxContainer" parent="ScrollContainer/ContentVBox"]
+layout_mode = 2

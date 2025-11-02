@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://cr4m9vb2k5n8p"]
+
+[ext_resource type="Script" path="res://scripts/ui/inventory_panel.gd" id="1_inventory_panel"]
+
+[node name="InventoryPanel" type="VBoxContainer"]
+script = ExtResource("1_inventory_panel")
+
+[node name="HeaderLabel" type="Label" parent="."]
+layout_mode = 2
+text = "Inventory (24 slots)"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridContainer" type="GridContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 6
+
+[node name="ControlsHBox" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="SortButton" type="Button" parent="ControlsHBox"]
+layout_mode = 2
+text = "Sort"
+
+[node name="ClearButton" type="Button" parent="ControlsHBox"]
+layout_mode = 2
+text = "Clear Empty"
+
+[connection signal="pressed" from="ControlsHBox/SortButton" to="." method="_on_sort_pressed"]
+[connection signal="pressed" from="ControlsHBox/ClearButton" to="." method="_on_clear_pressed"]
