@@ -1289,23 +1289,23 @@ package "Model Layer (Resources)" as ModelLayer {
   component "ItemData\n(Item Definition)" as ItemData <<model>> {
     note right
       Properties:
-      - id, display_name
-      - max_stack, is_stackable
-      - item_type, is_usable
-      - effect_script, stat_effects
+      - id, display name
+      - max stack, is stackable
+      - item type, is usable
+      - effect script, stat effects
     end note
   }
 
   component "ItemStack\n(Quantity Manager)" as ItemStack <<model>> {
     note right
       Properties:
-      - item_data: ItemData
+      - item data: ItemData
       - quantity: int
 
       Methods:
       - add(amount): int (returns overflow)
       - remove(amount): bool
-      - is_full(): bool
+      - is full(): bool
     end note
   }
 
@@ -1316,9 +1316,9 @@ package "Model Layer (Resources)" as ModelLayer {
       - slots: Array[ItemStack]
 
       Methods:
-      - add_item(item, amount): bool
-      - remove_item(item, amount): bool
-      - has_item(item, amount): bool
+      - add item(item, amount): bool
+      - remove item(item, amount): bool
+      - has item(item, amount): bool
       - clear(), sort()
       - serialize/deserialize
     end note
@@ -1371,10 +1371,10 @@ package "Controller Layer" as ControllerLayer {
   component "InventoryController\n(Logic Handler)" as InvController <<controller>> {
     note right
       Operations:
-      - use_item(item, target): bool
-      - equip_equipment(equip, char): bool
-      - sort_inventory(type): void
-      - transfer_item(from, to): bool
+      - use item(item, target): bool
+      - equip equipment(equip, char): bool
+      - sort inventory(type): void
+      - transfer item(from, to): bool
 
       Mediates between Model and View
     end note
@@ -1396,16 +1396,16 @@ package "Manager Layer (Autoloads)" as ManagerLayer {
   component "GameManager\n(State Manager)" as GameMgr <<manager>> {
     note right
       **Central State:**
-      - current_scene: StringName
-      - is_paused: bool
+      - current scene: StringName
+      - is paused: bool
       - mode: StringName
-      - input_mode: StringName
+      - input mode: StringName
 
       **Signals:**
-      - scene_changed
-      - paused_changed
-      - mode_changed
-      - input_mode_changed
+      - scene changed
+      - paused changed
+      - mode changed
+      - input mode changed
     end note
   }
 
@@ -1414,25 +1414,25 @@ package "Manager Layer (Autoloads)" as ManagerLayer {
       **57 Signals:**
 
       Flow/Scene (5):
-      - boot_completed, level_will_change,
-        level_loaded, level_unloaded
+      - boot completed, level will change,
+        level loaded, level unloaded
 
       Party (8):
-      - party_moved, party_member_added,
-        party_size_changed, party_data_loaded
+      - party moved, party member added,
+        party size changed, party data loaded
 
       Inventory (5):
-      - item_added, item_removed,
-        equipment_equipped, equipment_unequipped
+      - item added, item removed,
+        equipment equipped, equipment unequipped
 
       UI (4):
-      - modal_opened, modal_closed,
-        tooltip_requested, tooltip_hidden
+      - modal opened, modal closed,
+        tooltip requested, tooltip hidden
 
       World (11):
-      - world_created, tile_modified,
-        location_discovered, location_entered,
-        chunk_loaded, chunk_unloaded, etc.
+      - world created, tile modified,
+        location discovered, location entered,
+        chunk loaded, chunk unloaded, etc.
 
       Combat, Actor, Save/Load, Audio (24)
     end note
@@ -1441,13 +1441,13 @@ package "Manager Layer (Autoloads)" as ManagerLayer {
   component "UIManager\n(Modal Manager)" as UIMgr <<manager>> {
     note right
       **LIFO Menu Stack:**
-      - _menu_stack: Array[Control]
+      - menu stack: Array[Control]
 
       **Methods:**
-      - open_menu(scene): Control
-      - close_top_menu(): void
-      - close_all_menus(): void
-      - get_active_menu(): Control
+      - open menu(scene): Control
+      - close top menu(): void
+      - close all menus(): void
+      - get active menu(): Control
 
       **Automatic:**
       - Pause on open
@@ -1461,7 +1461,7 @@ package "Manager Layer (Autoloads)" as ManagerLayer {
 ItemStack --> ItemData : contains
 Inventory --> ItemStack : manages array
 PartyModel --> CharModel : contains members
-CharModel --> Inventory : has shared_inventory
+CharModel --> Inventory : has shared inventory
 
 ' View connections
 PauseMenu --|> BaseMenu : extends
@@ -1490,8 +1490,8 @@ CharSheetPanel --> InvController : equip/unequip
 
 ' View to EventBus
 BaseMenu --> EventBus : subscribes to events
-InventoryPanel --> EventBus : listens item_added
-CharSheetPanel --> EventBus : listens equipment_equipped
+InventoryPanel --> EventBus : listens item added
+CharSheetPanel --> EventBus : listens equipment equipped
 
 note top of ManagerLayer
   **Architecture Refactor 2025**
