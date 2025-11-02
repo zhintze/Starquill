@@ -1,5 +1,5 @@
 extends Node
-class_name EventBus
+# EventBus autoload - no class_name to avoid singleton conflict
 
 # ============================================
 # FLOW / SCENE SIGNALS (from BusFlow)

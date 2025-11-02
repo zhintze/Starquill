@@ -1,7 +1,7 @@
 extends Resource
 class_name Inventory
 
-signal changed()
+signal inventory_changed()
 signal item_added(stack: ItemStack)
 signal item_removed(stack: ItemStack)
 signal capacity_changed(old_capacity: int, new_capacity: int)
@@ -180,12 +180,12 @@ func deserialize(data: Dictionary) -> void:
 	slots.clear()
 	slots.resize(capacity)
 
-	var slot_data := data.get("slots", [])
+	var slot_data: Array = data.get("slots", [])
 	for i in range(mini(slot_data.size(), capacity)):
 		var stack_data = slot_data[i]
 		if stack_data != null and stack_data is Dictionary:
-			var item_id := stack_data.get("item_id", &"")
-			var quantity := stack_data.get("quantity", 1)
+			var item_id: StringName = stack_data.get("item_id", &"")
+			var quantity: int = stack_data.get("quantity", 1)
 
 			# TODO: Load ItemData from registry (ItemRegistry.get_item(item_id))
 			# For now, skip deserialization until ItemRegistry is implemented

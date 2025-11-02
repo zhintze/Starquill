@@ -1,5 +1,5 @@
 extends Node
-class_name GameManager
+# GameManager autoload - no class_name to avoid singleton conflict
 
 # Signals
 signal scene_changed(new_scene: StringName)

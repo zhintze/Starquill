@@ -7,7 +7,7 @@ func start_new_game(level_id: String, scene: PackedScene) -> void:
 	PlayerData.initialize_new_game()
 	_create_test_party()
 	SceneLoader.swap_to(level_id, scene)
-	BusAudio.set_music("explore")
+	EventBus.music_changed.emit("explore")
 
 func _create_test_party() -> void:
 	for i in range(4):

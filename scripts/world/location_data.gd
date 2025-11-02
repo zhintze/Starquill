@@ -64,7 +64,7 @@ func _set_default_properties() -> void:
 func discover() -> void:
 	if not is_discovered:
 		is_discovered = true
-		BusWorld.location_discovered.emit(self)
+		EventBus.location_discovered.emit(self)
 
 func add_npc(npc_id: String) -> void:
 	if npc_id not in npc_ids:

@@ -1,5 +1,5 @@
 extends CanvasLayer
-class_name UIManager
+# UIManager autoload - no class_name to avoid singleton conflict
 
 # Menu stack for modal management
 var _menu_stack: Array[Control] = []
@@ -9,8 +9,16 @@ var party_menu_scene: PackedScene = null
 var pause_menu_scene: PackedScene = null
 var settings_menu_scene: PackedScene = null
 
+# Cached autoload references
+var _game_manager: Node = null
+var _event_bus: Node = null
+
 func _ready() -> void:
 	layer = 100  # Render above game world
+
+	# Cache autoload references
+	_game_manager = get_node("/root/GameManager")
+	_event_bus = get_node("/root/EventBus")
 
 	# Menu scenes will be loaded when they are created
 	# party_menu_scene = preload("res://scenes/ui/party_menu.tscn")
@@ -49,7 +57,7 @@ func open_menu(menu_scene: PackedScene) -> Control:
 	else:
 		menu.show()
 
-	GameManager.set_mode(&"menu")
+	_game_manager.set_mode(&"menu")
 
 	# Get menu name for event
 	var menu_name: StringName = &"unknown"
@@ -58,7 +66,7 @@ func open_menu(menu_scene: PackedScene) -> Control:
 	elif "menu_name" in menu:
 		menu_name = menu.menu_name
 
-	EventBus.modal_opened.emit(menu_name)
+	_event_bus.modal_opened.emit(menu_name)
 
 	return menu
 
@@ -67,7 +75,7 @@ func close_top_menu() -> void:
 	if _menu_stack.is_empty():
 		return
 
-	var top_menu := _menu_stack.pop_back()
+	var top_menu: Control = _menu_stack.pop_back()
 
 	# Call close method if menu has it
 	if top_menu.has_method("close"):
@@ -124,8 +132,8 @@ func _on_menu_closed(menu: Control) -> void:
 
 	menu.queue_free()
 
-	EventBus.modal_closed.emit(StringName(menu_name))
+	_event_bus.modal_closed.emit(StringName(menu_name))
 
 	# Restore gameplay mode if no menus remain
 	if _menu_stack.is_empty():
-		GameManager.set_mode(&"gameplay")
+		_game_manager.set_mode(&"gameplay")
