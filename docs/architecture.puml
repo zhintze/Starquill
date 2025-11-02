@@ -1,0 +1,1204 @@
+@startuml Starquill Architecture Overview
+!theme plain
+title Starquill - Open World Fantasy RPG Architecture
+caption Generated PlantUML documentation for Starquill project
+
+' This document contains multiple diagrams documenting the Starquill project architecture
+' Use PlantUML to render these diagrams individually by section
+
+@enduml
+
+' ================================================================================
+' PACKAGE DIAGRAM - Project Structure
+' ================================================================================
+@startuml Package-Structure
+!theme plain
+title Package Structure and Dependencies
+
+package "Autoload Singletons" as autoload {
+  package "Bus System" as buses {
+    [BusFlow]
+    [BusActors]
+    [BusCombat]
+    [BusInventory]
+    [BusUi]
+    [BusSave]
+    [BusAudio]
+    [BusWorld]
+    [BusParty]
+  }
+
+  package "Core Managers" as managers {
+    [ConfigManager]
+    [ColorManager]
+    [StarquillData]
+    [DisplayBuilder]
+  }
+
+  package "Game Controllers" as controllers {
+    [Game]
+    [SceneLoader]
+    [PlayerData]
+    [equipment_factory]
+  }
+
+  [WorldConstants]
+}
+
+package "scripts/" as scripts {
+  package "character/" as character {
+    [Character]
+    [Stats]
+    [CharacterFactory]
+  }
+
+  package "species/" as species {
+    [Species]
+    [SpeciesInstance]
+    [SpeciesFactory]
+  }
+
+  package "equipment/" as equipment {
+    [Equipment]
+    [EquipmentInstance]
+    [EquipmentCatalog]
+    [EquipmentFactory]
+  }
+
+  package "display/" as display {
+    [CharacterDisplay]
+    [DisplayPiece]
+    [ImageId]
+  }
+
+  package "world/" as world {
+    [WorldMap]
+    [ChunkManager]
+    [Chunk]
+    [Tile]
+    [TileRenderer]
+    [Pathfinder]
+    [CameraController]
+  }
+
+  package "core/" as core {
+    [config_manager]
+    [starquill_data]
+    [display_builder]
+    [color_manager]
+    [LayerManager]
+  }
+
+  package "ui/" as ui {
+    [HUD]
+    [RandomizationSettings]
+  }
+
+  package "verbs/" as verbs {
+    [Verb]
+    [VerbFactory]
+  }
+}
+
+package "assets/data/" as data {
+  [species.json]
+  [equipment.json]
+  [weapons.json]
+  [color_palettes.json]
+  [speciesModularParts.json]
+}
+
+package "addons/godot_mcp/" as mcp {
+  package "commands/" as mcp_commands {
+    [NodeCommands]
+    [SceneCommands]
+    [ScriptCommands]
+    [EditorCommands]
+    [ProjectCommands]
+  }
+  [MCPServer]
+  [CommandHandler]
+  [WebSocketServer]
+}
+
+' Dependencies
+ConfigManager --> data
+StarquillData --> data
+ColorManager --> data
+
+character --> species
+character --> equipment
+character --> display
+
+equipment --> StarquillData
+species --> StarquillData
+
+world --> character
+world --> display
+world --> WorldConstants
+
+display --> DisplayBuilder
+display --> ColorManager
+
+Game --> PlayerData
+Game --> SceneLoader
+Game --> StarquillData
+Game --> equipment_factory
+
+mcp --> world
+mcp --> character
+mcp --> scripts
+
+@enduml
+
+' ================================================================================
+' COMPONENT DIAGRAM - System Architecture
+' ================================================================================
+@startuml Component-Architecture
+!theme plain
+title Starquill Component Architecture
+
+skinparam component {
+  BackgroundColor<<autoload>> LightBlue
+  BackgroundColor<<manager>> LightGreen
+  BackgroundColor<<system>> LightYellow
+  BackgroundColor<<data>> LightGray
+}
+
+component "Game Entry Point" as GameEntry {
+  component "main.tscn" as MainScene
+  component "Game\n(Autoload)" as Game <<autoload>>
+}
+
+component "Event Bus System" as BusSystem <<autoload>> {
+  component "BusFlow\n(Level transitions)" as BusFlow
+  component "BusActors\n(Character events)" as BusActors
+  component "BusCombat\n(Combat events)" as BusCombat
+  component "BusWorld\n(World events)" as BusWorld
+  component "BusParty\n(Party events)" as BusParty
+  component "BusUi\n(UI events)" as BusUi
+  component "BusSave\n(Save/Load)" as BusSave
+  component "BusAudio\n(Music/SFX)" as BusAudio
+  component "BusInventory\n(Inventory)" as BusInventory
+}
+
+component "Core Management Layer" as CoreLayer <<manager>> {
+  component "ConfigManager\n(Config & Boot)" as ConfigMgr <<autoload>>
+  component "StarquillData\n(Data Registry)" as DataMgr <<autoload>>
+  component "ColorManager\n(Color Palettes)" as ColorMgr <<autoload>>
+  component "DisplayBuilder\n(Visual Assembly)" as DisplayMgr <<autoload>>
+  component "PlayerData\n(Player State)" as PlayerMgr <<autoload>>
+}
+
+component "Character System" as CharacterSys <<system>> {
+  component "Character\n(Stats + Equipment)" as CharClass
+  component "Stats\n(D&D Stats)" as StatsClass
+  component "SpeciesInstance\n(Appearance)" as SpeciesInst
+  component "CharacterFactory\n(Creation)" as CharFactory
+}
+
+component "Equipment System" as EquipmentSys <<system>> {
+  component "EquipmentInstance\n(Runtime Item)" as EquipInst
+  component "EquipmentCatalog\n(Item Definitions)" as EquipCat
+  component "EquipmentFactory\n(Randomization)" as EquipFactory <<autoload>>
+}
+
+component "World System" as WorldSys <<system>> {
+  component "WorldMap\n(Main World)" as WorldMap
+  component "ChunkManager\n(Chunk Loading)" as ChunkMgr
+  component "Chunk\n(16x16 Tiles)" as ChunkClass
+  component "Tile\n(Single Cell)" as TileClass
+  component "TileRenderer\n(Rendering)" as TileRender
+  component "Pathfinder\n(A* Pathfinding)" as Pathfind
+}
+
+component "Display System" as DisplaySys <<system>> {
+  component "CharacterDisplay\n(Visual Node)" as CharDisplay
+  component "DisplayPiece\n(Texture Layer)" as DisplayPiece
+  component "LayerManager\n(Z-ordering)" as LayerMgr
+}
+
+component "Data Sources" as DataSources <<data>> {
+  database "species.json" as SpeciesJson
+  database "equipment.json" as EquipJson
+  database "weapons.json" as WeaponsJson
+  database "color_palettes.json" as ColorJson
+}
+
+component "MCP Integration" as MCPSys <<system>> {
+  component "MCPServer\n(WebSocket:9080)" as MCPServer
+  component "CommandHandler\n(Request Router)" as MCPHandler
+  component "Node/Scene/Script\nCommands" as MCPCommands
+}
+
+' Connections
+Game --> BusFlow
+Game --> BusAudio
+Game --> PlayerMgr
+
+ConfigMgr --> DataMgr : loads data
+ConfigMgr --> DataSources : reads JSON
+
+DataMgr --> SpeciesJson
+DataMgr --> EquipJson
+DataMgr --> WeaponsJson
+
+ColorMgr --> ColorJson
+
+CharClass --> StatsClass
+CharClass --> SpeciesInst
+CharClass --> EquipInst
+CharClass --> DisplayMgr
+
+EquipFactory --> DataMgr : query catalog
+EquipFactory --> ColorMgr : get colors
+EquipFactory --> CharClass : equips items
+
+CharFactory --> DataMgr : create species
+CharFactory --> EquipFactory : randomize
+
+WorldMap --> ChunkMgr
+WorldMap --> TileRender
+WorldMap --> Pathfind
+ChunkMgr --> ChunkClass
+ChunkClass --> TileClass
+
+CharDisplay --> DisplayMgr : builds pieces
+CharDisplay --> DisplayPiece
+DisplayMgr --> LayerMgr : z-sorting
+
+WorldMap --> BusWorld : events
+WorldMap --> BusParty : party movement
+
+MCPServer --> MCPHandler
+MCPHandler --> MCPCommands
+MCPCommands --> WorldMap
+MCPCommands --> CharClass
+
+note right of BusSystem
+  Event bus pattern for
+  decoupled communication
+  between systems
+end note
+
+note right of DataMgr
+  Unified registry replacing:
+  - species_loader
+  - equipment_catalog
+  - equipment_loader
+end note
+
+note right of DisplayMgr
+  Paper doll rendering with:
+  - Layer-based assembly
+  - Color tinting
+  - Equipment conflicts
+  - Z-order sorting
+end note
+
+@enduml
+
+' ================================================================================
+' CLASS DIAGRAM - Character System
+' ================================================================================
+@startuml Class-CharacterSystem
+!theme plain
+title Character System - Class Relationships
+
+class Character {
+  - id: String
+  - display_name: String
+  - skin_color: Color
+  - stats: Stats
+  - species: SpeciesInstance
+
+  ' Equipment slots
+  - head: EquipmentInstance
+  - torso: EquipmentInstance
+  - arms: EquipmentInstance
+  - legs: EquipmentInstance
+  - feet: EquipmentInstance
+  - main_hand: EquipmentInstance
+  - off_hand: EquipmentInstance
+  - misc1-4: EquipmentInstance
+
+  - equipment_layer_colors: Dictionary
+  - base_verbs: Array[Verb]
+
+  + equip_instance(ei: EquipmentInstance): bool
+  + equip_to_hand_slot(ei, slot): bool
+  + unequip(slot: int): void
+  + get_display_pieces(): Array[DisplayPiece]
+  - _recalc_stats(): void
+  - _assign_colors_for_equipment_variants(): void
+
+  <<signal>> model_changed
+}
+
+class Stats {
+  - values: Dictionary
+  + get_stat(type: int): int
+  + set_stat(type, value): void
+  + add_stat(type, amount): void
+
+  <<signal>> changed
+}
+
+enum StatType {
+  STR
+  DEX
+  CON
+  INT
+  WIS
+  CHA
+}
+
+class SpeciesInstance {
+  - base: Species
+  - skinColor: Color
+  - hairColor: Color
+  - eyesColor: Color
+  - facialDetailColor: Color
+
+  ' Body parts (resolved from base)
+  - backArm: String
+  - body: String
+  - head: String
+  - ears: String
+  - eyes: String
+  - hair: String
+  - facialHair: String
+  - facialDetail: String
+  - frontArm: String
+  - legs: String
+  - mouth: String
+  - nose: String
+
+  - otherBodyParts: PackedStringArray
+  - itemRestrictions: PackedStringArray
+  - modular_image_nums: Dictionary
+  - skinVariance_resolved: Dictionary
+
+  + from_species(species: Species): void
+  + get_variance_color_for_layer(layer): Color
+}
+
+class Species <<Resource>> {
+  - name: String
+
+  ' Part definitions
+  - backArm: String
+  - body: String
+  - head: String
+  - ears: String
+  - eyes: String
+  - hair: Variant
+  - facialHair: String
+  - facialDetail: String
+  - frontArm: String
+  - legs: String
+  - mouth: String
+  - nose: String
+
+  - otherBodyParts: PackedStringArray
+  - itemRestrictions: PackedStringArray
+
+  ' Colors
+  - skin_color: PackedStringArray
+  - hair_color: PackedStringArray
+  - eyes_color: PackedStringArray
+  - facialDetail_color: PackedStringArray
+  - skinVariance_sets: Array[Dictionary]
+
+  ' Scale
+  - x_scale: float
+  - y_scale: float
+}
+
+class CharacterFactory {
+  {static} + create_from_species_instance(si): Character
+  {static} + create_random_character(): Character
+}
+
+Character "1" *-- "1" Stats : has
+Character "1" *-- "1" SpeciesInstance : has
+Character "1" o-- "0..11" EquipmentInstance : equips
+SpeciesInstance "1" --> "1" Species : based on
+CharacterFactory ..> Character : creates
+CharacterFactory ..> SpeciesInstance : uses
+Stats --> StatType : uses
+
+note right of Character
+  Central character class combining:
+  - Visual appearance (species)
+  - Game stats (D&D style)
+  - Equipment slots (11 total)
+  - Equipment color assignments
+
+  Emits model_changed signal when
+  equipment or stats change.
+end note
+
+note right of SpeciesInstance
+  Runtime instance of a Species with:
+  - Randomized colors
+  - Resolved modular parts
+  - Skin variance applied
+
+  Allows multiple characters
+  of same species to look unique.
+end note
+
+@enduml
+
+' ================================================================================
+' CLASS DIAGRAM - Equipment System
+' ================================================================================
+@startuml Class-EquipmentSystem
+!theme plain
+title Equipment System - Class Relationships
+
+class EquipmentInstance {
+  - item_type: String
+  - item_num: int
+  - description: String
+  - stats: Stats
+  - modular: bool
+  - layer_variants: Array[int]
+  - layer_color_map: Dictionary
+  - layer_tints: Dictionary
+
+  + _init_from_catalog(cat, num, palette)
+  + _init_from_handheld_dict(dict, num, palette)
+  + tint_for_layer(layer_code): Color
+  + set_layer_tint(layer_code, color): void
+}
+
+class "EquipmentCatalog.CatalogItem" as CatalogItem {
+  - item_type: String
+  - amount: int
+  - description: String
+  - layer_codes: Array
+  - layer_color_variance: Array
+  - hidden_layers: Array
+  - stat_bonuses: Dictionary
+
+  + new(data: Dictionary)
+}
+
+class EquipmentFactory <<Singleton>> {
+  - _main_palette: PackedStringArray
+
+  + create_from_catalog(cat, item_num): EquipmentInstance
+  + create_from_handheld_dict(dict, item_num): EquipmentInstance
+  + create_random_from_prefix(prefix): EquipmentInstance
+  + create_random_weapon(): EquipmentInstance
+  + equip_random_set(character, extras): void
+
+  - _select_prefix_for_misc(pool): String
+  - _load_palette(): PackedStringArray
+}
+
+class StarquillData <<Singleton>> {
+  ' Equipment catalog data
+  - _equipment_all: Array[CatalogItem]
+  - _equipment_by_type: Dictionary
+  - _equipment_by_slot_prefix: Dictionary
+
+  ' Handheld catalog (weapons/shields)
+  - _handheld_all: Array
+  - _handheld_by_type: Dictionary
+
+  ' Randomization constants
+  - randomization_constants: Dictionary
+
+  + get_equipment_by_type(type): CatalogItem
+  + get_equipment_by_slot_prefix(prefix): Array
+  + get_handheld_by_type(type): Dictionary
+  + get_slot_for_item_type(type): String
+  + is_handheld_two_handed(type): bool
+  + is_handheld_one_handed(type): bool
+  + get_equipment_prefix_chance(prefix): float
+  + get_off_hand_chance(): float
+}
+
+class ColorManager <<Singleton>> {
+  - _palettes: Dictionary
+
+  + get_random_color_from_palette(name): Color
+  + get_palette_hex(name): Array
+  + load_palettes_from_json(path): void
+}
+
+EquipmentFactory ..> CatalogItem : queries
+EquipmentFactory ..> StarquillData : uses
+EquipmentFactory ..> ColorManager : uses
+EquipmentFactory ..> EquipmentInstance : creates
+
+EquipmentInstance --> Stats : has
+
+StarquillData "1" *-- "*" CatalogItem : manages
+StarquillData "1" *-- "*" "Handheld Dict" : manages
+
+note right of EquipmentFactory
+  Factory pattern for equipment creation:
+  - Randomization with restrictions
+  - Color palette selection
+  - Slot-based creation
+  - Character equipping with priorities
+
+  Handles both regular equipment
+  and weapons/shields (handheld).
+end note
+
+note right of StarquillData
+  Unified data registry replacing:
+  - equipment_catalog
+  - equipment_loader
+
+  Provides:
+  - Equipment lookups by type/prefix
+  - Randomization constants
+  - Slot mapping logic
+  - Weapon type detection
+end note
+
+note left of CatalogItem
+  Equipment definition from JSON:
+  - layer_codes: visual layers
+  - layer_color_variance: colorable layers
+  - hidden_layers: hides species parts
+  - stat_bonuses: gameplay modifiers
+
+  Example: Helmet hides hair layer
+end note
+
+@enduml
+
+' ================================================================================
+' CLASS DIAGRAM - World System
+' ================================================================================
+@startuml Class-WorldSystem
+!theme plain
+title World System - Class Relationships
+
+class WorldMap {
+  - world_seed: int
+  - world_size: Vector2i
+  - world_name: String
+  - party_position: Vector2i
+
+  - chunk_manager: ChunkManager
+  - tile_renderer: TileRenderer
+
+  - visible_tiles: Array[Vector2i]
+  - revealed_tiles: Array[Vector2i]
+
+  - party_member_positions: Array[Vector2i]
+  - is_party_moving: bool
+  - movement_progress: float
+
+  + initialize_world(): void
+  + get_tile(pos: Vector2i): Tile
+  + set_tile(pos, tile): void
+  + move_party(new_pos): bool
+  + serialize(): Dictionary
+
+  - _update_visibility(): void
+  - _update_movement_animation(delta): void
+  - _generate_biome_seeds(rng): void
+}
+
+class ChunkManager {
+  - world_map: WorldMap
+  - loaded_chunks: Dictionary
+  - chunk_load_radius: int
+
+  + get_chunk(chunk_pos): Chunk
+  + update_loaded_chunks(center_chunk): void
+  + unload_chunk(chunk_pos): void
+  - _generate_chunk(chunk_pos): Chunk
+}
+
+class Chunk {
+  - chunk_position: Vector2i
+  - tiles: Array[Tile]
+  - is_modified: bool
+  - is_generated: bool
+
+  + get_tile(x, y): Tile
+  + get_tile_world(world_x, world_y): Tile
+  + set_tile_world(world_x, world_y, tile): void
+  + update_visibility(visible_tiles): void
+  + serialize(): Dictionary
+
+  {static} + CHUNK_SIZE: int = 16
+}
+
+class Tile {
+  - world_position: Vector2i
+  - tile_type: int
+  - biome_type: int
+  - is_passable: bool
+  - is_visible: bool
+  - is_revealed: bool
+  - location_data: LocationData
+
+  + has_location(): bool
+  + reveal(): void
+}
+
+class TileRenderer {
+  + render_chunk(chunk): void
+  + render_tile(pos, tile): void
+  + update_visibility_batch(visible, revealed): void
+}
+
+class WorldCoordinate {
+  {static} + world_to_chunk(world_pos): Vector2i
+  {static} + chunk_to_world(chunk_pos): Vector2i
+  {static} + is_valid_position(pos): bool
+  {static} + euclidean_distance(a, b): float
+  {static} + get_tiles_in_radius(center, radius): Array
+}
+
+class WorldConstants <<Singleton>> {
+  {static} + WORLD_SIZE: int = 10000
+  {static} + CHUNK_SIZE: int = 16
+  {static} + TILE_SIZE: int = 64
+  {static} + VISIBILITY_RADIUS: int = 10
+  {static} + MAX_PARTY_SIZE: int = 4
+
+  {static} + tile_to_pixel(tile_pos): Vector2
+  {static} + pixel_to_tile(pixel_pos): Vector2i
+}
+
+class Pathfinder {
+  + find_path(world_map, start, goal): Array[Vector2i]
+  - _reconstruct_path(came_from, current): Array
+  - _heuristic(a, b): float
+}
+
+class CameraController {
+  - target_zoom: float
+  - current_zoom: float
+  - is_panning: bool
+  - last_touch_distance: float
+
+  + _process(delta): void
+  - _handle_pinch_zoom(): void
+  - _update_camera_limits(): void
+}
+
+WorldMap "1" *-- "1" ChunkManager : manages
+WorldMap "1" *-- "1" TileRenderer : renders
+WorldMap "1" --> "1" Pathfinder : uses
+
+ChunkManager "1" *-- "*" Chunk : loads/unloads
+Chunk "1" *-- "256" Tile : contains (16x16)
+
+WorldMap ..> WorldCoordinate : uses
+ChunkManager ..> WorldCoordinate : uses
+WorldMap ..> WorldConstants : uses
+
+WorldMap --> CameraController : controlled by
+
+note right of WorldMap
+  Main world controller managing:
+  - Procedural chunk generation
+  - Party position and movement
+  - Visibility/fog of war
+  - Party member animations
+
+  Uses event bus for communication:
+  - BusWorld: world events
+  - BusParty: party movement
+end note
+
+note right of ChunkManager
+  Handles chunk lifecycle:
+  - Dynamic loading/unloading
+  - Procedural generation
+  - Chunk caching
+
+  Loads chunks in radius around
+  party position.
+end note
+
+note bottom of Tile
+  Single world cell containing:
+  - Terrain type and biome
+  - Passability for movement
+  - Visibility state (fog of war)
+  - Optional location data
+end note
+
+@enduml
+
+' ================================================================================
+' CLASS DIAGRAM - Display System
+' ================================================================================
+@startuml Class-DisplaySystem
+!theme plain
+title Display System - Visual Layer Architecture
+
+class CharacterDisplay {
+  - _character: Character
+  - _piece_nodes: Array[TextureRect]
+  - _content_size: Vector2
+  - _is_facing_left: bool
+
+  - bg_panel: Panel
+  - layer_root: Control
+
+  + set_character(c: Character): void
+  + set_facing_left(facing_left): void
+
+  - _redraw(): void
+  - _update_flip_state(): void
+  - _apply_bottom_center_anchor(): void
+  - _update_global_scale(): void
+}
+
+class DisplayPiece {
+  + texture: Texture2D
+  + layer: int
+  + modulate: Color
+  + scale: Vector2
+  + rotation_degrees: float
+  + offset: Vector2
+  + flip_h: bool
+  + flip_v: bool
+  + is_offhand_weapon: bool
+
+  {static} + from_path(path, layer, tint): DisplayPiece
+}
+
+class DisplayBuilder <<Singleton>> {
+  {static} - SPECIES_IMG_DIR: String
+  {static} - EQUIPMENT_IMG_DIR: String
+  {static} - WEAPONS_IMG_DIR: String
+
+  + build_character_display(character): Array[DisplayPiece]
+  + build_species_display(species): Array[DisplayPiece]
+  + build_equipment_display(equipment): Array[DisplayPiece]
+
+  + build_species_pieces(instance): Array[DisplayPiece]
+  + build_equipment_pieces(equipment): EquipmentResult
+
+  - _add_species_field(field, token, pieces, color, instance)
+  - _deduplicate_equipment_by_type(equipment): Array
+}
+
+class "DisplayBuilder.EquipmentResult" as EquipmentResult {
+  + pieces: Array[DisplayPiece]
+  + hidden_species_layers: PackedInt32Array
+}
+
+class LayerManager <<Singleton>> {
+  - _layer_mappings: Dictionary
+
+  + get_layer_mapping(type_code): Array[int]
+  + merge_and_sort_pieces(species, equipment, hidden): Array
+  + sort_pieces_by_layer(pieces): Array
+  + apply_layer_tints(pieces, color_map): Array
+  + filter_hidden_layers(pieces, hidden): Array
+}
+
+enum ImageIdKind {
+  EMPTY
+  INVALID
+  STATIC
+  MODULAR_FULL
+  MODULAR_GROUP_ONLY
+}
+
+class ImageId {
+  {static} + parse(token): Dictionary
+  {static} + to_static_id(image_num, layer): String
+  {static} + to_modular_id(group, num, layer): String
+}
+
+ImageId ..> ImageIdKind : uses
+
+CharacterDisplay "1" --> "1" Character : displays
+CharacterDisplay "1" *-- "*" DisplayPiece : renders
+CharacterDisplay ..> DisplayBuilder : uses
+
+DisplayBuilder ..> DisplayPiece : creates
+DisplayBuilder ..> LayerManager : uses
+DisplayBuilder ..> ImageId : parses
+DisplayBuilder --> EquipmentResult : returns
+
+DisplayBuilder ..> Character : queries
+DisplayBuilder ..> SpeciesInstance : queries
+DisplayBuilder ..> EquipmentInstance : queries
+
+note right of CharacterDisplay
+  Godot Control node that:
+  - Renders character visuals
+  - Manages TextureRect children
+  - Handles horizontal flipping
+  - Applies species scale
+  - Anchors to bottom-center
+
+  Updates automatically via
+  Character.model_changed signal.
+end note
+
+note right of DisplayBuilder
+  Unified builder replacing:
+  - SpeciesDisplayBuilder
+  - EquipmentDisplayBuilder
+  - SpeciesDisplayable
+
+  Handles:
+  - Species body part assembly
+  - Equipment layer rendering
+  - Color tinting
+  - Layer conflict resolution
+  - Off-hand transformations
+end note
+
+note bottom of DisplayPiece
+  Immutable visual layer data:
+  - Texture and Z-layer
+  - Color modulation
+  - Transform (scale, rotation, offset)
+  - Flip flags
+
+  Created by DisplayBuilder,
+  consumed by CharacterDisplay.
+end note
+
+note left of LayerManager
+  Layer management utilities:
+  - Z-order sorting (0-999)
+  - Species/equipment merging
+  - Hidden layer filtering
+  - Color tint application
+
+  Ensures proper visual stacking
+  of body parts and equipment.
+end note
+
+@enduml
+
+' ================================================================================
+' CLASS DIAGRAM - Core Management
+' ================================================================================
+@startuml Class-CoreManagement
+!theme plain
+title Core Management Layer - Data & Configuration
+
+class ConfigManager <<Singleton>> {
+  - _config_loaded: bool
+  - _project_config: Dictionary
+
+  + _ready(): void
+  + get_config_value(key, default): Variant
+  + load_project_config(): void
+
+  - _boot_sequence(): void
+  - _load_core_data(): void
+}
+
+class StarquillData <<Singleton>> {
+  ' Species registry
+  - _species_all: Array[Species]
+  - _species_by_id: Dictionary
+
+  ' Equipment catalog
+  - _equipment_all: Array[CatalogItem]
+  - _equipment_by_type: Dictionary
+  - _equipment_by_slot_prefix: Dictionary
+
+  ' Handheld catalog
+  - _handheld_all: Array
+  - _handheld_by_type: Dictionary
+
+  ' Randomization settings
+  - randomization_constants: Dictionary
+
+  ' Species API
+  + get_species_by_id(id): Species
+  + get_all_species(): Array
+  + create_species_instance(id): SpeciesInstance
+  + create_random_species_instance(): SpeciesInstance
+
+  ' Equipment API
+  + get_equipment_by_type(type): CatalogItem
+  + get_equipment_by_slot_prefix(prefix): Array
+  + get_slot_for_item_type(type): String
+
+  ' Handheld API
+  + get_handheld_by_type(type): Dictionary
+  + is_handheld_two_handed(type): bool
+  + get_one_handed_handheld(): Array
+
+  ' Data loading
+  + load_species_from_json(path): void
+  + load_equipment_catalog_from_json(path): void
+  + load_handheld_catalog_from_json(path): void
+
+  ' Modular parts
+  {static} + pick_modular_image_num(code): String
+}
+
+class ColorManager <<Singleton>> {
+  - _palettes: Dictionary
+
+  + get_random_color_from_palette(name): Color
+  + get_color_by_index(palette, index): Color
+  + get_palette_hex(name): Array
+  + load_palettes_from_json(path): void
+
+  - _parse_color_keyword(keyword): Color
+}
+
+class PlayerData <<Singleton>> {
+  - party: Party
+  - current_world: String
+  - save_data: Dictionary
+
+  + initialize_new_game(): void
+  + add_character(character): void
+  + remove_character(character): void
+  + save_game(): void
+  + load_game(): void
+}
+
+class Game <<Singleton>> {
+  + start_new_game(level_id, scene): void
+  + go_to_next_level(from_id, to_id, scene): void
+
+  - _create_test_party(): void
+}
+
+class SceneLoader <<Singleton>> {
+  - _current_level_id: String
+  - _current_scene: Node
+
+  + swap_to(level_id, scene): void
+  + get_current_level_id(): String
+
+  - _unload_current(): void
+  - _load_scene(scene): void
+}
+
+class Party {
+  - members: Array[Character]
+  - inventory: Inventory
+
+  + add_member(character): void
+  + remove_member(character): void
+  + get_leader(): Character
+}
+
+ConfigManager --> StarquillData : initializes
+ConfigManager --> ColorManager : initializes
+
+StarquillData "1" *-- "*" Species : manages
+StarquillData "1" *-- "*" CatalogItem : manages
+
+Game --> PlayerData : creates party
+Game --> SceneLoader : loads scenes
+Game --> StarquillData : queries data
+
+PlayerData "1" *-- "1" Party : has
+Party "1" *-- "1..4" Character : contains
+
+note right of ConfigManager
+  Boot-time initialization:
+  1. Load color palettes
+  2. Load species data
+  3. Load equipment catalog
+  4. Load handheld catalog
+  5. Emit boot_completed
+
+  Single source of truth for
+  project configuration.
+end note
+
+note right of StarquillData
+  Unified data registry replacing:
+  - species_loader
+  - equipment_catalog
+  - equipment_loader
+
+  Provides:
+  - Species creation APIs
+  - Equipment lookup APIs
+  - Randomization constants
+  - Modular image selection
+
+  All data loaded by ConfigManager
+  during boot sequence.
+end note
+
+note bottom of ColorManager
+  Color palette management:
+  - Loads from color_palettes.json
+  - Supports named palettes
+  - Keyword resolution (human, dark, etc)
+  - Random color selection
+
+  Used by:
+  - SpeciesInstance (skin/hair/eyes)
+  - EquipmentFactory (equipment colors)
+end note
+
+@enduml
+
+' ================================================================================
+' CLASS DIAGRAM - MCP Integration
+' ================================================================================
+@startuml Class-MCPSystem
+!theme plain
+title MCP (Model Context Protocol) Integration
+
+package "addons/godot_mcp/" {
+  class MCPServer {
+    - websocket_server: WebSocketServer
+    - command_handler: CommandHandler
+    - is_running: bool
+
+    + _ready(): void
+    + start_server(port): void
+    + stop_server(): void
+    - _on_message_received(message): void
+    - _send_response(response): void
+  }
+
+  class WebSocketServer {
+    - port: int
+    - connections: Array
+
+    + start(port): void
+    + stop(): void
+    + send_to_all(message): void
+
+    <<signal>> message_received
+    <<signal>> client_connected
+    <<signal>> client_disconnected
+  }
+
+  class CommandHandler {
+    - processors: Dictionary
+
+    + register_processor(name, processor): void
+    + handle_command(command_data): Variant
+    - _route_to_processor(command_name, params): Variant
+  }
+
+  class BaseCommandProcessor {
+    + process(params: Dictionary): Variant
+    # _validate_params(params, required): bool
+  }
+
+  package "commands/" {
+    class NodeCommands {
+      + process(params): Variant
+      - create_node(parent_path, type, name): Dictionary
+      - delete_node(node_path): Dictionary
+      - update_node_property(node_path, prop, value): Dictionary
+      - get_node_properties(node_path): Dictionary
+      - list_nodes(parent_path): Dictionary
+    }
+
+    class SceneCommands {
+      + process(params): Variant
+      - get_current_scene(): Dictionary
+      - create_scene(path, root_type): Dictionary
+      - open_scene(path): Dictionary
+      - save_scene(path): Dictionary
+    }
+
+    class ScriptCommands {
+      + process(params): Variant
+      - get_script(path): Dictionary
+      - create_script(path, content): Dictionary
+      - edit_script(path, content): Dictionary
+      - create_script_template(type): Dictionary
+    }
+
+    class EditorCommands {
+      + process(params): Variant
+      - get_editor_state(): Dictionary
+      - get_selected_node(): Dictionary
+      - create_resource(type, path, props): Dictionary
+    }
+
+    class ProjectCommands {
+      + process(params): Variant
+      - get_project_info(): Dictionary
+      - get_project_structure(): Dictionary
+      - list_project_files(dir, pattern): Dictionary
+    }
+
+    class EditorScriptCommands {
+      + process(params): Variant
+      - execute_editor_script(code): Dictionary
+    }
+  }
+}
+
+MCPServer "1" *-- "1" WebSocketServer : uses
+MCPServer "1" *-- "1" CommandHandler : uses
+
+CommandHandler "1" *-- "*" BaseCommandProcessor : manages
+
+NodeCommands --|> BaseCommandProcessor
+SceneCommands --|> BaseCommandProcessor
+ScriptCommands --|> BaseCommandProcessor
+EditorCommands --|> BaseCommandProcessor
+ProjectCommands --|> BaseCommandProcessor
+EditorScriptCommands --|> BaseCommandProcessor
+
+CommandHandler --> NodeCommands : routes
+CommandHandler --> SceneCommands : routes
+CommandHandler --> ScriptCommands : routes
+CommandHandler --> EditorCommands : routes
+CommandHandler --> ProjectCommands : routes
+CommandHandler --> EditorScriptCommands : routes
+
+note right of MCPServer
+  WebSocket server running on port 9080
+  when Godot editor is open.
+
+  Allows Claude Code to:
+  - Inspect scene structure
+  - Create/modify nodes
+  - Read/write scripts
+  - Execute GDScript in editor
+
+  Auto-configured in Claude Code MCP settings.
+end note
+
+note bottom of CommandHandler
+  Routes incoming MCP commands to
+  appropriate processor based on
+  command name.
+
+  All commands return Dictionary
+  with status and result data.
+end note
+
+note left of NodeCommands
+  Node manipulation commands:
+  - create_node: Add node to scene
+  - delete_node: Remove node
+  - update_node_property: Modify properties
+  - get_node_properties: Inspect node
+  - list_nodes: Get scene tree
+end note
+
+note left of ScriptCommands
+  Script management commands:
+  - get_script: Read GDScript file
+  - create_script: Write new script
+  - edit_script: Modify existing script
+  - create_script_template: Generate boilerplate
+end note
+
+@enduml

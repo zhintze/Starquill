@@ -11,7 +11,7 @@ var debug_dead_zone: bool = false  # Set to true to visualize camera dead zone
 var current_path: Array[Vector2i] = []
 var path_index: int = 0
 var auto_move_delay: float = 0.0
-var auto_move_interval: float = 0.15  # Seconds between auto-moves
+var auto_move_interval: float = 0.0  # Seconds between auto-moves
 
 # Swipe gesture detection
 var swipe_start_pos: Vector2 = Vector2.ZERO
@@ -19,7 +19,7 @@ var swipe_min_distance: float = 50.0  # Minimum pixels for a swipe
 var is_swiping: bool = false
 var continuous_move_direction: Vector2i = Vector2i.ZERO  # For continuous movement on swipe
 var continuous_move_delay: float = 0.0
-var continuous_move_interval: float = 0.2  # Seconds between continuous moves
+var continuous_move_interval: float = 0.0  # Seconds between continuous moves
 
 # Double-tap detection
 var last_tap_time: float = 0.0
@@ -31,30 +31,11 @@ var double_tap_distance: float = 30.0  # Max pixels between taps
 var was_moving_on_touch: bool = false
 
 func _ready():
-	print("=== WORLD TEST SCENE _ready() CALLED ===")
-	print("World Test Scene initializing...")
-
-	print("Step 1: Setting up test party...")
 	_setup_test_party()
-	print("Step 1: DONE")
-
-	print("Step 2: Setting up world...")
 	_setup_world()
-	print("Step 2: DONE")
-
-	print("Step 3: Setting up camera...")
 	_setup_camera()
-	print("Step 3: DONE")
-
-	print("Step 4: Setting up debug UI...")
 	_setup_debug_ui()
-	print("Step 4: DONE")
-
-	print("Step 5: Connecting signals...")
 	_connect_signals()
-	print("Step 5: DONE")
-
-	print("=== WORLD TEST SCENE READY COMPLETE ===")
 
 func _setup_test_party() -> void:
 	# Initialize party if not already created
@@ -124,9 +105,37 @@ func _connect_signals() -> void:
 
 func _process(delta: float) -> void:
 	_update_debug_info()
+	_update_held_keys()
 	_update_path_following(delta)
 	_update_continuous_movement(delta)
 	# Camera movement now handled by CameraController
+
+func _update_held_keys() -> void:
+	# Check for held movement keys and set continuous_move_direction
+	# Priority: Check in order so diagonal inputs resolve to single direction
+
+	var movement = Vector2i.ZERO
+
+	# Check vertical movement
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		movement.y = -1
+	elif Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		movement.y = 1
+
+	# Check horizontal movement
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		movement.x = -1
+	elif Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		movement.x = 1
+
+	# Only use one direction at a time (prioritize vertical if both pressed)
+	if movement.y != 0:
+		continuous_move_direction = Vector2i(0, movement.y)
+	elif movement.x != 0:
+		continuous_move_direction = Vector2i(movement.x, 0)
+	else:
+		# No keys held, stop continuous movement
+		continuous_move_direction = Vector2i.ZERO
 
 func _update_continuous_movement(delta: float) -> void:
 	if continuous_move_direction == Vector2i.ZERO:
@@ -171,7 +180,7 @@ func _update_path_following(delta: float) -> void:
 			auto_move_delay = auto_move_interval
 		else:
 			# Movement blocked, cancel path
-			print("Path blocked at %v, cancelling" % next_tile)
+			# Path blocked, cancel silently
 			current_path.clear()
 			path_index = 0
 	else:
@@ -180,19 +189,9 @@ func _update_path_following(delta: float) -> void:
 		path_index = 0
 
 func _input(event: InputEvent) -> void:
-	# Handle movement input
+	# Handle non-movement input
 	if event is InputEventKey and event.pressed:
-		var movement = Vector2i.ZERO
-
 		match event.keycode:
-			KEY_W, KEY_UP:
-				movement = Vector2i(0, -1)
-			KEY_S, KEY_DOWN:
-				movement = Vector2i(0, 1)
-			KEY_A, KEY_LEFT:
-				movement = Vector2i(-1, 0)
-			KEY_D, KEY_RIGHT:
-				movement = Vector2i(1, 0)
 			KEY_SPACE:
 				_interact_with_current_tile()
 			KEY_M:
@@ -208,9 +207,7 @@ func _input(event: InputEvent) -> void:
 			KEY_0, KEY_KP_0:  # 0 key
 				if camera_controller:
 					camera_controller.reset_zoom()
-
-		if movement != Vector2i.ZERO:
-			_move_party(movement)
+	# Movement keys are now handled by _update_held_keys() in _process()
 
 	# Handle mouse/touch input
 	elif event is InputEventMouseButton:
@@ -270,7 +267,7 @@ func _move_party(direction: Vector2i) -> bool:
 		return true
 	else:
 		BusParty.party_movement_blocked.emit("Impassable terrain")
-		print("Movement blocked at position: %v" % new_position)
+		# Movement blocked
 		return false
 
 func _handle_swipe(swipe_vector: Vector2) -> void:
@@ -289,7 +286,7 @@ func _handle_swipe(swipe_vector: Vector2) -> void:
 		# Swipe up (negative Y) should move character up (negative Y)
 		direction = Vector2i(0, 1 if swipe_vector.y > 0 else -1)
 
-	print("Swipe: %v -> Continuous Direction: %v" % [swipe_vector, direction])
+	# Swipe detected
 
 	# Start continuous movement in this direction
 	continuous_move_direction = direction
@@ -306,14 +303,12 @@ func _handle_tap(screen_position: Vector2) -> void:
 
 	if time_since_last_tap < double_tap_threshold and distance_from_last_tap < double_tap_distance:
 		# This is a double-tap! Path to this tile
-		print("Double-tap detected at: %v" % screen_position)
 		_handle_click(screen_position)
 		# Reset tap tracking
 		last_tap_time = 0.0
 		last_tap_position = Vector2.ZERO
 	else:
 		# Single tap - just record it
-		print("Single tap at: %v (waiting for double-tap)" % screen_position)
 		last_tap_time = current_time
 		last_tap_position = screen_position
 
@@ -331,33 +326,18 @@ func _handle_click(screen_position: Vector2) -> void:
 	# Convert to tile coordinates (pixel_to_tile does floor division)
 	var tile_position = WorldConstants.pixel_to_tile(world_position)
 
-	print("=== DOUBLE-TAP DEBUG ===")
-	print("Screen pos: %v" % screen_position)
-	print("Viewport size: %v" % viewport.get_visible_rect().size)
-	print("Screen center: %v" % screen_center)
-	print("Screen center world: %v" % screen_center_world)
-	print("Offset from center: %v" % offset_from_center)
-	print("Camera zoom: %v" % camera.zoom)
-	print("World pos: %v" % world_position)
-	print("Tile pos: %v" % tile_position)
-	print("Party at: %v" % world_map.party_position)
-	print("Distance: %d tiles" % WorldConstants.manhattan_distance(tile_position, world_map.party_position))
-	print("========================")
-
 	BusWorld.tile_clicked.emit(tile_position)
 
 	# Find path to clicked tile
 	var path = Pathfinder.find_path(world_map, world_map.party_position, tile_position)
 
 	if path.is_empty():
-		print("No path found to tile %v" % tile_position)
 		return
 
 	# Start auto-movement along path
 	current_path = path
 	path_index = 0
 	auto_move_delay = 0.0
-	print("Path found with %d steps to tile %v" % [path.size(), tile_position])
 
 func _interact_with_current_tile() -> void:
 	var tile = world_map.get_tile(world_map.party_position)
@@ -425,4 +405,4 @@ func _on_biome_entered(biome_type: WorldConstants.BiomeType, biome_name: String)
 	print("Entered biome: %s" % biome_name)
 
 func _on_party_moved(from: Vector2i, to: Vector2i) -> void:
-	print("Party moved from %v to %v" % [from, to])
+	pass  # Movement handled silently

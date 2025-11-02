@@ -2,8 +2,7 @@ extends Node2D
 class_name WorldMap
 
 
-const CHARACTER_TILE_OFFSET: float = 0.55;
-const CHARACTER_SPRITE_HEIGHT: int = 200;  # Height of character sprites in pixels
+const CHARACTER_TILE_OFFSET: float = -0.45;
 
 # World properties
 var world_seed: int = 0
@@ -98,16 +97,16 @@ func _setup_party_visuals() -> void:
 		party_container.add_child(char_display)
 
 func _connect_signals() -> void:
-	# Connect to party bus signals
-	BusParty.party_moved.connect(_on_party_moved)
-	BusParty.party_teleported.connect(_on_party_teleported)
-	BusParty.member_added.connect(_on_party_member_added)
-	BusParty.member_removed.connect(_on_party_member_removed)
+	# Connect to party event bus signals
+	EventBus.party_moved.connect(_on_party_moved)
+	EventBus.party_teleported.connect(_on_party_teleported)
+	EventBus.party_member_added.connect(_on_party_member_added)
+	EventBus.party_member_removed.connect(_on_party_member_removed)
 
-	# Connect to world bus signals
-	BusWorld.world_saved.connect(_on_world_saved)
-	BusWorld.debug_teleport.connect(_on_debug_teleport)
-	BusWorld.debug_reveal_map.connect(_on_debug_reveal_map)
+	# Connect to world event bus signals
+	EventBus.world_saved.connect(_on_world_saved)
+	EventBus.debug_teleport.connect(_on_debug_teleport)
+	EventBus.debug_reveal_map.connect(_on_debug_reveal_map)
 
 func initialize_world() -> void:
 	if is_initialized:
@@ -144,7 +143,7 @@ func initialize_world() -> void:
 	_update_party_visuals()
 
 	is_initialized = true
-	BusWorld.world_created.emit(world_name, world_seed)
+	EventBus.world_created.emit(world_name, world_seed)
 
 func _find_valid_spawn_position(start_pos: Vector2i, max_search_radius: int = 50) -> Vector2i:
 	# First, ensure chunks are loaded around the start position
@@ -238,7 +237,7 @@ func set_tile(world_pos: Vector2i, tile: Tile) -> void:
 	if chunk:
 		chunk.set_tile_world(world_pos.x, world_pos.y, tile)
 		tile_renderer.render_tile(world_pos, tile)
-		BusWorld.tile_modified.emit(world_pos, tile)
+		EventBus.tile_modified.emit(world_pos, tile)
 
 func get_chunk(chunk_pos: Vector2i) -> Chunk:
 	return chunk_manager.get_chunk(chunk_pos)
@@ -283,7 +282,7 @@ func _update_visibility() -> void:
 	# Update fog of war rendering
 	tile_renderer.update_visibility_batch(visible_tiles, revealed_tiles)
 
-	BusWorld.visibility_updated.emit(visible_tiles)
+	EventBus.visibility_updated.emit(visible_tiles)
 
 func _process(delta: float) -> void:
 	if is_party_moving:
@@ -347,7 +346,7 @@ func move_party(new_position: Vector2i) -> bool:
 
 	# Check for location entry
 	if tile.has_location():
-		BusWorld.location_entered.emit(tile.location_data)
+		EventBus.location_entered.emit(tile.location_data)
 
 	return true
 
@@ -385,11 +384,9 @@ func _update_party_visuals() -> void:
 			var pixel_pos = WorldConstants.tile_to_pixel(member_world_pos)
 
 			# Position character at bottom-center of tile
-			# Calculate where character's feet should be (at CHARACTER_TILE_OFFSET% down the tile)
 			var half_tile = WorldConstants.TILE_SIZE / 2
-			var feet_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET
-			# Character's top-left position = feet position - 2 tiles (character visual height)
-			char_display.position = pixel_pos + Vector2(-half_tile, feet_offset - WorldConstants.TILE_SIZE * 2)
+			var vertical_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET  # Move down to bottom third of tile
+			char_display.position = pixel_pos - Vector2(half_tile, half_tile - vertical_offset)
 		else:
 			char_display.visible = false
 
@@ -425,11 +422,9 @@ func _update_party_visuals_animated() -> void:
 			)
 
 			# Apply hop offset and position at bottom of tile
-			# Calculate where character's feet should be (at CHARACTER_TILE_OFFSET% down the tile)
 			var half_tile = WorldConstants.TILE_SIZE / 2
-			var feet_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET
-			# Character's top-left position = feet position - 2 tiles (character visual height) - hop offset
-			char_display.position = pixel_pos + Vector2(-half_tile, feet_offset - WorldConstants.TILE_SIZE * 2 - hop_offset)
+			var vertical_offset = WorldConstants.TILE_SIZE * CHARACTER_TILE_OFFSET # Move down to bottom third of tile
+			char_display.position = pixel_pos - Vector2(half_tile, half_tile - vertical_offset + hop_offset)
 
 			# Update horizontal flip based on movement direction
 			_update_character_flip(char_display, i, start_pos, end_pos)

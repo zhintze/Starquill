@@ -1,0 +1,49 @@
+@startuml
+!theme plain
+
+package "Autoloads" #DDDDDD {
+  class GameManager <<Singleton>> {
+    +scene_changed(new_scene)
+    +paused_changed(is_paused)
+    +mode_changed(mode)
+  }
+  class UIManager <<Mediator>>
+  class EventBus <<Observer>>
+}
+
+package "Model" #CCFFCC {
+  class Inventory <<Resource>> {
+    +capacity: int
+    +items: Array[ItemStack]
+    +changed()
+  }
+  class ItemStack <<Resource>>
+  class ItemData <<Resource>>
+}
+
+package "View/UI" #CCE5FF {
+  class BaseMenu <<Template>>
+  class InventoryPanel
+}
+
+package "Controller" #FFEECC {
+  class InventoryController
+  class ItemEffects <<Strategy>>
+}
+
+GameManager -[hidden]- UIManager
+GameManager -[hidden]- EventBus
+
+UIManager --> BaseMenu : manages >
+UIManager --> InventoryPanel : opens/closes >
+BaseMenu <|-- InventoryPanel
+
+InventoryController --> Inventory : manipulates >
+InventoryController --> EventBus : emits >
+InventoryPanel --> Inventory : observes changed >
+ItemEffects --> ItemData : applies effect >
+EventBus --> UIManager : broadcasts >
+GameManager --> UIManager : sets mode >
+GameManager --> EventBus : signals scene/pause changes
+
+@enduml

@@ -6,6 +6,11 @@ var party: Party = null
 var current_world_position: Vector2i = Vector2i.ZERO
 var gold: int = 0
 var game_time: float = 0.0
+
+# NEW: Inventory model for consumable items
+var shared_inventory: Inventory = null
+
+# Equipment storage (kept for backward compatibility)
 var inventory: Array[EquipmentInstance] = []
 
 # Save/Load state
@@ -16,27 +21,32 @@ func _ready():
 	party = Party.new()
 	party.name = "PlayerParty"
 
+	# Initialize shared inventory for consumables/items
+	shared_inventory = Inventory.new(24)
+
 func initialize_new_game() -> void:
 	party.members.clear()
 	inventory.clear()
+	if shared_inventory:
+		shared_inventory.clear()
 	gold = 100
 	game_time = 0.0
 	is_new_game = true
-	BusParty.party_data_loaded.emit({})
+	EventBus.party_data_loaded.emit({})
 
 func add_character(character: Character) -> bool:
 	if party.members.size() >= WorldConstants.MAX_PARTY_SIZE:
 		return false
 
 	party.members.append(character)
-	BusParty.member_added.emit(character, party.members.size() - 1)
-	BusParty.party_size_changed.emit(party.members.size())
+	EventBus.party_member_added.emit(character, party.members.size() - 1)
+	EventBus.party_size_changed.emit(party.members.size())
 	return true
 
 func remove_character(character: Character) -> void:
 	party.members.erase(character)
-	BusParty.member_removed.emit(character)
-	BusParty.party_size_changed.emit(party.members.size())
+	EventBus.party_member_removed.emit(character)
+	EventBus.party_size_changed.emit(party.members.size())
 
 func get_party_size() -> int:
 	return party.members.size()
@@ -48,15 +58,20 @@ func get_party_leader() -> Character:
 
 func set_world_position(pos: Vector2i) -> void:
 	current_world_position = pos
-	BusParty.current_position = pos
+	# Note: Old BusParty.current_position property removed - position tracked in PlayerData
 
+# Equipment inventory methods (kept for backward compatibility)
 func add_to_inventory(equipment: EquipmentInstance) -> void:
 	inventory.append(equipment)
-	BusInventory.item_added.emit(equipment)
+	# Equipment added to equipment array, not shared_inventory
 
 func remove_from_inventory(equipment: EquipmentInstance) -> void:
 	inventory.erase(equipment)
-	BusInventory.item_removed.emit(equipment)
+	# Equipment removed from equipment array
+
+# NEW: Get shared inventory for UI panels
+func get_shared_inventory() -> Inventory:
+	return shared_inventory
 
 func serialize() -> Dictionary:
 	var member_data = []
@@ -67,9 +82,15 @@ func serialize() -> Dictionary:
 	for item in inventory:
 		inventory_data.append(item.serialize())
 
+	# NEW: Serialize shared inventory
+	var shared_inventory_data = {}
+	if shared_inventory:
+		shared_inventory_data = shared_inventory.serialize()
+
 	return {
 		"party_members": member_data,
 		"inventory": inventory_data,
+		"shared_inventory": shared_inventory_data,
 		"world_position": {"x": current_world_position.x, "y": current_world_position.y},
 		"gold": gold,
 		"game_time": game_time,
@@ -92,6 +113,11 @@ func deserialize(data: Dictionary) -> void:
 		equipment.deserialize(item_dict)
 		inventory.append(equipment)
 
+	# NEW: Deserialize shared inventory
+	var shared_inventory_data = data.get("shared_inventory", {})
+	if not shared_inventory_data.is_empty() and shared_inventory:
+		shared_inventory.deserialize(shared_inventory_data)
+
 	var pos = data.get("world_position", {"x": 0, "y": 0})
 	current_world_position = Vector2i(pos["x"], pos["y"])
 
@@ -100,4 +126,4 @@ func deserialize(data: Dictionary) -> void:
 	current_save_slot = data.get("save_slot", -1)
 	is_new_game = false
 
-	BusParty.party_data_loaded.emit(data)
+	EventBus.party_data_loaded.emit(data)
