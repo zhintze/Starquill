@@ -99,9 +99,9 @@ func _setup_debug_ui() -> void:
 
 func _connect_signals() -> void:
 	# Connect to world events
-	BusWorld.location_discovered.connect(_on_location_discovered)
-	BusWorld.biome_entered.connect(_on_biome_entered)
-	BusParty.party_moved.connect(_on_party_moved)
+	EventBus.location_discovered.connect(_on_location_discovered)
+	EventBus.biome_entered.connect(_on_biome_entered)
+	EventBus.party_moved.connect(_on_party_moved)
 
 func _process(delta: float) -> void:
 	_update_debug_info()
@@ -262,11 +262,11 @@ func _move_party(direction: Vector2i) -> bool:
 
 	var new_position = world_map.party_position + direction
 	if world_map.move_party(new_position):
-		BusParty.party_moved.emit(world_map.party_position - direction, new_position)
+		EventBus.party_moved.emit(world_map.party_position - direction, new_position)
 		# Camera smoothly follows via CameraController
 		return true
 	else:
-		BusParty.party_movement_blocked.emit("Impassable terrain")
+		EventBus.party_movement_blocked.emit("Impassable terrain")
 		# Movement blocked
 		return false
 
@@ -326,7 +326,7 @@ func _handle_click(screen_position: Vector2) -> void:
 	# Convert to tile coordinates (pixel_to_tile does floor division)
 	var tile_position = WorldConstants.pixel_to_tile(world_position)
 
-	BusWorld.tile_clicked.emit(tile_position)
+	EventBus.tile_clicked.emit(tile_position)
 
 	# Find path to clicked tile
 	var path = Pathfinder.find_path(world_map, world_map.party_position, tile_position)
@@ -343,7 +343,7 @@ func _interact_with_current_tile() -> void:
 	var tile = world_map.get_tile(world_map.party_position)
 	if tile and tile.has_location():
 		print("Interacting with location: %s" % tile.location_data.get_display_name())
-		BusWorld.location_entered.emit(tile.location_data)
+		EventBus.location_entered.emit(tile.location_data)
 
 func get_party_pixel_position() -> Vector2:
 	# Get character position (with movement interpolation)

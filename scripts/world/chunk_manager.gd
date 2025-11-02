@@ -174,7 +174,7 @@ func _handle_thread_result(result: Dictionary) -> void:
 
 	# Emit location spawned signals for any locations in this chunk
 	for location in chunk.locations:
-		BusWorld.location_spawned.emit(location.world_position, location)
+		EventBus.location_spawned.emit(location.world_position, location)
 
 	chunk_generation_completed.emit(chunk_pos, chunk)
 

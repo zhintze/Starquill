@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://cr4m9vb2k5n8p"]
+[gd_scene load_steps=2 format=3 uid="uid://cr4navb2k5n8p"]
 
 [ext_resource type="Script" path="res://scripts/ui/inventory_panel.gd" id="1_inventory_panel"]
 

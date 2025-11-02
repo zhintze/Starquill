@@ -172,12 +172,12 @@ func load_chunk() -> void:
 		is_loaded = true
 		last_access_time = Time.get_ticks_msec() / 1000.0
 		_refresh_visuals()
-		BusWorld.chunk_loaded.emit(chunk_position, self)
+		EventBus.chunk_loaded.emit(chunk_position, self)
 
 func unload_chunk() -> void:
 	if is_loaded:
 		is_loaded = false
-		BusWorld.chunk_unloaded.emit(chunk_position)
+		EventBus.chunk_unloaded.emit(chunk_position)
 
 func _refresh_visuals() -> void:
 	if not tile_map:
