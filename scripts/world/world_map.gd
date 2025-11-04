@@ -27,6 +27,7 @@ var party_member_hop_offsets: Array[float] = []  # Phase offset for each charact
 var party_member_hop_speeds: Array[float] = []  # Slight speed variation for each character
 var is_party_moving: bool = false
 var movement_progress: float = 0.0
+var movement_overshoot: float = 0.0  # Carry forward momentum to next movement
 var movement_duration: float = 0.6  # seconds per tile
 var hop_height: float = 20.0  # pixels to hop up
 var hop_frequency: float = 3.0  # hops per tile movement (stays same, so hops are slower)
@@ -337,11 +338,12 @@ func move_party(new_position: Vector2i) -> bool:
 	if party_member_trail.size() > WorldConstants.MAX_PARTY_SIZE:
 		party_member_trail.resize(WorldConstants.MAX_PARTY_SIZE)
 
-	# Start animation
+	# Start animation with carried momentum from previous movement
 	is_party_moving = true
-	movement_progress = 0.0
+	movement_progress = movement_overshoot  # Start with overshoot from previous movement (creates seamless flow)
+	movement_overshoot = 0.0  # Clear overshoot after using it
 
-	print("New movement starting: from pos[0]=%s to trail[0]=%s, progress=%.2f" % [party_member_positions[0] if party_member_positions.size() > 0 else "none", party_member_trail[0] if party_member_trail.size() > 0 else "none", movement_progress])
+	print("New movement starting: from pos[0]=%s to trail[0]=%s, progress=%.3f (with momentum)" % [party_member_positions[0] if party_member_positions.size() > 0 else "none", party_member_trail[0] if party_member_trail.size() > 0 else "none", movement_progress])
 
 	# Update visuals immediately to prevent one-frame snap
 	_update_party_visuals_animated()
@@ -360,8 +362,9 @@ func _update_movement_animation(delta: float) -> void:
 	movement_progress += delta / movement_duration
 
 	if movement_progress >= 1.0:
-		# Animation complete
-		print("Movement complete: progress=%.2f, pos[0]=%s, trail[0]=%s" % [movement_progress, party_member_positions[0] if party_member_positions.size() > 0 else "none", party_member_trail[0] if party_member_trail.size() > 0 else "none"])
+		# Animation complete - carry forward overshoot as momentum
+		movement_overshoot = movement_progress - 1.0  # Store overshoot (0.01-0.03 typically)
+		print("Movement complete: progress=%.2f, overshoot=%.3f, pos[0]=%s, trail[0]=%s" % [movement_progress, movement_overshoot, party_member_positions[0] if party_member_positions.size() > 0 else "none", party_member_trail[0] if party_member_trail.size() > 0 else "none"])
 		movement_progress = 0.0
 		is_party_moving = false
 
@@ -374,7 +377,7 @@ func _update_movement_animation(delta: float) -> void:
 
 		# Emit signal for immediate continuation of movement
 		movement_completed.emit()
-		print("After signal: is_party_moving=%s, progress=%.2f" % [is_party_moving, movement_progress])
+		print("After signal: is_party_moving=%s, progress=%.3f" % [is_party_moving, movement_progress])
 
 	# Update visual positions with animation (always call, even after completion)
 	_update_party_visuals_animated()
