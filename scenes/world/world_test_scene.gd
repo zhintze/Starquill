@@ -17,7 +17,11 @@ var auto_move_interval: float = 0.0  # Seconds between auto-moves
 var swipe_start_pos: Vector2 = Vector2.ZERO
 var swipe_min_distance: float = 50.0  # Minimum pixels for a swipe
 var is_swiping: bool = false
+
+# Movement input tracking
+enum MoveInputSource { NONE, KEYBOARD, SWIPE }
 var continuous_move_direction: Vector2i = Vector2i.ZERO  # For continuous movement on swipe
+var move_input_source: MoveInputSource = MoveInputSource.NONE
 var continuous_move_delay: float = 0.0
 var continuous_move_interval: float = 0.0  # Seconds between continuous moves
 
@@ -134,11 +138,15 @@ func _update_held_keys() -> void:
 	# Only use one direction at a time (prioritize vertical if both pressed)
 	if movement.y != 0:
 		continuous_move_direction = Vector2i(0, movement.y)
+		move_input_source = MoveInputSource.KEYBOARD
 	elif movement.x != 0:
 		continuous_move_direction = Vector2i(movement.x, 0)
+		move_input_source = MoveInputSource.KEYBOARD
 	else:
-		# No keys held, stop continuous movement
-		continuous_move_direction = Vector2i.ZERO
+		# No keys held - only clear if this was keyboard input (don't override swipe)
+		if move_input_source == MoveInputSource.KEYBOARD:
+			continuous_move_direction = Vector2i.ZERO
+			move_input_source = MoveInputSource.NONE
 
 func _update_continuous_movement(delta: float) -> void:
 	if continuous_move_direction == Vector2i.ZERO:
@@ -246,6 +254,7 @@ func _input(event: InputEvent) -> void:
 					# It's a tap - stop all movement now
 					print("TAP detected")
 					continuous_move_direction = Vector2i.ZERO
+					move_input_source = MoveInputSource.NONE
 					current_path.clear()
 					path_index = 0
 
@@ -310,6 +319,7 @@ func _handle_swipe(swipe_vector: Vector2) -> void:
 
 	# Start continuous movement in this direction
 	continuous_move_direction = direction
+	move_input_source = MoveInputSource.SWIPE
 	continuous_move_delay = 0.0  # Start immediately
 
 	# Also do one immediate move
