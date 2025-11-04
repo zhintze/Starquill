@@ -236,11 +236,15 @@ func _input(event: InputEvent) -> void:
 				var swipe_vector = swipe_end_pos - swipe_start_pos
 				var swipe_distance = swipe_vector.length()
 
+				print("Touch released: distance=%.1f, threshold=%.1f" % [swipe_distance, swipe_min_distance])
+
 				if swipe_distance >= swipe_min_distance:
 					# It's a swipe - start continuous movement
+					print("SWIPE detected: vector=%s" % swipe_vector)
 					_handle_swipe(swipe_vector)
 				else:
 					# It's a tap - stop all movement now
+					print("TAP detected")
 					continuous_move_direction = Vector2i.ZERO
 					current_path.clear()
 					path_index = 0
@@ -274,12 +278,17 @@ func _move_party(direction: Vector2i) -> bool:
 
 func _on_movement_completed() -> void:
 	# Movement just completed, immediately start next move if continuous movement active
+	print("_on_movement_completed: continuous_move_direction=%s" % continuous_move_direction)
 	if continuous_move_direction != Vector2i.ZERO:
+		print("  -> Continuing movement")
 		if _move_party(continuous_move_direction):
 			continuous_move_delay = continuous_move_interval
 		else:
 			# Movement blocked
+			print("  -> Movement blocked, stopping")
 			continuous_move_direction = Vector2i.ZERO
+	else:
+		print("  -> No continuous movement")
 
 func _handle_swipe(swipe_vector: Vector2) -> void:
 	# Convert swipe to a continuous movement direction
@@ -297,7 +306,7 @@ func _handle_swipe(swipe_vector: Vector2) -> void:
 		# Swipe up (negative Y) should move character up (negative Y)
 		direction = Vector2i(0, 1 if swipe_vector.y > 0 else -1)
 
-	# Swipe detected
+	print("_handle_swipe: direction=%s, setting continuous_move_direction" % direction)
 
 	# Start continuous movement in this direction
 	continuous_move_direction = direction
@@ -305,6 +314,7 @@ func _handle_swipe(swipe_vector: Vector2) -> void:
 
 	# Also do one immediate move
 	_move_party(direction)
+	print("After _move_party: continuous_move_direction=%s" % continuous_move_direction)
 
 func _handle_tap(screen_position: Vector2) -> void:
 	# Check if this is a double-tap
