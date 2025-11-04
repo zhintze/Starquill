@@ -368,9 +368,7 @@ func _update_movement_animation(delta: float) -> void:
 				party_member_positions[i] = party_member_trail[i]
 
 		# Emit signal for immediate continuation of movement
-		print("Movement completed, emitting signal")
 		movement_completed.emit()
-		print("Signal emitted, is_party_moving: ", is_party_moving)
 
 	# Update visual positions with animation (always call, even after completion)
 	_update_party_visuals_animated()

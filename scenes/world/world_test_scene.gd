@@ -275,16 +275,12 @@ func _move_party(direction: Vector2i) -> bool:
 
 func _on_movement_completed() -> void:
 	# Movement just completed, immediately start next move if continuous movement active
-	print("_on_movement_completed called, continuous_move_direction: ", continuous_move_direction)
 	if continuous_move_direction != Vector2i.ZERO:
-		print("Starting next continuous move: ", continuous_move_direction)
 		if _move_party(continuous_move_direction):
 			continuous_move_delay = continuous_move_interval
 		else:
 			# Movement blocked
 			continuous_move_direction = Vector2i.ZERO
-	else:
-		print("No continuous movement")
 
 func _handle_swipe(swipe_vector: Vector2) -> void:
 	# Convert swipe to a continuous movement direction
