@@ -220,11 +220,8 @@ func _input(event: InputEvent) -> void:
 	# Handle touch gestures (swipe and double-tap)
 	elif event is InputEventScreenTouch:
 		if event.pressed:
-			# Touch started - stop all movement (both continuous and pathfinding)
+			# Touch started - store state but don't clear movement yet (might be a swipe)
 			var was_moving = continuous_move_direction != Vector2i.ZERO or not current_path.is_empty()
-			continuous_move_direction = Vector2i.ZERO
-			current_path.clear()
-			path_index = 0
 
 			# Store whether we were moving to decide tap behavior later
 			was_moving_on_touch = was_moving
@@ -243,8 +240,12 @@ func _input(event: InputEvent) -> void:
 					# It's a swipe - start continuous movement
 					_handle_swipe(swipe_vector)
 				else:
-					# It's a tap
-					# If we were already moving, the touch already stopped us - don't start pathfinding
+					# It's a tap - stop all movement now
+					continuous_move_direction = Vector2i.ZERO
+					current_path.clear()
+					path_index = 0
+
+					# If we were already moving, the tap stopped us - don't start pathfinding
 					if not was_moving_on_touch:
 						# Only check for double-tap if we weren't moving
 						_handle_tap(event.position)
@@ -252,10 +253,8 @@ func _input(event: InputEvent) -> void:
 				is_swiping = false
 
 	elif event is InputEventScreenDrag:
-		# Dragging cancels all movement
-		continuous_move_direction = Vector2i.ZERO
-		current_path.clear()
-		path_index = 0
+		# Dragging is part of a swipe, don't cancel movement
+		pass
 
 func _move_party(direction: Vector2i) -> bool:
 	# Cancel any existing path when manually moving (but not continuous movement)
