@@ -13,21 +13,34 @@ var path_index: int = 0
 var auto_move_delay: float = 0.0
 var auto_move_interval: float = 0.0  # Seconds between auto-moves
 
-# Swipe gesture detection
-var swipe_start_pos: Vector2 = Vector2.ZERO
-var swipe_min_distance: float = 50.0  # Minimum pixels for a swipe
-var is_swiping: bool = false
-var continuous_move_direction: Vector2i = Vector2i.ZERO  # For continuous movement on swipe
-var continuous_move_delay: float = 0.0
-var continuous_move_interval: float = 0.0  # Seconds between continuous moves
+# Gesture detection - best practices based on mobile standards
+enum GestureState { NONE, POSSIBLE_TAP, DRAGGING, CONFIRMED_SWIPE }
+var gesture_state: GestureState = GestureState.NONE
 
-# Double-tap detection
+# Touch tracking
+var touch_start_pos: Vector2 = Vector2.ZERO
+var touch_current_pos: Vector2 = Vector2.ZERO
+var touch_start_time: float = 0.0
+var touch_id: int = -1
+
+# Gesture thresholds (based on mobile best practices)
+const TOUCH_SLOP: float = 8.0  # Below this is still a tap (Android standard)
+const SWIPE_MIN_DISTANCE: float = 50.0  # Minimum distance for swipe
+const SWIPE_MIN_VELOCITY: float = 0.5  # Minimum velocity in pixels/ms (10 px/ms = 0.01 px/1ms, adjusted for 60fps)
+const SWIPE_MIN_DURATION: float = 0.05  # 50ms minimum to prevent accidents
+const DOUBLE_TAP_TIME: float = 0.4  # Max seconds between taps
+const DOUBLE_TAP_DISTANCE: float = 30.0  # Max pixels between taps
+
+# Movement state
+var continuous_move_direction: Vector2i = Vector2i.ZERO
+var continuous_move_delay: float = 0.0
+var continuous_move_interval: float = 0.0
+
+# Double-tap tracking
 var last_tap_time: float = 0.0
 var last_tap_position: Vector2 = Vector2.ZERO
-var double_tap_threshold: float = 0.4  # Max seconds between taps
-var double_tap_distance: float = 30.0  # Max pixels between taps
 
-# Touch state tracking
+# State tracking
 var was_moving_on_touch: bool = false
 
 func _ready():
@@ -217,44 +230,30 @@ func _input(event: InputEvent) -> void:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			_handle_click(event.position)
 
-	# Handle touch gestures (swipe and double-tap)
+	# Handle touch gestures with proper state machine
 	elif event is InputEventScreenTouch:
 		if event.pressed:
-			# Touch started - store state but don't clear movement yet (might be a swipe)
-			var was_moving = continuous_move_direction != Vector2i.ZERO or not current_path.is_empty()
+			# Touch down - initialize gesture tracking
+			touch_id = event.index
+			touch_start_pos = event.position
+			touch_current_pos = event.position
+			touch_start_time = Time.get_ticks_msec() / 1000.0
+			gesture_state = GestureState.POSSIBLE_TAP
 
-			# Store whether we were moving to decide tap behavior later
-			was_moving_on_touch = was_moving
-
-			# Touch started
-			swipe_start_pos = event.position
-			is_swiping = true
+			# Store if we were moving
+			was_moving_on_touch = continuous_move_direction != Vector2i.ZERO or not current_path.is_empty()
 		else:
-			# Touch ended - check if it was a swipe or tap
-			if is_swiping:
-				var swipe_end_pos = event.position
-				var swipe_vector = swipe_end_pos - swipe_start_pos
-				var swipe_distance = swipe_vector.length()
-
-				if swipe_distance >= swipe_min_distance:
-					# It's a swipe - start continuous movement
-					_handle_swipe(swipe_vector)
-				else:
-					# It's a tap - stop all movement now
-					continuous_move_direction = Vector2i.ZERO
-					current_path.clear()
-					path_index = 0
-
-					# If we were already moving, the tap stopped us - don't start pathfinding
-					if not was_moving_on_touch:
-						# Only check for double-tap if we weren't moving
-						_handle_tap(event.position)
-
-				is_swiping = false
+			# Touch up - determine final gesture
+			if event.index == touch_id:
+				_handle_gesture_end()
+				gesture_state = GestureState.NONE
+				touch_id = -1
 
 	elif event is InputEventScreenDrag:
-		# Dragging is part of a swipe, don't cancel movement
-		pass
+		# Track dragging to update gesture state
+		if event.index == touch_id:
+			touch_current_pos = event.position
+			_update_gesture_state()
 
 func _move_party(direction: Vector2i) -> bool:
 	# Cancel any existing path when manually moving (but not continuous movement)
@@ -281,9 +280,42 @@ func _on_movement_completed() -> void:
 			# Movement blocked
 			continuous_move_direction = Vector2i.ZERO
 
+func _update_gesture_state() -> void:
+	# Update gesture state based on movement during drag
+	var distance = touch_start_pos.distance_to(touch_current_pos)
+
+	if gesture_state == GestureState.POSSIBLE_TAP:
+		if distance > TOUCH_SLOP:
+			# Moved beyond touch slop, now dragging
+			gesture_state = GestureState.DRAGGING
+	elif gesture_state == GestureState.DRAGGING:
+		if distance > SWIPE_MIN_DISTANCE:
+			# Moved far enough to be a swipe
+			gesture_state = GestureState.CONFIRMED_SWIPE
+
+func _handle_gesture_end() -> void:
+	# Determine what gesture occurred based on final state
+	var gesture_vector = touch_current_pos - touch_start_pos
+	var distance = gesture_vector.length()
+	var duration = (Time.get_ticks_msec() / 1000.0) - touch_start_time
+	var velocity = distance / max(duration * 1000.0, 1.0)  # pixels per millisecond
+
+	# Check if it's a valid swipe based on distance, velocity, and duration
+	var is_valid_swipe = (
+		distance >= SWIPE_MIN_DISTANCE and
+		velocity >= SWIPE_MIN_VELOCITY and
+		duration >= SWIPE_MIN_DURATION and
+		gesture_state in [GestureState.DRAGGING, GestureState.CONFIRMED_SWIPE]
+	)
+
+	if is_valid_swipe:
+		_handle_swipe(gesture_vector)
+	else:
+		# It's a tap
+		_handle_tap(touch_current_pos)
+
 func _handle_swipe(swipe_vector: Vector2) -> void:
 	# Convert swipe to a continuous movement direction
-	# Determine primary direction (horizontal or vertical)
 	var abs_x = abs(swipe_vector.x)
 	var abs_y = abs(swipe_vector.y)
 
@@ -293,26 +325,31 @@ func _handle_swipe(swipe_vector: Vector2) -> void:
 		direction = Vector2i(1 if swipe_vector.x > 0 else -1, 0)
 	else:
 		# Vertical swipe
-		# Swipe down (positive Y) should move character down (positive Y)
-		# Swipe up (negative Y) should move character up (negative Y)
 		direction = Vector2i(0, 1 if swipe_vector.y > 0 else -1)
 
-	# Swipe detected
-
-	# Start continuous movement in this direction
+	# Start continuous movement
 	continuous_move_direction = direction
-	continuous_move_delay = 0.0  # Start immediately
+	continuous_move_delay = 0.0
 
-	# Also do one immediate move
+	# Do one immediate move
 	_move_party(direction)
 
 func _handle_tap(screen_position: Vector2) -> void:
-	# Check if this is a double-tap
+	# Stop all movement
+	continuous_move_direction = Vector2i.ZERO
+	current_path.clear()
+	path_index = 0
+
+	# Don't start pathfinding if we were already moving
+	if was_moving_on_touch:
+		return
+
+	# Check for double-tap
 	var current_time = Time.get_ticks_msec() / 1000.0
 	var time_since_last_tap = current_time - last_tap_time
 	var distance_from_last_tap = screen_position.distance_to(last_tap_position)
 
-	if time_since_last_tap < double_tap_threshold and distance_from_last_tap < double_tap_distance:
+	if time_since_last_tap < DOUBLE_TAP_TIME and distance_from_last_tap < DOUBLE_TAP_DISTANCE:
 		# This is a double-tap! Path to this tile
 		_handle_click(screen_position)
 		# Reset tap tracking
