@@ -384,7 +384,7 @@ func get_party_pixel_position() -> Vector2:
 	# Get character position (without hop animation)
 	if world_map.is_party_moving and world_map.party_member_trail.size() > 0:
 		# During movement, interpolate between tiles (no hop tracking)
-		var t = world_map.movement_progress
+		var t = min(world_map.movement_progress, 1.0)  # Clamp to prevent camera overshoot
 		var start_pos = world_map.party_member_positions[0] if world_map.party_member_positions.size() > 0 else world_map.party_position
 		var end_pos = world_map.party_member_trail[0] if world_map.party_member_trail.size() > 0 else start_pos
 

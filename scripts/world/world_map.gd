@@ -408,7 +408,7 @@ func _update_party_visuals_animated() -> void:
 		return
 
 	var party_members = PlayerData.party.members
-	var t = movement_progress  # 0.0 to 1.0
+	var t = min(movement_progress, 1.0)  # Clamp at 1.0 to prevent visual overshoot
 
 	for i in range(WorldConstants.MAX_PARTY_SIZE):
 		var char_display = party_container.get_node("PartyMember%d" % i) as CharacterDisplay
