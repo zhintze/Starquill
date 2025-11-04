@@ -372,8 +372,8 @@ func _update_movement_animation(delta: float) -> void:
 		print("[%.3f] Movement reached 100%%" % movement_progress)
 
 	if movement_progress >= 1.0:
-		# Animation complete - carry forward overshoot as momentum
-		movement_overshoot = movement_progress - 1.0  # Store overshoot (0.01-0.03 typically)
+		# Animation complete - carry forward overshoot as momentum (boosted for seamless flow)
+		movement_overshoot = max(movement_progress - 1.0, 0.15)  # Minimum 15% momentum for visible flow
 		print("Movement complete: progress=%.2f, overshoot=%.3f, pos[0]=%s, trail[0]=%s" % [movement_progress, movement_overshoot, party_member_positions[0] if party_member_positions.size() > 0 else "none", party_member_trail[0] if party_member_trail.size() > 0 else "none"])
 		movement_progress = 0.0
 		is_party_moving = false
