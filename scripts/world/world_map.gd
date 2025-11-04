@@ -344,9 +344,12 @@ func move_party(new_position: Vector2i) -> bool:
 	movement_overshoot = 0.0  # Clear overshoot after using it
 
 	print("New movement starting: from pos[0]=%s to trail[0]=%s, progress=%.3f (with momentum)" % [party_member_positions[0] if party_member_positions.size() > 0 else "none", party_member_trail[0] if party_member_trail.size() > 0 else "none", movement_progress])
+	print("[%.3f] Visual update at start" % movement_progress)
 
 	# Update visuals immediately to prevent one-frame snap
 	_update_party_visuals_animated()
+
+	print("[%.3f] First frame of new movement rendered" % movement_progress)
 
 	# Update chunks if needed
 	_update_loaded_chunks()
@@ -359,7 +362,14 @@ func move_party(new_position: Vector2i) -> bool:
 	return true
 
 func _update_movement_animation(delta: float) -> void:
+	var old_progress = movement_progress
 	movement_progress += delta / movement_duration
+
+	# Log when approaching completion
+	if old_progress < 0.95 and movement_progress >= 0.95:
+		print("[%.3f] Movement at 95%%" % movement_progress)
+	if old_progress < 1.0 and movement_progress >= 1.0:
+		print("[%.3f] Movement reached 100%%" % movement_progress)
 
 	if movement_progress >= 1.0:
 		# Animation complete - carry forward overshoot as momentum
