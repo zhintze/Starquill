@@ -55,6 +55,9 @@ func _setup_world() -> void:
 	world_map.name = "WorldMap"
 	add_child(world_map)
 
+	# Connect to movement completion for instant queued moves
+	world_map.movement_completed.connect(_on_movement_completed)
+
 func _setup_camera() -> void:
 	# Create camera that follows the party
 	camera = Camera2D.new()
@@ -141,7 +144,7 @@ func _update_continuous_movement(delta: float) -> void:
 	if continuous_move_direction == Vector2i.ZERO:
 		return
 
-	# Wait for movement animation to complete
+	# If party is moving, don't do anything - signal handler will continue movement
 	if world_map.is_party_moving:
 		return
 
@@ -269,6 +272,19 @@ func _move_party(direction: Vector2i) -> bool:
 		EventBus.party_movement_blocked.emit("Impassable terrain")
 		# Movement blocked
 		return false
+
+func _on_movement_completed() -> void:
+	# Movement just completed, immediately start next move if continuous movement active
+	print("_on_movement_completed called, continuous_move_direction: ", continuous_move_direction)
+	if continuous_move_direction != Vector2i.ZERO:
+		print("Starting next continuous move: ", continuous_move_direction)
+		if _move_party(continuous_move_direction):
+			continuous_move_delay = continuous_move_interval
+		else:
+			# Movement blocked
+			continuous_move_direction = Vector2i.ZERO
+	else:
+		print("No continuous movement")
 
 func _handle_swipe(swipe_vector: Vector2) -> void:
 	# Convert swipe to a continuous movement direction

@@ -1,6 +1,7 @@
 extends Node2D
 class_name WorldMap
 
+signal movement_completed
 
 const CHARACTER_TILE_OFFSET: float = -0.45;
 
@@ -26,7 +27,7 @@ var party_member_hop_offsets: Array[float] = []  # Phase offset for each charact
 var party_member_hop_speeds: Array[float] = []  # Slight speed variation for each character
 var is_party_moving: bool = false
 var movement_progress: float = 0.0
-var movement_duration: float = 0.6  # seconds per tile (doubled from 0.3)
+var movement_duration: float = 0.6  # seconds per tile
 var hop_height: float = 20.0  # pixels to hop up
 var hop_frequency: float = 3.0  # hops per tile movement (stays same, so hops are slower)
 
@@ -340,6 +341,9 @@ func move_party(new_position: Vector2i) -> bool:
 	is_party_moving = true
 	movement_progress = 0.0
 
+	# Update visuals immediately to prevent one-frame snap
+	_update_party_visuals_animated()
+
 	# Update chunks if needed
 	_update_loaded_chunks()
 	_update_visibility()
@@ -355,15 +359,20 @@ func _update_movement_animation(delta: float) -> void:
 
 	if movement_progress >= 1.0:
 		# Animation complete
-		movement_progress = 1.0
+		movement_progress = 0.0
 		is_party_moving = false
 
-		# Update final positions
+		# Update final positions FIRST before signal
 		for i in range(party_member_positions.size()):
 			if i < party_member_trail.size():
 				party_member_positions[i] = party_member_trail[i]
 
-	# Update visual positions with animation
+		# Emit signal for immediate continuation of movement
+		print("Movement completed, emitting signal")
+		movement_completed.emit()
+		print("Signal emitted, is_party_moving: ", is_party_moving)
+
+	# Update visual positions with animation (always call, even after completion)
 	_update_party_visuals_animated()
 
 func _update_party_visuals() -> void:

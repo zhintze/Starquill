@@ -12,7 +12,7 @@ extends Node
 @export var zoom_smoothing: float = 5.0  # Lerp speed for smooth zoom transitions
 
 @export_group("Camera Follow Settings")
-@export var dead_zone_base_tiles: float = 2.5  # Base dead zone size in tiles
+@export var dead_zone_base_tiles: float = 0.5  # Base dead zone size in tiles
 @export var dead_zone_scales_with_zoom: bool = true  # Scale dead zone with zoom level
 @export var camera_smoothing: float = 1.5  # Lerp speed for camera position
 
@@ -112,36 +112,9 @@ func _update_zoom(delta: float) -> void:
 		camera.zoom = Vector2(current_zoom, current_zoom)
 
 func _update_camera_position(delta: float) -> void:
-	# Dead-zone camera follow - only moves when target reaches edge of center box
+	# Direct camera follow - perfectly centered on character
 	var target_position = _get_target_position()
-
-	# Calculate dead zone size (scales with zoom if enabled)
-	var dead_zone_size = dead_zone_base_tiles * WorldConstants.TILE_SIZE
-	if dead_zone_scales_with_zoom:
-		# Inverse scaling: more zoom out (higher value) = larger dead zone
-		dead_zone_size *= current_zoom / zoom_default
-
-	var half_dead_zone = dead_zone_size / 2.0
-
-	# Calculate offset from camera to target
-	var cam_to_target = target_position - camera.position
-	var camera_target = camera.position
-
-	# Check horizontal bounds
-	if cam_to_target.x > half_dead_zone:
-		camera_target.x = target_position.x - half_dead_zone
-	elif cam_to_target.x < -half_dead_zone:
-		camera_target.x = target_position.x + half_dead_zone
-
-	# Check vertical bounds
-	if cam_to_target.y > half_dead_zone:
-		camera_target.y = target_position.y - half_dead_zone
-	elif cam_to_target.y < -half_dead_zone:
-		camera_target.y = target_position.y + half_dead_zone
-
-	# Smoothly interpolate camera position
-	if camera_target != camera.position:
-		camera.position = camera.position.lerp(camera_target, camera_smoothing * delta)
+	camera.position = target_position
 
 func _get_target_position() -> Vector2:
 	# Get the position we want the camera to follow
