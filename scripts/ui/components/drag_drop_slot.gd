@@ -33,12 +33,19 @@ enum SlotState {
 @export var can_drag: bool = true
 @export var can_drop: bool = true
 @export var slot_index: int = -1
+@export var long_press_duration: float = 0.4  # Seconds before drag starts
 
 # Current state
 var _state: SlotState = SlotState.EMPTY
 var _slot_data: Variant = null
 var _is_dragging: bool = false
 var _drag_preview: Control = null
+
+# Long press tracking
+var _long_press_timer: Timer = null
+var _is_pressing: bool = false
+var _press_position: Vector2 = Vector2.ZERO
+var _drag_threshold: float = 10.0  # Pixels of movement before canceling long press
 
 # Internal nodes
 var _icon_rect: TextureRect
@@ -49,6 +56,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 	_build_internal_structure()
+	_setup_long_press_timer()
 	_apply_style()
 
 	# Ensure touch-friendly size
@@ -57,6 +65,14 @@ func _ready() -> void:
 	# Listen for theme changes
 	if UIThemeManager:
 		UIThemeManager.theme_changed.connect(_on_theme_changed)
+
+func _setup_long_press_timer() -> void:
+	_long_press_timer = Timer.new()
+	_long_press_timer.name = "LongPressTimer"
+	_long_press_timer.one_shot = true
+	_long_press_timer.wait_time = long_press_duration
+	_long_press_timer.timeout.connect(_on_long_press_triggered)
+	add_child(_long_press_timer)
 
 func _build_internal_structure() -> void:
 	# Create icon display
@@ -129,27 +145,59 @@ func _gui_input(event: InputEvent) -> void:
 	if _state == SlotState.DISABLED:
 		return
 
-	# Handle click
+	# Handle click/touch
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
-				_on_slot_pressed()
+				_on_slot_pressed(mb.position)
 			else:
 				_on_slot_released()
 
-	# Handle drag motion
-	if event is InputEventMouseMotion and _is_dragging:
-		_on_drag_motion(event as InputEventMouseMotion)
+	# Handle motion during press (for long-press cancellation and drag)
+	if event is InputEventMouseMotion:
+		var motion := event as InputEventMouseMotion
+		if _is_pressing and not _is_dragging:
+			# Check if moved too far - cancel long press to allow scrolling
+			var distance := motion.position.distance_to(_press_position)
+			if distance > _drag_threshold:
+				_cancel_long_press()
+		elif _is_dragging:
+			_on_drag_motion(motion)
 
-func _on_slot_pressed() -> void:
+func _on_slot_pressed(position: Vector2) -> void:
+	_is_pressing = true
+	_press_position = position
+
+	# Start long press timer if we have draggable content
 	if can_drag and _slot_data != null:
-		_start_drag()
-	slot_clicked.emit(self)
+		_long_press_timer.start()
 
 func _on_slot_released() -> void:
+	var was_pressing := _is_pressing
+	_is_pressing = false
+
+	# If dragging, end the drag
 	if _is_dragging:
 		_end_drag()
+		return
+
+	# If timer was running (long press not triggered), this is a quick tap
+	if was_pressing and not _long_press_timer.is_stopped():
+		_long_press_timer.stop()
+		# Quick tap - emit click for selection
+		slot_clicked.emit(self)
+
+func _on_long_press_triggered() -> void:
+	# Long press completed - start drag if still pressing
+	if _is_pressing and can_drag and _slot_data != null:
+		_start_drag()
+		# Emit click as well so the item shows info
+		slot_clicked.emit(self)
+
+func _cancel_long_press() -> void:
+	_is_pressing = false
+	_long_press_timer.stop()
 
 func _start_drag() -> void:
 	if _is_dragging:
@@ -215,6 +263,10 @@ func _on_mouse_entered() -> void:
 
 func _on_mouse_exited() -> void:
 	slot_unhovered.emit(self)
+
+	# Cancel long press if mouse leaves while pressing (allows scroll to work)
+	if _is_pressing and not _is_dragging:
+		_cancel_long_press()
 
 	# Restore normal state if we were showing drag hover
 	if _state == SlotState.DRAG_HOVER_VALID or _state == SlotState.DRAG_HOVER_INVALID:
