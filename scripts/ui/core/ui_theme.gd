@@ -240,6 +240,14 @@ func create_drag_drop_slot_stylebox(state: String = "empty") -> StyleBoxFlat:
 		"highlighted":
 			stylebox.bg_color = slot_filled_color
 			stylebox.border_color = border_highlight
+		"dragging_from":
+			# Recessed/inset appearance for source slot during drag
+			stylebox.bg_color = slot_empty_color.darkened(0.25)
+			stylebox.border_color = border_slot.darkened(0.3)
+			# Inner shadow effect for recessed look
+			stylebox.shadow_color = Color(0, 0, 0, 0.4)
+			stylebox.shadow_size = 3
+			stylebox.shadow_offset = Vector2(1, 1)
 		_:
 			stylebox.bg_color = slot_empty_color
 			stylebox.border_color = border_slot

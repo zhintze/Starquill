@@ -21,7 +21,8 @@ enum SlotState {
 	DRAG_HOVER_VALID,
 	DRAG_HOVER_INVALID,
 	HIGHLIGHTED,
-	DISABLED
+	DISABLED,
+	DRAGGING_FROM  # Source slot during drag - recessed appearance
 }
 
 # Configuration
@@ -116,6 +117,8 @@ func _state_to_string() -> String:
 			return "highlighted"
 		SlotState.DISABLED:
 			return "empty"  # Use empty style for disabled
+		SlotState.DRAGGING_FROM:
+			return "dragging_from"
 		_:
 			return "empty"
 
@@ -205,6 +208,11 @@ func _start_drag() -> void:
 
 	_is_dragging = true
 	_drag_preview = _create_drag_preview()
+
+	# Apply recessed visual state and hide the icon
+	_set_state(SlotState.DRAGGING_FROM)
+	_icon_rect.visible = false
+
 	drag_started.emit(self, _slot_data)
 
 	# Notify DragDropManager if it exists
@@ -217,6 +225,11 @@ func _end_drag() -> void:
 		return
 
 	_is_dragging = false
+
+	# Restore icon visibility and normal state
+	_icon_rect.visible = true
+	_set_state(SlotState.FILLED if _slot_data else SlotState.EMPTY)
+
 	drag_ended.emit(self)
 
 	# Notify DragDropManager if it exists
