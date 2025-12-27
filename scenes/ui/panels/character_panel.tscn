@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://c3xm7k5qn9f2a"]
+
+[ext_resource type="Script" path="res://scripts/ui/panels/character_panel.gd" id="1_character_panel"]
+
+[node name="CharacterPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(280, 400)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_character_panel")

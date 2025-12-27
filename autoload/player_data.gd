@@ -2,6 +2,8 @@ extends Node
 
 # Persistent singleton for player party and game state
 
+signal inventory_changed()
+
 var party: Party = null
 var current_world_position: Vector2i = Vector2i.ZERO
 var gold: int = 0
@@ -60,14 +62,22 @@ func set_world_position(pos: Vector2i) -> void:
 	current_world_position = pos
 	# Note: Old BusParty.current_position property removed - position tracked in PlayerData
 
-# Equipment inventory methods (kept for backward compatibility)
+# Equipment inventory methods
 func add_to_inventory(equipment: EquipmentInstance) -> void:
 	inventory.append(equipment)
-	# Equipment added to equipment array, not shared_inventory
+	inventory_changed.emit()
 
 func remove_from_inventory(equipment: EquipmentInstance) -> void:
 	inventory.erase(equipment)
-	# Equipment removed from equipment array
+	inventory_changed.emit()
+
+func remove_from_inventory_at(index: int) -> EquipmentInstance:
+	if index >= 0 and index < inventory.size():
+		var equipment := inventory[index]
+		inventory.remove_at(index)
+		inventory_changed.emit()
+		return equipment
+	return null
 
 # NEW: Get shared inventory for UI panels
 func get_shared_inventory() -> Inventory:

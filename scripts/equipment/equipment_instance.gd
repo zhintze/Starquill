@@ -1,6 +1,8 @@
 extends Resource
 class_name EquipmentInstance
 
+const EquipmentIconRendererScript = preload("res://scripts/display/equipment_icon_renderer.gd")
+
 # -------- Public, read-only API --------
 var item_type: String                      : set = _no_set, get = _get_item_type
 var item_num: int                          : set = _no_set, get = _get_item_num
@@ -48,6 +50,30 @@ func tint_for_layer(code: int) -> Color:
 
 func get_stat_mod(key: String, default_val: float = 0.0) -> float:
 	return float(_stat_mods.get(key, default_val))
+
+# Get icon texture for UI display (uses EquipmentIconRenderer)
+func get_icon() -> Texture2D:
+	return EquipmentIconRendererScript.get_icon(self)
+
+# Get display name for UI (derives from item_type)
+func get_display_name() -> String:
+	# Map item type prefixes to readable names
+	var prefix := _item_type.substr(0, 2) if _item_type.length() >= 2 else _item_type
+	match prefix:
+		"hd":
+			return "Headgear"
+		"tr":
+			return "Torso Armor"
+		"ar":
+			return "Arm Guards"
+		"lg":
+			return "Leg Armor"
+		"fe":
+			return "Footwear"
+		"w0", "w1":
+			return "Weapon"
+		_:
+			return _item_type.capitalize()
 
 # --------- Factory-only initializer (private) ---------
 func _init_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int, palette: PackedStringArray) -> void:

@@ -113,6 +113,14 @@ func get_stack_at(slot_index: int) -> ItemStack:
 		return null
 	return slots[slot_index]
 
+# Get all non-null stacks (for UI display)
+func get_all_stacks() -> Array[ItemStack]:
+	var result: Array[ItemStack] = []
+	for stack in slots:
+		if stack != null:
+			result.append(stack)
+	return result
+
 # Find first empty slot
 func _find_empty_slot() -> int:
 	for i in range(slots.size()):

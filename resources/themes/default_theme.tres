@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="UITheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/core/ui_theme.gd" id="1_theme_script"]
+
+[resource]
+script = ExtResource("1_theme_script")
+theme_name = "Fantasy Default"
+theme_description = "Medieval fantasy theme with parchment textures and ornate styling"
+primary_color = Color(0.824, 0.745, 0.627, 1)
+secondary_color = Color(0.294, 0.231, 0.18, 1)
+accent_color = Color(0.882, 0.702, 0.31, 1)
+background_color = Color(0.18, 0.141, 0.102, 0.92)
+panel_color = Color(0.89, 0.82, 0.69, 1)
+text_color = Color(0.098, 0.082, 0.055, 1)
+text_color_secondary = Color(0.392, 0.329, 0.251, 1)
+text_color_disabled = Color(0.502, 0.502, 0.502, 1)
+text_color_highlight = Color(0.933, 0.765, 0.357, 1)
+hover_color = Color(0.969, 0.91, 0.745, 1)
+pressed_color = Color(0.706, 0.627, 0.478, 1)
+selected_color = Color(0.918, 0.827, 0.576, 1)
+disabled_color = Color(0.502, 0.502, 0.502, 0.502)
+success_color = Color(0.349, 0.718, 0.349, 1)
+warning_color = Color(0.91, 0.733, 0.251, 1)
+error_color = Color(0.804, 0.239, 0.239, 1)
+info_color = Color(0.329, 0.51, 0.78, 1)
+font_header = null
+font_body = null
+font_button = null
+font_small = null
+font_size_header = 24
+font_size_subheader = 18
+font_size_body = 14
+font_size_button = 16
+font_size_small = 12
+panel_texture = null
+button_texture = null
+border_texture = null
+slot_texture = null
+icon_frame_texture = null
+panel_border_width = 4
+panel_corner_radius = 8
+panel_shadow_size = 4
+panel_shadow_color = Color(0, 0, 0, 0.5)
+button_border_width = 2
+button_corner_radius = 6
+button_padding_horizontal = 16
+button_padding_vertical = 8
+button_hover_scale = 1.05
+slot_size = Vector2i(64, 64)
+slot_border_width = 2
+slot_border_color = Color(0.392, 0.314, 0.235, 1)
+slot_border_color_highlight = Color(0.933, 0.737, 0.314, 1)
+slot_empty_color = Color(0.302, 0.255, 0.204, 0.502)
+spacing_tiny = 4
+spacing_small = 8
+spacing_medium = 16
+spacing_large = 24
+spacing_huge = 32
+padding_panel = 16
+padding_container = 12
+padding_button = 8
+transition_duration = 0.2
+hover_duration = 0.1
+fade_duration = 0.3

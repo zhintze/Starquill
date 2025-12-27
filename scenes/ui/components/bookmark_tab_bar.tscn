@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://dv7ykn3qf8m2a"]
+
+[ext_resource type="Script" path="res://scripts/ui/components/bookmark_tab_bar.gd" id="1_bookmark_tab_bar"]
+
+[node name="BookmarkTabBar" type="HBoxContainer"]
+custom_minimum_size = Vector2(0, 44)
+script = ExtResource("1_bookmark_tab_bar")

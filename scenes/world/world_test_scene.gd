@@ -7,6 +7,11 @@ var camera_controller: CameraController
 var debug_label: Label
 var debug_dead_zone: bool = false  # Set to true to visualize camera dead zone
 
+# UI references
+var ui_layer: CanvasLayer
+var party_menu_button: Control
+var active_menu: Control = null
+
 # Pathfinding and movement
 var current_path: Array[Vector2i] = []
 var path_index: int = 0
@@ -53,6 +58,15 @@ func _setup_test_party() -> void:
 			PlayerData.add_character(character)
 		print("Created test party with %d members" % PlayerData.party.members.size())
 
+		# Add 10 random equipment items to shared inventory
+		var prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe", "w"]
+		for i in range(10):
+			var prefix: String = prefixes[randi() % prefixes.size()]
+			var equipment: EquipmentInstance = equipment_factory.create_random_from_prefix(prefix)
+			if equipment:
+				PlayerData.add_to_inventory(equipment)
+		print("Added %d items to shared inventory" % PlayerData.inventory.size())
+
 func _setup_world() -> void:
 	# Create world map instance
 	world_map = WorldMap.new(randi(), "Test World")
@@ -86,23 +100,69 @@ func _setup_camera() -> void:
 
 func _setup_debug_ui() -> void:
 	# Create debug label
-	var canvas_layer = CanvasLayer.new()
-	canvas_layer.name = "UILayer"
-	add_child(canvas_layer)
+	ui_layer = CanvasLayer.new()
+	ui_layer.name = "UILayer"
+	add_child(ui_layer)
 
 	debug_label = Label.new()
 	debug_label.name = "DebugLabel"
 	debug_label.position = Vector2(10, 10)
 	debug_label.add_theme_font_size_override("font_size", 14)
-	canvas_layer.add_child(debug_label)
+	ui_layer.add_child(debug_label)
 
 	# Add controls info
 	var controls_label = Label.new()
 	controls_label.name = "ControlsLabel"
 	controls_label.position = Vector2(10, 100)
-	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\n+/- - Zoom In/Out\n0 - Reset Zoom\n\nTouch:\nTap - Path to tile\nSwipe - Move direction\nPinch - Zoom"
+	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\n+/- - Zoom In/Out\n0 - Reset Zoom\nP - Party Menu\n\nTouch:\nTap - Path to tile\nSwipe - Move direction\nPinch - Zoom"
 	controls_label.add_theme_font_size_override("font_size", 12)
-	canvas_layer.add_child(controls_label)
+	ui_layer.add_child(controls_label)
+
+	# Add party menu button (top-right corner)
+	_setup_menu_buttons()
+
+func _setup_menu_buttons() -> void:
+	# Container for menu buttons (top-right)
+	var button_container = HBoxContainer.new()
+	button_container.name = "MenuButtons"
+	button_container.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	button_container.anchor_left = 1.0
+	button_container.anchor_right = 1.0
+	button_container.offset_left = -120
+	button_container.offset_right = -10
+	button_container.offset_top = 10
+	button_container.add_theme_constant_override("separation", 8)
+	ui_layer.add_child(button_container)
+
+	# Party menu button
+	party_menu_button = Button.new()
+	party_menu_button.name = "PartyButton"
+	party_menu_button.text = "Party"
+	party_menu_button.custom_minimum_size = Vector2(80, 40)
+	party_menu_button.pressed.connect(_open_party_menu)
+	button_container.add_child(party_menu_button)
+
+func _open_party_menu() -> void:
+	if active_menu:
+		return  # Already have a menu open
+
+	# Load and instantiate the party menu
+	var party_menu_scene = load("res://scenes/ui/screens/party_menu.tscn")
+	if party_menu_scene:
+		active_menu = party_menu_scene.instantiate()
+		active_menu.menu_closed.connect(_on_menu_closed)
+		ui_layer.add_child(active_menu)
+
+		# Pause world input while menu is open
+		set_process_input(false)
+
+func _on_menu_closed() -> void:
+	if active_menu:
+		active_menu.queue_free()
+		active_menu = null
+
+	# Resume world input
+	set_process_input(true)
 
 func _connect_signals() -> void:
 	# Connect to world events
@@ -207,6 +267,8 @@ func _input(event: InputEvent) -> void:
 				_interact_with_current_tile()
 			KEY_M:
 				_toggle_minimap()
+			KEY_P:
+				_open_party_menu()
 			KEY_ESCAPE:
 				_open_menu()
 			KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:  # + key
