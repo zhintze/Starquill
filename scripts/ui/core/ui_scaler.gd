@@ -2,8 +2,21 @@ class_name UIScaler
 extends RefCounted
 
 ## UIScaler
-## Utility class for responsive UI scaling on mobile devices
-## Handles DPI scaling, safe areas, and adaptive sizing
+## Utility for safe areas and touch targets on mobile devices.
+##
+## IMPORTANT: UIScaler is NOT for general UI scaling. Godot's built-in stretch
+## mode handles resolution scaling. UIScaler provides only:
+##   - Safe area insets for notched displays
+##   - Minimum touch target enforcement
+##   - Device detection (tablet, landscape)
+##   - Responsive breakpoints
+##
+## DO NOT use scale(), scale_vec2(), scale_int() for spacing, padding, or fonts.
+## These functions are DEPRECATED and will be removed in a future version.
+## Theme tokens (spacing_medium, padding_panel, etc.) are logical pixels that
+## adapt via Godot stretch mode, not manual multiplication.
+##
+## See docs/ui_layout_rules.md "UIScaler Rules" for full guidelines.
 
 # Cached values (call refresh() when viewport changes)
 static var _scale_factor: float = 1.0
@@ -45,23 +58,32 @@ static func _calculate_safe_area() -> void:
 		_safe_area = Rect2(Vector2.ZERO, _viewport_size)
 
 # Get current scale factor
+# DEPRECATED: Godot stretch mode handles scaling. Do not use for spacing/fonts.
 static func get_scale_factor() -> float:
 	if not _initialized:
 		refresh()
 	return _scale_factor
 
 # Scale a value by the current scale factor
+# DEPRECATED: Do not use. Theme tokens adapt via Godot stretch mode.
 static func scale(value: float) -> float:
+	push_warning("UIScaler.scale() is deprecated. Use theme tokens directly without scaling.")
 	return value * get_scale_factor()
 
 # Scale a Vector2 by the current scale factor
+# DEPRECATED: Do not use. Theme tokens adapt via Godot stretch mode.
 static func scale_vec2(value: Vector2) -> Vector2:
+	push_warning("UIScaler.scale_vec2() is deprecated. Use theme tokens directly without scaling.")
 	var factor := get_scale_factor()
 	return Vector2(value.x * factor, value.y * factor)
 
 # Scale an integer value (rounded)
+# DEPRECATED: Do not use. Theme tokens adapt via Godot stretch mode.
 static func scale_int(value: int) -> int:
+	push_warning("UIScaler.scale_int() is deprecated. Use theme tokens directly without scaling.")
 	return int(round(float(value) * get_scale_factor()))
+
+# --- VALID USAGE: Safe Area Functions ---
 
 # Get safe area insets
 static func get_safe_area() -> Rect2:
@@ -97,6 +119,8 @@ static func get_viewport_size() -> Vector2:
 static func get_content_area() -> Rect2:
 	return get_safe_area()
 
+# --- VALID USAGE: Responsive Breakpoints ---
+
 # Calculate responsive value based on screen width
 # min_val at 360dp width, max_val at 600dp width, interpolated between
 static func responsive(min_val: float, max_val: float) -> float:
@@ -105,9 +129,14 @@ static func responsive(min_val: float, max_val: float) -> float:
 	t = clamp(t, 0.0, 1.0)
 	return lerp(min_val, max_val, t)
 
-# Get minimum touch target size (scaled)
+# --- VALID USAGE: Touch Targets ---
+
+# Get minimum touch target size
+# Uses the larger of MIN_TOUCH_TARGET or MIN_TOUCH_TARGET_SMALL
 static func get_min_touch_size() -> float:
-	return max(scale(UIConstants.MIN_TOUCH_TARGET), UIConstants.MIN_TOUCH_TARGET_SMALL)
+	return max(float(UIConstants.MIN_TOUCH_TARGET), float(UIConstants.MIN_TOUCH_TARGET_SMALL))
+
+# --- VALID USAGE: Device Detection ---
 
 # Check if we're on a tablet-sized device
 static func is_tablet() -> bool:
@@ -120,23 +149,12 @@ static func is_landscape() -> bool:
 	return size.x > size.y
 
 # Get appropriate slot size based on screen
+# Returns UIConstants value - no manual scaling needed (Godot stretch handles it)
 static func get_slot_size() -> int:
 	if is_tablet():
-		return scale_int(UIConstants.SLOT_SIZE_LARGE)
+		return UIConstants.SLOT_SIZE_LARGE
 	else:
-		return scale_int(UIConstants.SLOT_SIZE_MEDIUM)
-
-# Get number of inventory columns that fit
-static func get_inventory_columns() -> int:
-	var content := get_content_area()
-	var slot_size := get_slot_size()
-	var spacing := scale_int(UIConstants.SPACING_XS)
-	var available_width := content.size.x * UIConstants.CONTENT_PANEL_WIDTH_RATIO
-	var padding := scale_int(UIConstants.PANEL_PADDING) * 2
-
-	available_width -= padding
-	var cols := int(available_width / (slot_size + spacing))
-	return max(cols, 3)  # Minimum 3 columns
+		return UIConstants.SLOT_SIZE_MEDIUM
 
 # Apply safe area margins to a Control
 static func apply_safe_margins(control: Control) -> void:

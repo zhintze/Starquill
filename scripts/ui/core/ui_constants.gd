@@ -7,36 +7,66 @@ extends RefCounted
 
 # Reference design dimensions
 # Designed for 360dp width (Android minimum) and 375pt width (iOS minimum)
-const REFERENCE_WIDTH: float = 360.0
-const REFERENCE_HEIGHT: float = 640.0
+const REFERENCE_WIDTH: float = 1280.0
+const REFERENCE_HEIGHT: float = 720.0
 
 # Minimum touch target sizes (per platform guidelines)
 # Android: 48dp minimum, iOS: 44pt minimum
-const MIN_TOUCH_TARGET: float = 48.0
-const MIN_TOUCH_TARGET_SMALL: float = 44.0  # For less critical elements
+# Doubled for 1280x720 reference resolution
+const MIN_TOUCH_TARGET: float = 96.0
+const MIN_TOUCH_TARGET_SMALL: float = 88.0  # For less critical elements
 
-# Icon sizes
-const ICON_SIZE_SMALL: int = 16
-const ICON_SIZE_MEDIUM: int = 24
-const ICON_SIZE_LARGE: int = 32
-const ICON_SIZE_XLARGE: int = 48
+# Icon sizes (doubled for 1280x720 reference)
+const ICON_SIZE_SMALL: int = 32
+const ICON_SIZE_MEDIUM: int = 48
+const ICON_SIZE_LARGE: int = 64
+const ICON_SIZE_XLARGE: int = 96
 
-# Button sizes
-const BUTTON_HEIGHT_SMALL: float = 36.0
-const BUTTON_HEIGHT_MEDIUM: float = 44.0
-const BUTTON_HEIGHT_LARGE: float = 56.0
-const BUTTON_MIN_WIDTH: float = 64.0
+# Button sizes (doubled for 1280x720 reference)
+const BUTTON_HEIGHT_SMALL: float = 72.0
+const BUTTON_HEIGHT_MEDIUM: float = 88.0
+const BUTTON_HEIGHT_LARGE: float = 112.0
+const BUTTON_MIN_WIDTH: float = 128.0
 
-# Slot sizes for inventory/equipment
-const SLOT_SIZE_SMALL: int = 48
-const SLOT_SIZE_MEDIUM: int = 64
-const SLOT_SIZE_LARGE: int = 80
-const SLOT_SIZE_ICON: int = 96  # 1.5x for better equipment icon visibility
+# Slot sizes for inventory/equipment (doubled for 1280x720 reference)
+const SLOT_SIZE_SMALL: int = 96
+const SLOT_SIZE_MEDIUM: int = 128
+const SLOT_SIZE_LARGE: int = 160
+const SLOT_SIZE_ICON: int = 128  # Main slot size
 
-# Tab dimensions
-const TAB_HEIGHT: float = 44.0
-const TAB_MIN_WIDTH: float = 64.0
-const TAB_MAX_WIDTH: float = 120.0
+# Tab dimensions (doubled for 1280x720 reference)
+const TAB_HEIGHT: float = 88.0
+const TAB_MIN_WIDTH: float = 128.0
+const TAB_MAX_WIDTH: float = 240.0
+
+# Icon button sizes (for close, arrows, sort, etc.)
+const ICON_BUTTON_SIZE: int = 80  # Standard icon-only button (close, arrows)
+const ICON_BUTTON_SIZE_SMALL: int = 64  # Smaller icon buttons (sort, delete)
+
+# Menu panel sizes (for modal menus like main menu, settings, save/load)
+const MENU_PANEL_WIDTH: float = 600.0
+const MENU_PANEL_HEIGHT: float = 800.0
+const MENU_PANEL_WIDTH_SMALL: float = 480.0
+const MENU_PANEL_HEIGHT_SMALL: float = 600.0
+
+# Menu button sizes
+const MENU_BUTTON_WIDTH: float = 400.0
+const MENU_BUTTON_HEIGHT: float = 96.0
+
+# Thumbnail/preview sizes
+const THUMBNAIL_WIDTH: int = 160
+const THUMBNAIL_HEIGHT: int = 100
+
+# Slider dimensions
+const SLIDER_HEIGHT: int = 48
+const SLIDER_MIN_WIDTH: int = 300
+
+# Portrait/character display area
+const PORTRAIT_MARGIN_RIGHT: int = 200
+const PORTRAIT_MARGIN_BOTTOM: int = 120
+
+# Inset container padding (for recessed scroll areas)
+const INSET_PADDING: int = 8
 
 # Safe area defaults (can be overridden by actual device values)
 const SAFE_AREA_TOP_DEFAULT: float = 0.0
@@ -44,45 +74,20 @@ const SAFE_AREA_BOTTOM_DEFAULT: float = 0.0
 const SAFE_AREA_LEFT_DEFAULT: float = 0.0
 const SAFE_AREA_RIGHT_DEFAULT: float = 0.0
 
-# Notch/cutout handling
-const NOTCH_HEIGHT_ESTIMATE: float = 44.0  # iOS notch approximate
-const HOME_INDICATOR_HEIGHT: float = 34.0  # iOS home indicator
+# Notch/cutout handling (doubled for 1280x720 reference)
+const NOTCH_HEIGHT_ESTIMATE: float = 88.0  # iOS notch approximate
+const HOME_INDICATOR_HEIGHT: float = 68.0  # iOS home indicator
 
-# Spacing scale (follows 4px grid)
-const SPACING_NONE: int = 0
-const SPACING_XXXS: int = 2
-const SPACING_XXS: int = 4
-const SPACING_XS: int = 8
-const SPACING_SM: int = 12
-const SPACING_MD: int = 16
-const SPACING_LG: int = 24
-const SPACING_XL: int = 32
-const SPACING_XXL: int = 48
-const SPACING_XXXL: int = 64
-
-# Border radii
-const RADIUS_NONE: int = 0
-const RADIUS_SM: int = 4
-const RADIUS_MD: int = 8
-const RADIUS_LG: int = 12
-const RADIUS_XL: int = 16
-const RADIUS_FULL: int = 9999  # For pill shapes
-
-# Border widths
-const BORDER_THIN: int = 1
-const BORDER_MEDIUM: int = 2
-const BORDER_THICK: int = 4
-
-# Panel dimensions
-const PANEL_MIN_WIDTH: float = 280.0
-const PANEL_MAX_WIDTH: float = 480.0
-const PANEL_PADDING: int = 16
+# Panel dimensions (doubled for 1280x720 reference)
+const PANEL_MIN_WIDTH: float = 560.0
+const PANEL_MAX_WIDTH: float = 960.0
+const PANEL_PADDING: int = 32
 
 # Party menu specific
 const CHARACTER_PANEL_WIDTH_RATIO: float = 0.4  # 40% of screen width
 const CONTENT_PANEL_WIDTH_RATIO: float = 0.6  # 60% of screen width
 const EQUIPMENT_SLOTS_PER_ROW: int = 4
-const INVENTORY_COLUMNS: int = 4
+const INVENTORY_COLUMNS: int = 2
 
 # Animation durations (seconds)
 const ANIM_INSTANT: float = 0.0

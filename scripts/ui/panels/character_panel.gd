@@ -2,12 +2,18 @@ class_name CharacterPanel
 extends PanelContainer
 
 ## CharacterPanel
-## Left side of party menu showing character portrait and equipment slots
+## Left side of party menu showing character portrait and equipment slots.
 ## Layout:
 ## - Top: Centered Portrait (left) + Equipment scroll column (right)
 ##   - Equipment column: Head, Torso, Arms, Legs, Feet, Misc1-4 in recessed scroll
 ## - Middle: Weapon row (Main Hand, Off Hand) centered under portrait
 ## - Bottom: Navigation arrows (left) + character name (right)
+##
+## SelectablePanel Compliance (duck-typed):
+##   - clear_selection(): Clears equipment slot highlighting
+##   - get_selected_slot(): Returns currently selected EquipmentSlot or null
+##   - equipment_slot_clicked signal: Emitted when slot selection changes
+## Used by PartyMenuCoordinator for cross-panel selection coordination.
 
 signal character_changed(index: int)
 signal equipment_slot_clicked(slot: EquipmentSlot)
@@ -50,21 +56,15 @@ func _build_ui() -> void:
 	var stylebox := UIThemeManager.create_bg_stylebox("secondary")
 	add_theme_stylebox_override("panel", stylebox)
 
-	var theme := UIThemeManager.get_theme()
-
-	# Main vertical layout
-	_main_vbox = VBoxContainer.new()
+	# Main vertical layout (padding via containers, not StyleBox)
+	_main_vbox = UIThemeManager.make_vbox("small")
 	_main_vbox.name = "MainVBox"
 	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_main_vbox.add_theme_constant_override("separation", theme.spacing_small)
 	add_child(_main_vbox)
 
-	# Top section: Portrait + Equipment scroll column
+	# Main section: Portrait+Weapons column (left) + Equipment scroll column (right)
 	_build_portrait_equipment_section()
-
-	# Middle section: Weapon slots row (Main Hand, Off Hand)
-	_build_weapon_row()
 
 	# Bottom section: Navigation + Name
 	_build_navigation_section()
@@ -72,48 +72,76 @@ func _build_ui() -> void:
 func _build_portrait_equipment_section() -> void:
 	var theme := UIThemeManager.get_theme()
 
-	_portrait_equipment_hbox = HBoxContainer.new()
+	_portrait_equipment_hbox = UIThemeManager.make_hbox("small")
 	_portrait_equipment_hbox.name = "PortraitEquipmentHBox"
 	_portrait_equipment_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_portrait_equipment_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_portrait_equipment_hbox.add_theme_constant_override("separation", theme.spacing_small)
 	_main_vbox.add_child(_portrait_equipment_hbox)
 
-	# Portrait area (left side, expands) with centered display
+	# Left column: Portrait (top) + Weapon slots (bottom)
+	var left_column := UIThemeManager.make_vbox("small")
+	left_column.name = "LeftColumn"
+	left_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_portrait_equipment_hbox.add_child(left_column)
+
+	# Portrait area (expands to fill available space)
 	_portrait_container = PanelContainer.new()
 	_portrait_container.name = "PortraitContainer"
 	_portrait_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_portrait_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	# Dark background for portrait with padding
+	# Dark background for portrait (no content margins - use MarginContainer)
 	var portrait_style := StyleBoxFlat.new()
 	portrait_style.bg_color = theme.bg_secondary.darkened(0.2)
-	portrait_style.set_corner_radius_all(6)
-	#portrait_style.content_margin_left = 180
-	portrait_style.content_margin_right = 180
-	#portrait_style.content_margin_top = 18
-	portrait_style.content_margin_bottom = 160
+	portrait_style.set_corner_radius_all(theme.panel_corner_radius)
 	_portrait_container.add_theme_stylebox_override("panel", portrait_style)
-	_portrait_equipment_hbox.add_child(_portrait_container)
+	left_column.add_child(_portrait_container)
+
+	# Padding via MarginContainer (per UI rules - padding in MarginContainer, not StyleBox)
+	var portrait_margin := MarginContainer.new()
+	portrait_margin.name = "PortraitMargin"
+	portrait_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	portrait_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	portrait_margin.add_theme_constant_override("margin_right", UIConstants.PORTRAIT_MARGIN_RIGHT)
+	portrait_margin.add_theme_constant_override("margin_bottom", UIConstants.PORTRAIT_MARGIN_BOTTOM)
+	_portrait_container.add_child(portrait_margin)
 
 	# CenterContainer to center the CharacterDisplay
 	var center_container := CenterContainer.new()
 	center_container.name = "CenterContainer"
 	center_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_portrait_container.add_child(center_container)
+	portrait_margin.add_child(center_container)
 
 	# CharacterDisplay for rendering the character (centered)
 	_portrait_display = CharacterDisplay.new()
 	_portrait_display.name = "CharacterDisplay"
 	center_container.add_child(_portrait_display)
 
+	# Weapon slots row (left-aligned under portrait)
+	_weapon_row = UIThemeManager.make_hbox("small")
+	_weapon_row.name = "WeaponRow"
+	_weapon_row.alignment = BoxContainer.ALIGNMENT_BEGIN  # Left-aligned
+	left_column.add_child(_weapon_row)
+
+	# Main Hand and Off Hand slots
+	var weapon_slot_types: Array[EquipmentSlot.SlotType] = [
+		EquipmentSlot.SlotType.MAIN_HAND,
+		EquipmentSlot.SlotType.OFF_HAND,
+	]
+
+	for slot_type in weapon_slot_types:
+		var slot := _create_equipment_slot(slot_type)
+		_weapon_row.add_child(slot)
+		_equipment_slots[slot_type] = slot
+
 	# Equipment column (right side) - recessed scroll container
 	var equipment_inset := PanelContainer.new()
 	equipment_inset.name = "EquipmentInset"
 	equipment_inset.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	# Create inset/recessed style for equipment column
+	# Create inset/recessed style for equipment column (no content margins - use MarginContainer)
 	var inset_style := StyleBoxFlat.new()
 	inset_style.bg_color = theme.bg_secondary.darkened(0.15)
 	inset_style.set_border_width_all(2)
@@ -122,25 +150,31 @@ func _build_portrait_equipment_section() -> void:
 	inset_style.shadow_color = Color(0, 0, 0, 0.2)
 	inset_style.shadow_size = 2
 	inset_style.shadow_offset = Vector2(1, 1)
-	inset_style.content_margin_left = 4
-	inset_style.content_margin_right = 4
-	inset_style.content_margin_top = 4
-	inset_style.content_margin_bottom = 4
 	equipment_inset.add_theme_stylebox_override("panel", inset_style)
 	_portrait_equipment_hbox.add_child(equipment_inset)
 
-	# Scroll container (hidden scrollbar)
+	# Padding via MarginContainer (per UI rules)
+	var inset_margin := MarginContainer.new()
+	inset_margin.name = "InsetMargin"
+	inset_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inset_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inset_margin.add_theme_constant_override("margin_left", UIConstants.INSET_PADDING)
+	inset_margin.add_theme_constant_override("margin_right", UIConstants.INSET_PADDING)
+	inset_margin.add_theme_constant_override("margin_top", UIConstants.INSET_PADDING)
+	inset_margin.add_theme_constant_override("margin_bottom", UIConstants.INSET_PADDING)
+	equipment_inset.add_child(inset_margin)
+
+	# Scroll container (hidden scrollbar) - extra height for additional row
 	_equipment_scroll = ScrollContainer.new()
 	_equipment_scroll.name = "EquipmentScroll"
 	_equipment_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_equipment_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_equipment_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
-	equipment_inset.add_child(_equipment_scroll)
+	inset_margin.add_child(_equipment_scroll)
 
 	# VBox for all equipment slots (body + misc)
-	_equipment_slots_vbox = VBoxContainer.new()
+	_equipment_slots_vbox = UIThemeManager.make_vbox("tiny")
 	_equipment_slots_vbox.name = "EquipmentSlotsVBox"
-	_equipment_slots_vbox.add_theme_constant_override("separation", theme.spacing_tiny)
 	_equipment_scroll.add_child(_equipment_slots_vbox)
 
 	# Create all equipment slots in vertical column (body + misc)
@@ -161,32 +195,9 @@ func _build_portrait_equipment_section() -> void:
 		_equipment_slots_vbox.add_child(slot)
 		_equipment_slots[slot_type] = slot
 
-func _build_weapon_row() -> void:
-	var theme := UIThemeManager.get_theme()
-
-	_weapon_row = HBoxContainer.new()
-	_weapon_row.name = "WeaponRow"
-	_weapon_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_weapon_row.add_theme_constant_override("separation", theme.spacing_small)
-	_main_vbox.add_child(_weapon_row)
-
-	# Main Hand and Off Hand slots
-	var weapon_slot_types: Array[EquipmentSlot.SlotType] = [
-		EquipmentSlot.SlotType.MAIN_HAND,
-		EquipmentSlot.SlotType.OFF_HAND,
-	]
-
-	for slot_type in weapon_slot_types:
-		var slot := _create_equipment_slot(slot_type)
-		_weapon_row.add_child(slot)
-		_equipment_slots[slot_type] = slot
-
 func _build_navigation_section() -> void:
-	var theme := UIThemeManager.get_theme()
-
-	_nav_container = HBoxContainer.new()
+	_nav_container = UIThemeManager.make_hbox("tiny")
 	_nav_container.name = "NavContainer"
-	_nav_container.add_theme_constant_override("separation", theme.spacing_tiny)
 	_main_vbox.add_child(_nav_container)
 
 	# Left arrow
@@ -195,7 +206,7 @@ func _build_navigation_section() -> void:
 	_left_arrow.preset_icon = IconButton.PresetIcon.ARROW_LEFT
 	_left_arrow.icon_position = IconButton.IconPosition.ONLY
 	_left_arrow.button_style = ThemedButton.ButtonStyle.GHOST
-	_left_arrow.custom_minimum_size = Vector2(40, 40)
+	_left_arrow.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE, UIConstants.ICON_BUTTON_SIZE)
 	_left_arrow.pressed.connect(_on_previous_character)
 	_nav_container.add_child(_left_arrow)
 
@@ -205,7 +216,7 @@ func _build_navigation_section() -> void:
 	_right_arrow.preset_icon = IconButton.PresetIcon.ARROW_RIGHT
 	_right_arrow.icon_position = IconButton.IconPosition.ONLY
 	_right_arrow.button_style = ThemedButton.ButtonStyle.GHOST
-	_right_arrow.custom_minimum_size = Vector2(40, 40)
+	_right_arrow.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE, UIConstants.ICON_BUTTON_SIZE)
 	_right_arrow.pressed.connect(_on_next_character)
 	_nav_container.add_child(_right_arrow)
 

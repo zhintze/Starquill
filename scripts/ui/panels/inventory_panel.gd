@@ -2,9 +2,26 @@ class_name InventoryPanelNew
 extends PanelContainer
 
 ## InventoryPanel (Refactored)
-## Dynamic inventory grid in inset scroll container
-## Displays inventory items with always-visible scrollbar
-## Shows 2 empty rows below last item
+## Dynamic inventory grid in inset scroll container.
+## Displays inventory items with always-visible scrollbar.
+## Shows 2 empty rows below last item.
+##
+## Uses SlotGridBinder for data binding (see docs/ui_ai_rules.md):
+##   - _binder handles slot creation via _create_inventory_slot factory
+##   - refresh() calls _binder.bind_items() with calculated extra slots
+##   - Binder signals connected for selection and drop handling
+##
+## SelectablePanel Compliance (duck-typed):
+##   - clear_selection(): Clears slot highlighting and info panel
+##   - get_selected_item(): Returns selected inventory item or null
+##   - show_item_info(item): Shows info for external item (from equipment)
+##   - item_selected signal: Emitted when selection changes
+## Used by PartyMenuCoordinator for cross-panel selection coordination.
+##
+## Drop Target Contract Implementation:
+##   - can_accept_drop(data): Accepts EquipmentInstance for unequipping
+##   - handle_drop(data, source): Handles equipment unequip to inventory
+## See docs/ui_drop_target_contract.md for contract details.
 
 signal item_selected(index: int, data: Variant)
 signal item_used(index: int, data: Variant)
@@ -13,7 +30,6 @@ signal sort_requested(sort_type: String)
 
 # Configuration
 @export var show_info_panel: bool = true
-@export var show_sort_buttons: bool = true
 @export var extra_empty_rows: int = 2  # Empty rows below last item
 
 # References
@@ -21,14 +37,11 @@ var _inventory: Variant = null  # Inventory object
 var _inventory_controller: Variant = null
 
 # UI References
-var _main_vbox: VBoxContainer
-var _header: HBoxContainer
-var _title_label: Label
-var _sort_buttons: HBoxContainer
+var _main_hbox: HBoxContainer
 var _inset_container: PanelContainer
 var _scroll_container: ScrollContainer
 var _grid_container: GridContainer
-var _slots: Array[DragDropSlot] = []
+var _binder: SlotGridBinder  # Handles slot creation and data binding
 var _info_panel: PanelContainer
 var _info_name_label: Label
 var _info_desc_label: Label
@@ -37,7 +50,7 @@ var _drag_highlight: ColorRect  # Overlay for drag feedback
 
 # Layout calculations
 var _slot_size: float = UIConstants.SLOT_SIZE_ICON
-var _slot_spacing: float = UIConstants.SPACING_XS
+var _slot_spacing: float = 0.0  # Set from theme in _ready
 var _columns: int = 0
 var _item_count: int = 0
 
@@ -68,65 +81,40 @@ func _build_ui() -> void:
 
 	var theme := UIThemeManager.get_theme()
 
-	# Main vertical layout
-	_main_vbox = VBoxContainer.new()
-	_main_vbox.name = "MainVBox"
-	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_main_vbox.add_theme_constant_override("separation", theme.spacing_small)
-	add_child(_main_vbox)
+	# Set slot spacing from theme (small = 8px, appropriate for tight grid)
+	_slot_spacing = theme.spacing_small
 
-	# Header with title and sort buttons
-	_build_header()
+	# Main content: HBox with scroll (left) and info (right)
+	_main_hbox = UIThemeManager.make_hbox("small")
+	_main_hbox.name = "MainHBox"
+	_main_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_main_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(_main_hbox)
 
-	# Inventory scroll container with inset style
+	# Left: Inventory scroll container
 	_build_inventory_scroll()
 
-	# Info panel (fills remaining space)
+	# Right: Info panel
 	if show_info_panel:
 		_build_info_panel()
-
-func _build_header() -> void:
-	var theme := UIThemeManager.get_theme()
-
-	_header = HBoxContainer.new()
-	_header.name = "Header"
-	_header.add_theme_constant_override("separation", theme.spacing_medium)
-	_main_vbox.add_child(_header)
-
-	# Title
-	_title_label = Label.new()
-	_title_label.name = "TitleLabel"
-	_title_label.text = "Inventory"
-	_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_header.add_child(_title_label)
-
-	# Sort buttons
-	if show_sort_buttons:
-		_sort_buttons = HBoxContainer.new()
-		_sort_buttons.name = "SortButtons"
-		_sort_buttons.add_theme_constant_override("separation", theme.spacing_tiny)
-		_header.add_child(_sort_buttons)
-
-		var sort_btn := IconButton.new()
-		sort_btn.preset_icon = IconButton.PresetIcon.SORT
-		sort_btn.icon_position = IconButton.IconPosition.ONLY
-		sort_btn.button_style = ThemedButton.ButtonStyle.GHOST
-		sort_btn.custom_minimum_size = Vector2(32, 32)
-		sort_btn.tooltip_text = "Sort by name"
-		sort_btn.pressed.connect(_on_sort_name_pressed)
-		_sort_buttons.add_child(sort_btn)
 
 func _build_inventory_scroll() -> void:
 	var theme := UIThemeManager.get_theme()
 
-	# Inset/recessed container for the scroll area
+	# Calculate fixed width for 2 columns + scrollbar + padding
+	# 2 columns * slot_size + 1 gap + scrollbar (~24px) + inset padding (8*2)
+	var scrollbar_width := 24
+	var grid_width := (UIConstants.SLOT_SIZE_ICON * 2) + int(_slot_spacing)
+	var scroll_area_width := grid_width + scrollbar_width + (UIConstants.INSET_PADDING * 2)
+
+	# Inset/recessed container for the scroll area (left side)
 	_inset_container = PanelContainer.new()
 	_inset_container.name = "InsetContainer"
-	_inset_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inset_container.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_inset_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_inset_container.custom_minimum_size = Vector2(scroll_area_width, 0)
 
-	# Create inset/recessed style
+	# Create inset/recessed style (no content margins - use MarginContainer)
 	var inset_style := StyleBoxFlat.new()
 	inset_style.bg_color = theme.bg_secondary.darkened(0.15)
 	inset_style.set_border_width_all(2)
@@ -136,12 +124,19 @@ func _build_inventory_scroll() -> void:
 	inset_style.shadow_color = Color(0, 0, 0, 0.2)
 	inset_style.shadow_size = 2
 	inset_style.shadow_offset = Vector2(1, 1)
-	inset_style.content_margin_left = 4
-	inset_style.content_margin_right = 4
-	inset_style.content_margin_top = 4
-	inset_style.content_margin_bottom = 4
 	_inset_container.add_theme_stylebox_override("panel", inset_style)
-	_main_vbox.add_child(_inset_container)
+	_main_hbox.add_child(_inset_container)
+
+	# Padding via MarginContainer (per UI rules)
+	var inset_margin := MarginContainer.new()
+	inset_margin.name = "InsetMargin"
+	inset_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inset_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	inset_margin.add_theme_constant_override("margin_left", UIConstants.INSET_PADDING)
+	inset_margin.add_theme_constant_override("margin_right", UIConstants.INSET_PADDING)
+	inset_margin.add_theme_constant_override("margin_top", UIConstants.INSET_PADDING)
+	inset_margin.add_theme_constant_override("margin_bottom", UIConstants.INSET_PADDING)
+	_inset_container.add_child(inset_margin)
 
 	# Drag highlight overlay (hidden by default)
 	_drag_highlight = ColorRect.new()
@@ -150,7 +145,7 @@ func _build_inventory_scroll() -> void:
 	_drag_highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drag_highlight.visible = false
 	_drag_highlight.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_inset_container.add_child(_drag_highlight)
+	inset_margin.add_child(_drag_highlight)
 
 	# Scroll container with always-visible scrollbar
 	_scroll_container = ScrollContainer.new()
@@ -159,7 +154,7 @@ func _build_inventory_scroll() -> void:
 	_scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
-	_inset_container.add_child(_scroll_container)
+	inset_margin.add_child(_scroll_container)
 
 	# Grid container for inventory slots
 	_grid_container = GridContainer.new()
@@ -169,26 +164,40 @@ func _build_inventory_scroll() -> void:
 	_grid_container.add_theme_constant_override("v_separation", int(_slot_spacing))
 	_scroll_container.add_child(_grid_container)
 
-func _build_info_panel() -> void:
-	var theme := UIThemeManager.get_theme()
+	# Set up SlotGridBinder for data binding
+	_binder = SlotGridBinder.new()
+	_binder.setup(_grid_container, _create_inventory_slot, Vector2(_slot_size, _slot_size))
+	_binder.slot_clicked.connect(_on_binder_slot_clicked)
+	_binder.slot_hovered.connect(_on_binder_slot_hovered)
+	_binder.slot_unhovered.connect(_on_binder_slot_unhovered)
+	_binder.item_dropped.connect(_on_binder_item_dropped)
 
+## Slot factory for SlotGridBinder
+func _create_inventory_slot(index: int) -> DragDropSlot:
+	var slot := InventorySlot.new()
+	slot.slot_index = index
+	return slot
+
+func _build_info_panel() -> void:
 	_info_panel = PanelContainer.new()
 	_info_panel.name = "InfoPanel"
-	# Fill remaining space instead of fixed height
+	# Fill remaining space (right side of HBox)
+	_info_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_info_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_info_panel.custom_minimum_size.y = 60  # Minimum height
-	_main_vbox.add_child(_info_panel)
+	_info_panel.size_flags_stretch_ratio = 0.45  # 45% width for info
+	_info_panel.custom_minimum_size.x = 100  # Minimum width
+	_main_hbox.add_child(_info_panel)
 
+	# StyleBox with no content margins (padding via MarginContainer)
 	var info_style := UIThemeManager.create_bg_stylebox("primary")
-	info_style.content_margin_left = theme.padding_container
-	info_style.content_margin_right = theme.padding_container
-	info_style.content_margin_top = theme.padding_container
-	info_style.content_margin_bottom = theme.padding_container
 	_info_panel.add_theme_stylebox_override("panel", info_style)
 
-	var info_vbox := VBoxContainer.new()
-	info_vbox.add_theme_constant_override("separation", theme.spacing_tiny)
-	_info_panel.add_child(info_vbox)
+	# Padding via MarginContainer (per UI rules)
+	var info_padding := UIThemeManager.make_margin_container("container")
+	_info_panel.add_child(info_padding)
+
+	var info_vbox := UIThemeManager.make_vbox("tiny")
+	info_padding.add_child(info_vbox)
 
 	# Item name
 	_info_name_label = Label.new()
@@ -213,10 +222,6 @@ func _build_info_panel() -> void:
 func _apply_style() -> void:
 	var theme := UIThemeManager.get_theme()
 
-	# Title styling
-	_title_label.add_theme_font_size_override("font_size", theme.font_size_subheader)
-	_title_label.add_theme_color_override("font_color", theme.text_color)
-
 	# Info panel styling
 	if _info_name_label:
 		_info_name_label.add_theme_font_size_override("font_size", theme.font_size_body)
@@ -238,47 +243,21 @@ func _recalculate_grid() -> void:
 	if not _scroll_container or not _grid_container:
 		return
 
-	# Calculate how many columns fit
-	var available_width := _scroll_container.size.x - 20  # Account for scrollbar
-	var slot_total := _slot_size + _slot_spacing
-	_columns = maxi(1, int(available_width / slot_total))
+	# Fixed 2 columns per UI design
+	_columns = UIConstants.INVENTORY_COLUMNS
 	_grid_container.columns = _columns
 
-	# Calculate slot count: items + 2 extra rows
-	_update_slot_count()
-
-func _update_slot_count() -> void:
-	# Calculate how many slots we need: item count + extra_empty_rows worth
-	var items_count := _item_count
-	var rows_for_items := ceili(float(items_count) / float(maxi(1, _columns)))
+func _calculate_extra_slots() -> int:
+	# Calculate extra empty slots: extra_empty_rows worth of columns
+	# Plus minimum 3 rows total
+	var rows_for_items := ceili(float(_item_count) / float(maxi(1, _columns)))
 	var total_rows := rows_for_items + extra_empty_rows
 	var target_slot_count := total_rows * _columns
 
 	# Minimum slot count (at least show some empty slots)
 	target_slot_count = maxi(target_slot_count, _columns * 3)
 
-	# Add or remove slots as needed
-	while _slots.size() < target_slot_count:
-		_add_slot()
-
-	# Hide excess slots (don't remove, just hide for performance)
-	for i in range(_slots.size()):
-		_slots[i].visible = (i < target_slot_count)
-
-func _add_slot() -> void:
-	var slot := InventorySlot.new()
-	slot.slot_index = _slots.size()
-	slot.slot_size = Vector2(_slot_size, _slot_size)
-	slot.name = "Slot_%d" % _slots.size()
-
-	# Connect signals
-	slot.slot_clicked.connect(_on_slot_clicked.bind(_slots.size()))
-	slot.slot_hovered.connect(_on_slot_hovered.bind(_slots.size()))
-	slot.slot_unhovered.connect(_on_slot_unhovered.bind(_slots.size()))
-	slot.item_dropped.connect(_on_item_dropped_internal.bind(_slots.size()))
-
-	_grid_container.add_child(slot)
-	_slots.append(slot)
+	return maxi(0, target_slot_count - _item_count)
 
 func _connect_inventory() -> void:
 	# Connect to PlayerData equipment inventory
@@ -288,7 +267,8 @@ func _connect_inventory() -> void:
 			player_data.inventory_changed.connect(_on_inventory_changed)
 		refresh()
 
-func _on_slot_clicked(slot: DragDropSlot, index: int) -> void:
+# Binder signal handlers
+func _on_binder_slot_clicked(index: int, slot: DragDropSlot) -> void:
 	var data: Variant = slot.get_slot_data()
 
 	# Deselect previous slot
@@ -315,24 +295,22 @@ func _on_slot_clicked(slot: DragDropSlot, index: int) -> void:
 		elif "is_usable" in data and data.is_usable:
 			item_used.emit(index, data)
 
-func _on_slot_hovered(slot: DragDropSlot, _index: int) -> void:
+func _on_binder_slot_hovered(index: int, slot: DragDropSlot) -> void:
 	# Show hover info only if no slot is selected
 	if _selected_slot == null and _selected_item == null:
 		var data: Variant = slot.get_slot_data()
 		_update_info_panel(data)
 
-func _on_slot_unhovered(_slot: DragDropSlot, _index: int) -> void:
+func _on_binder_slot_unhovered(_index: int, _slot: DragDropSlot) -> void:
 	# Only clear if no slot is selected
 	if _selected_slot == null and _selected_item == null:
 		_clear_info_panel()
 
-func _on_item_dropped_internal(slot: DragDropSlot, _data: Variant, source_slot: DragDropSlot, index: int) -> void:
-	var source_index := source_slot.slot_index if source_slot else -1
-	item_dropped.emit(index, source_index)
-
-func _on_sort_name_pressed() -> void:
-	sort_by_name()
-	sort_requested.emit("name")
+func _on_binder_item_dropped(target_index: int, _data: Variant, source_slot: Control) -> void:
+	var source_index: int = -1
+	if source_slot and "slot_index" in source_slot:
+		source_index = source_slot.slot_index
+	item_dropped.emit(target_index, source_index)
 
 func _update_info_panel(data: Variant) -> void:
 	if not show_info_panel or not data:
@@ -432,7 +410,7 @@ func get_inventory() -> Variant:
 	return _inventory
 
 func refresh() -> void:
-	if not _grid_container:
+	if not _grid_container or not _binder:
 		return
 
 	# Get equipment items from PlayerData inventory
@@ -443,49 +421,43 @@ func refresh() -> void:
 
 	_item_count = items.size()
 
-	# Ensure we have enough slots
+	# Ensure grid has correct columns
 	_recalculate_grid()
 
-	# Populate slots with items
-	for i in range(_slots.size()):
-		if i < items.size():
-			_slots[i].set_slot_data(items[i])
-		else:
-			_slots[i].clear_slot()
+	# Use binder to bind items with extra empty slots
+	var extra_slots := _calculate_extra_slots()
+	_binder.bind_items(items, extra_slots)
 
 func get_slot(index: int) -> DragDropSlot:
-	if index >= 0 and index < _slots.size():
-		return _slots[index]
+	if _binder:
+		return _binder.get_slot(index)
 	return null
 
 func get_all_slots() -> Array[DragDropSlot]:
-	return _slots
+	if _binder:
+		return _binder.get_slots()
+	return []
 
 func add_item(data: Variant) -> int:
-	# Find first empty slot
-	for i in range(_slots.size()):
-		if _slots[i].is_empty():
-			_slots[i].set_slot_data(data)
+	if _binder:
+		var index := _binder.add_item(data)
+		if index >= 0:
 			_item_count += 1
-			_update_slot_count()
-			return i
+		return index
 	return -1
 
 func remove_item(index: int) -> Variant:
-	if index >= 0 and index < _slots.size():
-		var data: Variant = _slots[index].get_slot_data()
-		_slots[index].clear_slot()
+	if _binder:
+		var data: Variant = _binder.remove_item(index)
 		if data:
 			_item_count = maxi(0, _item_count - 1)
-			_update_slot_count()
 		return data
 	return null
 
 func clear_all() -> void:
-	for slot in _slots:
-		slot.clear_slot()
+	if _binder:
+		_binder.clear()
 	_item_count = 0
-	_update_slot_count()
 
 # Sorting
 func sort_by_name() -> void:
@@ -547,6 +519,12 @@ func clear_selection() -> void:
 	_selected_slot = null
 	_selected_item = null
 	_clear_info_panel()
+
+# Get the currently selected item (from slot or external)
+func get_selected_item() -> Variant:
+	if _selected_slot and is_instance_valid(_selected_slot):
+		return _selected_slot.get_slot_data()
+	return _selected_item
 
 # Drag highlight handlers - called by DragDropManager
 func _on_mouse_entered() -> void:

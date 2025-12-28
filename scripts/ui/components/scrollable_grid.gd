@@ -2,8 +2,24 @@ class_name ScrollableGrid
 extends ScrollContainer
 
 ## ScrollableGrid
-## A scrollable container with a grid of slots
-## Auto-fits columns based on available width or uses fixed column count
+## A scrollable container with a grid of slots.
+## Handles LAYOUT only: columns, spacing, slot sizing, auto-fit.
+##
+## Data Binding:
+##   For new code, use SlotGridBinder for data binding instead of the
+##   deprecated set_items/get_items methods on this class.
+##
+##   Example with SlotGridBinder:
+##     var binder := SlotGridBinder.new()
+##     binder.setup(_scrollable_grid.get_grid(), _create_slot)
+##     binder.bind_items(inventory_items)
+##
+## This class provides:
+##   - Slot creation and layout (columns, spacing)
+##   - Auto-fit columns based on container width
+##   - Scroll container configuration
+##
+## See docs/ui_ai_rules.md for the full pattern.
 
 signal slot_clicked(index: int, slot: DragDropSlot)
 signal slot_hovered(index: int, slot: DragDropSlot)
@@ -152,12 +168,18 @@ func get_slots() -> Array[DragDropSlot]:
 func get_slot_count() -> int:
 	return _slots.size()
 
+## Get the internal GridContainer for use with SlotGridBinder
+func get_grid() -> GridContainer:
+	return _grid
+
+# DEPRECATED: Use SlotGridBinder instead
 # Set data for a specific slot
 func set_slot_data(index: int, data: Variant) -> void:
 	var slot := get_slot(index)
 	if slot:
 		slot.set_slot_data(data)
 
+# DEPRECATED: Use SlotGridBinder instead
 # Get data from a specific slot
 func get_slot_data(index: int) -> Variant:
 	var slot := get_slot(index)
@@ -165,6 +187,7 @@ func get_slot_data(index: int) -> Variant:
 		return slot.get_slot_data()
 	return null
 
+# DEPRECATED: Use SlotGridBinder.bind_items() instead
 # Set data for all slots from an array
 func set_items(items: Array) -> void:
 	for i in range(mini(items.size(), _slots.size())):
@@ -174,6 +197,7 @@ func set_items(items: Array) -> void:
 	for i in range(items.size(), _slots.size()):
 		_slots[i].clear_slot()
 
+# DEPRECATED: Use SlotGridBinder.get_items() instead
 # Get all slot data as an array
 func get_items() -> Array:
 	var items: Array = []
@@ -181,6 +205,7 @@ func get_items() -> Array:
 		items.append(slot.get_slot_data())
 	return items
 
+# DEPRECATED: Use SlotGridBinder.get_items() instead
 # Get only non-empty slot data
 func get_non_empty_items() -> Array:
 	var items: Array = []
@@ -190,6 +215,7 @@ func get_non_empty_items() -> Array:
 			items.append(data)
 	return items
 
+# DEPRECATED: Use SlotGridBinder.find_empty_slot() instead
 # Find first empty slot index
 func find_empty_slot() -> int:
 	for i in range(_slots.size()):
@@ -197,6 +223,7 @@ func find_empty_slot() -> int:
 			return i
 	return -1
 
+# DEPRECATED: Implement custom search in your code
 # Find slot containing specific data (by reference or ID)
 func find_slot_with_data(data: Variant) -> int:
 	for i in range(_slots.size()):
@@ -210,6 +237,7 @@ func find_slot_with_data(data: Variant) -> int:
 					return i
 	return -1
 
+# DEPRECATED: Use SlotGridBinder.add_item() instead
 # Add item to first empty slot
 func add_item(data: Variant) -> int:
 	var empty_index := find_empty_slot()
@@ -217,6 +245,7 @@ func add_item(data: Variant) -> int:
 		set_slot_data(empty_index, data)
 	return empty_index
 
+# DEPRECATED: Use SlotGridBinder.remove_item() instead
 # Remove item from slot
 func remove_item(index: int) -> Variant:
 	var slot := get_slot(index)
@@ -226,6 +255,7 @@ func remove_item(index: int) -> Variant:
 		return data
 	return null
 
+# DEPRECATED: Use SlotGridBinder.clear() instead
 # Clear all slots
 func clear_all() -> void:
 	for slot in _slots:

@@ -73,7 +73,7 @@ func _build_ui() -> void:
 	# Main panel
 	_main_panel = BasePanel.create(BasePanel.PanelStyle.PRIMARY, true)
 	_main_panel.name = "SettingsPanel"
-	_main_panel.custom_minimum_size = Vector2(400, 450)
+	_main_panel.custom_minimum_size = Vector2(UIConstants.MENU_PANEL_WIDTH, UIConstants.MENU_PANEL_HEIGHT_SMALL)
 	center.add_child(_main_panel)
 
 	# Panel margin
@@ -140,7 +140,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	_close_button.preset_icon = IconButton.PresetIcon.CLOSE
 	_close_button.icon_position = IconButton.IconPosition.ONLY
 	_close_button.button_style = ThemedButton.ButtonStyle.GHOST
-	_close_button.custom_minimum_size = Vector2(40, 40)
+	_close_button.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE, UIConstants.ICON_BUTTON_SIZE)
 	_close_button.pressed.connect(_on_close_pressed)
 	header.add_child(_close_button)
 
@@ -254,7 +254,7 @@ func _create_slider_row(parent: VBoxContainer, label_text: String, min_val: floa
 	slider.step = 0.05
 	slider.value = initial
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.custom_minimum_size = Vector2(150, 24)
+	slider.custom_minimum_size = Vector2(UIConstants.SLIDER_MIN_WIDTH, UIConstants.SLIDER_HEIGHT)
 	row.add_child(slider)
 
 	var value_label := Label.new()

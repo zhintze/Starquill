@@ -43,11 +43,11 @@ class_name UITheme
 @export var font_small: Font = null  # Small labels
 
 @export_subgroup("Font Sizes")
-@export var font_size_header: int = 24
-@export var font_size_subheader: int = 18
-@export var font_size_body: int = 14
-@export var font_size_button: int = 16
-@export var font_size_small: int = 12
+@export var font_size_header: int = 48
+@export var font_size_subheader: int = 36
+@export var font_size_body: int = 28
+@export var font_size_button: int = 32
+@export var font_size_small: int = 24
 
 # Textures and Styles
 @export_group("Textures")
@@ -57,25 +57,25 @@ class_name UITheme
 @export var slot_texture: Texture2D = null  # Equipment slot background
 @export var icon_frame_texture: Texture2D = null  # Frame around icons
 
-# Panel Styling
+# Panel Styling (doubled for 1280x720 reference)
 @export_group("Panel Style")
-@export var panel_border_width: int = 4
-@export var panel_corner_radius: int = 8
-@export var panel_shadow_size: int = 4
+@export var panel_border_width: int = 8
+@export var panel_corner_radius: int = 16
+@export var panel_shadow_size: int = 8
 @export var panel_shadow_color: Color = Color(0, 0, 0, 0.5)
 
-# Button Styling
+# Button Styling (doubled for 1280x720 reference)
 @export_group("Button Style")
-@export var button_border_width: int = 2
-@export var button_corner_radius: int = 6
-@export var button_padding_horizontal: int = 16
-@export var button_padding_vertical: int = 8
+@export var button_border_width: int = 4
+@export var button_corner_radius: int = 12
+@export var button_padding_horizontal: int = 32
+@export var button_padding_vertical: int = 16
 @export var button_hover_scale: float = 1.05  # Scale on hover
 
-# Equipment Slot Styling
+# Equipment Slot Styling (doubled for 1280x720 reference)
 @export_group("Equipment Slot Style")
-@export var slot_size: Vector2i = Vector2i(64, 64)
-@export var slot_border_width: int = 2
+@export var slot_size: Vector2i = Vector2i(128, 128)
+@export var slot_border_width: int = 4
 @export var slot_border_color: Color = Color(0.4, 0.3, 0.2)
 @export var slot_border_color_highlight: Color = Color(0.9, 0.7, 0.3)
 @export var slot_empty_color: Color = Color(0.3, 0.25, 0.2, 0.5)
@@ -111,18 +111,18 @@ class_name UITheme
 @export var tab_hover: Color = Color(0.75, 0.65, 0.5)
 @export var tab_border: Color = Color(0.4, 0.3, 0.2)
 
-# Spacing and Layout
+# Spacing and Layout (doubled for 1280x720 reference)
 @export_group("Layout")
-@export var spacing_tiny: int = 4
-@export var spacing_small: int = 8
-@export var spacing_medium: int = 16
-@export var spacing_large: int = 24
-@export var spacing_huge: int = 32
+@export var spacing_tiny: int = 8
+@export var spacing_small: int = 16
+@export var spacing_medium: int = 32
+@export var spacing_large: int = 48
+@export var spacing_huge: int = 64
 
 @export_subgroup("Padding")
-@export var padding_panel: int = 16
-@export var padding_container: int = 12
-@export var padding_button: int = 8
+@export var padding_panel: int = 32
+@export var padding_container: int = 24
+@export var padding_button: int = 16
 
 # Animation
 @export_group("Animation")
@@ -148,6 +148,7 @@ func get_font_or_default(font: Font, fallback_size: int) -> Font:
 	return ThemeDB.fallback_font
 
 # Get complete StyleBox for panels
+# NOTE: Content margins are 0 - use MarginContainer for padding
 func create_panel_stylebox() -> StyleBoxFlat:
 	var stylebox := StyleBoxFlat.new()
 	stylebox.bg_color = panel_color
@@ -162,10 +163,7 @@ func create_panel_stylebox() -> StyleBoxFlat:
 	stylebox.corner_radius_bottom_right = panel_corner_radius
 	stylebox.shadow_size = panel_shadow_size
 	stylebox.shadow_color = panel_shadow_color
-	stylebox.content_margin_left = padding_panel
-	stylebox.content_margin_right = padding_panel
-	stylebox.content_margin_top = padding_panel
-	stylebox.content_margin_bottom = padding_panel
+	# Content margins are 0 - padding comes from MarginContainer
 	return stylebox
 
 # Get complete StyleBox for buttons (uses new btn_* colors)
@@ -256,10 +254,10 @@ func create_drag_drop_slot_stylebox(state: String = "empty") -> StyleBoxFlat:
 	stylebox.border_width_right = slot_border_width
 	stylebox.border_width_top = slot_border_width
 	stylebox.border_width_bottom = slot_border_width
-	stylebox.corner_radius_top_left = 4
-	stylebox.corner_radius_top_right = 4
-	stylebox.corner_radius_bottom_left = 4
-	stylebox.corner_radius_bottom_right = 4
+	stylebox.corner_radius_top_left = 8
+	stylebox.corner_radius_top_right = 8
+	stylebox.corner_radius_bottom_left = 8
+	stylebox.corner_radius_bottom_right = 8
 
 	return stylebox
 
@@ -281,18 +279,18 @@ func create_tab_stylebox(state: String = "inactive") -> StyleBoxFlat:
 			stylebox.bg_color = tab_inactive
 			stylebox.border_color = tab_border
 
-	stylebox.border_width_left = 2
-	stylebox.border_width_right = 2
-	stylebox.border_width_top = 2
+	stylebox.border_width_left = 4
+	stylebox.border_width_right = 4
+	stylebox.border_width_top = 4
 	stylebox.border_width_bottom = 0  # No bottom border for bookmark style
-	stylebox.corner_radius_top_left = 6
-	stylebox.corner_radius_top_right = 6
+	stylebox.corner_radius_top_left = 12
+	stylebox.corner_radius_top_right = 12
 	stylebox.corner_radius_bottom_left = 0
 	stylebox.corner_radius_bottom_right = 0
-	stylebox.content_margin_left = 12
-	stylebox.content_margin_right = 12
-	stylebox.content_margin_top = 8
-	stylebox.content_margin_bottom = 8
+	stylebox.content_margin_left = 24
+	stylebox.content_margin_right = 24
+	stylebox.content_margin_top = 16
+	stylebox.content_margin_bottom = 16
 
 	return stylebox
 
@@ -303,6 +301,7 @@ func create_overlay_stylebox() -> StyleBoxFlat:
 	return stylebox
 
 # Get StyleBox using semantic background colors
+# NOTE: Content margins are 0 - use MarginContainer for padding
 func create_bg_stylebox(bg_type: String = "primary") -> StyleBoxFlat:
 	var stylebox := StyleBoxFlat.new()
 

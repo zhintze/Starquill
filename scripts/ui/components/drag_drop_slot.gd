@@ -2,8 +2,24 @@ class_name DragDropSlot
 extends PanelContainer
 
 ## DragDropSlot
-## Base class for drag-and-drop enabled slots (inventory, equipment)
-## Handles drag detection, visual states, and drop validation
+## Canonical implementation of the Drop Target Contract for slot-based UI elements.
+## See docs/ui_drop_target_contract.md for the full contract specification.
+##
+## This is the base class for all drag-and-drop enabled slots (inventory, equipment).
+## Subclasses: EquipmentSlot, InventorySlot
+##
+## Drop Target Contract Implementation:
+##   - can_accept_drop(data) -> bool : Override to add custom validation
+##   - handle_drop(data, source) -> bool : Override to handle the drop
+##   - signal item_dropped : Emitted after successful drop
+##   - signal drop_rejected : Emitted when drop is rejected
+##
+## Features:
+##   - Visual feedback for all drag states (valid, invalid, hover, dragging-from)
+##   - Long-press drag initiation for mobile
+##   - Slot data management (set/get/clear)
+##   - Selection/highlighting support
+##   - Automatic styling via UITheme
 
 # Signals
 signal drag_started(slot: DragDropSlot, data: Variant)
@@ -48,16 +64,24 @@ var _is_pressing: bool = false
 var _press_position: Vector2 = Vector2.ZERO
 var _drag_threshold: float = 10.0  # Pixels of movement before canceling long press
 
+# Scroll detection - allow parent ScrollContainer to detect scrolls
+var _scroll_check_timer: Timer = null
+var _scroll_check_duration: float = 0.08  # Short delay before claiming input
+var _claimed_input: bool = false  # True once we've determined this is a tap, not a scroll
+
 # Internal nodes
 var _icon_rect: TextureRect
 var _highlight_rect: ColorRect
 
 func _ready() -> void:
 	custom_minimum_size = slot_size
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	# Use MOUSE_FILTER_PASS to allow ScrollContainer to detect scroll gestures
+	# We'll claim input only after confirming it's a tap, not a scroll
+	mouse_filter = Control.MOUSE_FILTER_PASS
 
 	_build_internal_structure()
 	_setup_long_press_timer()
+	_setup_scroll_check_timer()
 	_apply_style()
 
 	# Ensure touch-friendly size
@@ -74,6 +98,19 @@ func _setup_long_press_timer() -> void:
 	_long_press_timer.wait_time = long_press_duration
 	_long_press_timer.timeout.connect(_on_long_press_triggered)
 	add_child(_long_press_timer)
+
+func _setup_scroll_check_timer() -> void:
+	_scroll_check_timer = Timer.new()
+	_scroll_check_timer.name = "ScrollCheckTimer"
+	_scroll_check_timer.one_shot = true
+	_scroll_check_timer.wait_time = _scroll_check_duration
+	_scroll_check_timer.timeout.connect(_on_scroll_check_complete)
+	add_child(_scroll_check_timer)
+
+func _on_scroll_check_complete() -> void:
+	# If still pressing and haven't moved much, this is a tap - claim the input
+	if _is_pressing and not _claimed_input:
+		_claimed_input = true
 
 func _build_internal_structure() -> void:
 	# Create icon display
@@ -154,8 +191,13 @@ func _gui_input(event: InputEvent) -> void:
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
 				_on_slot_pressed(mb.position)
+				# Don't accept the event yet - let ScrollContainer see it
+				# We'll handle the release if this turns out to be a tap
 			else:
 				_on_slot_released()
+				# Only consume the release if we claimed this input
+				if _claimed_input:
+					accept_event()
 
 	# Handle motion during press (for long-press cancellation and drag)
 	if event is InputEventMouseMotion:
@@ -165,12 +207,18 @@ func _gui_input(event: InputEvent) -> void:
 			var distance := motion.position.distance_to(_press_position)
 			if distance > _drag_threshold:
 				_cancel_long_press()
+				# Don't accept - let scroll happen
 		elif _is_dragging:
 			_on_drag_motion(motion)
+			accept_event()  # Consume drag motion
 
 func _on_slot_pressed(position: Vector2) -> void:
 	_is_pressing = true
 	_press_position = position
+	_claimed_input = false
+
+	# Start scroll check timer - after this fires we claim the input as a tap
+	_scroll_check_timer.start()
 
 	# Start long press timer if we have draggable content
 	if can_drag and _slot_data != null:
@@ -179,6 +227,7 @@ func _on_slot_pressed(position: Vector2) -> void:
 func _on_slot_released() -> void:
 	var was_pressing := _is_pressing
 	_is_pressing = false
+	_scroll_check_timer.stop()
 
 	# If dragging, end the drag
 	if _is_dragging:
@@ -188,19 +237,23 @@ func _on_slot_released() -> void:
 	# If timer was running (long press not triggered), this is a quick tap
 	if was_pressing and not _long_press_timer.is_stopped():
 		_long_press_timer.stop()
-		# Quick tap - emit click for selection
+		# Quick tap - claim input and emit click for selection
+		_claimed_input = true
 		slot_clicked.emit(self)
 
 func _on_long_press_triggered() -> void:
 	# Long press completed - start drag if still pressing
 	if _is_pressing and can_drag and _slot_data != null:
+		_claimed_input = true  # Claim input for the drag operation
 		_start_drag()
 		# Emit click as well so the item shows info
 		slot_clicked.emit(self)
 
 func _cancel_long_press() -> void:
 	_is_pressing = false
+	_claimed_input = false
 	_long_press_timer.stop()
+	_scroll_check_timer.stop()
 
 func _start_drag() -> void:
 	if _is_dragging:
@@ -277,7 +330,7 @@ func _on_mouse_entered() -> void:
 func _on_mouse_exited() -> void:
 	slot_unhovered.emit(self)
 
-	# Cancel long press if mouse leaves while pressing (allows scroll to work)
+	# Cancel long press and scroll check if mouse leaves while pressing (allows scroll to work)
 	if _is_pressing and not _is_dragging:
 		_cancel_long_press()
 
@@ -344,7 +397,7 @@ func set_disabled(disabled: bool) -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		_set_state(SlotState.FILLED if _slot_data else SlotState.EMPTY)
-		mouse_filter = Control.MOUSE_FILTER_STOP
+		mouse_filter = Control.MOUSE_FILTER_PASS
 
 # Override in subclasses to update display based on data type
 func _update_display() -> void:

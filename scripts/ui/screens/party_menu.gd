@@ -36,16 +36,24 @@ var _stats_panel: StatsPanel
 var _journal_panel: PanelContainer
 var _map_panel: PanelContainer
 var _close_button: IconButton
+var _coordinator: PartyMenuCoordinator
 
 func _ready() -> void:
 	_build_ui()
 	_connect_signals()
+	_setup_coordinator()
 	_load_party_data()
 	_update_display()
 
 	# Listen for theme changes
 	if UIThemeManager:
 		UIThemeManager.theme_changed.connect(_on_theme_changed)
+
+func _setup_coordinator() -> void:
+	# Create coordinator for cross-panel selection coordination
+	# See: scripts/ui/screens/party_menu_coordinator.gd
+	_coordinator = PartyMenuCoordinator.new()
+	_coordinator.setup(_character_panel, _inventory_panel, _tab_bar)
 
 func _build_ui() -> void:
 	# Full screen layout
@@ -61,13 +69,9 @@ func _build_ui() -> void:
 	add_child(_background)
 
 	# Safe area margin (fallback if UIScaler not available)
-	var safe_margin := MarginContainer.new()
+	var safe_margin := UIThemeManager.make_margin_container("panel")
 	safe_margin.name = "SafeMargin"
 	safe_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	safe_margin.add_theme_constant_override("margin_left", 16)
-	safe_margin.add_theme_constant_override("margin_right", 16)
-	safe_margin.add_theme_constant_override("margin_top", 16)
-	safe_margin.add_theme_constant_override("margin_bottom", 16)
 	add_child(safe_margin)
 
 	# Main panel with paper styling
@@ -77,32 +81,18 @@ func _build_ui() -> void:
 	_main_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	safe_margin.add_child(_main_panel)
 
-	# Panel margin
-	var panel_margin := MarginContainer.new()
+	# Panel margin (padding comes from MarginContainer per UI rules)
+	var panel_margin := UIThemeManager.make_margin_container("panel")
 	panel_margin.name = "PanelMargin"
 	panel_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel_margin.add_theme_constant_override("margin_left", theme.padding_panel)
-	panel_margin.add_theme_constant_override("margin_right", theme.padding_panel)
-	panel_margin.add_theme_constant_override("margin_top", theme.padding_panel)
-	panel_margin.add_theme_constant_override("margin_bottom", theme.padding_panel)
 	_main_panel.add_child(panel_margin)
 
-	# Main content VBox (header + content)
-	var main_vbox := VBoxContainer.new()
-	main_vbox.name = "MainVBox"
-	main_vbox.add_theme_constant_override("separation", theme.spacing_small)
-	panel_margin.add_child(main_vbox)
-
-	# Header with title and close button
-	_build_header(main_vbox)
-
 	# Main horizontal split (character | content)
-	_main_hbox = HBoxContainer.new()
+	_main_hbox = UIThemeManager.make_hbox("medium")
 	_main_hbox.name = "MainHBox"
 	_main_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_main_hbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_main_hbox.add_theme_constant_override("separation", theme.spacing_medium)
-	main_vbox.add_child(_main_hbox)
+	panel_margin.add_child(_main_hbox)
 
 	# Left side: Character Panel
 	_build_character_panel()
@@ -110,36 +100,24 @@ func _build_ui() -> void:
 	# Right side: Tabbed Content
 	_build_content_area()
 
-func _build_header(parent: VBoxContainer) -> void:
-	var theme := UIThemeManager.get_theme()
+	# Close button at top-left corner using OverlayButtonContainer
+	# (avoids absolute positioning per docs/ui_ai_rules.md Rule 4)
+	var close_overlay := OverlayButtonContainer.create(
+		OverlayButtonContainer.Position.TOP_LEFT,
+		true  # use safe area
+	)
+	close_overlay.name = "CloseButtonOverlay"
+	close_overlay.z_index = 100  # Ensure it's above everything
+	add_child(close_overlay)
 
-	var header := HBoxContainer.new()
-	header.name = "Header"
-	header.add_theme_constant_override("separation", theme.spacing_medium)
-	parent.add_child(header)
-
-	# Close button (top-left)
 	_close_button = IconButton.new()
 	_close_button.name = "CloseButton"
 	_close_button.preset_icon = IconButton.PresetIcon.CLOSE
 	_close_button.icon_position = IconButton.IconPosition.ONLY
-	_close_button.button_style = ThemedButton.ButtonStyle.GHOST
-	_close_button.custom_minimum_size = Vector2(40, 40)
+	_close_button.button_style = ThemedButton.ButtonStyle.SECONDARY
+	_close_button.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE, UIConstants.ICON_BUTTON_SIZE)
 	_close_button.pressed.connect(_on_close_pressed)
-	header.add_child(_close_button)
-
-	# Title
-	var title := Label.new()
-	title.name = "Title"
-	title.text = "Party Menu"
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.add_theme_font_size_override("font_size", theme.font_size_header)
-	title.add_theme_color_override("font_color", theme.accent_color)
-	header.add_child(title)
-
-	# Separator
-	var sep := HSeparator.new()
-	parent.add_child(sep)
+	close_overlay.add_child(_close_button)
 
 func _build_character_panel() -> void:
 	_character_panel = CharacterPanel.new()
@@ -149,14 +127,13 @@ func _build_character_panel() -> void:
 	_main_hbox.add_child(_character_panel)
 
 func _build_content_area() -> void:
-	var theme := UIThemeManager.get_theme()
-
-	_content_container = VBoxContainer.new()
+	# Content container with zero separation (tabs touch their content)
+	_content_container = UIThemeManager.make_vbox("tiny")
+	_content_container.add_theme_constant_override("separation", 0)  # Override for tab-content connection
 	_content_container.name = "ContentContainer"
 	_content_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content_container.size_flags_stretch_ratio = UIConstants.CONTENT_PANEL_WIDTH_RATIO
-	_content_container.add_theme_constant_override("separation", 0)
 	_main_hbox.add_child(_content_container)
 
 	# Tab bar
@@ -184,19 +161,10 @@ func _build_content_area() -> void:
 	_show_tab(ContentTab.INVENTORY)
 
 func _build_inventory_tab() -> void:
-	# Use the new InventoryPanelNew
-	_inventory_panel = PanelContainer.new()
+	# Create InventoryPanelNew directly (class_name defined in script)
+	_inventory_panel = InventoryPanelNew.new()
 	_inventory_panel.name = "InventoryTab"
 	_inventory_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-
-	# Build inventory panel content
-	var inv_script = load("res://scripts/ui/panels/inventory_panel.gd")
-	if inv_script:
-		_inventory_panel.set_script(inv_script)
-	else:
-		# Fallback: create simple grid
-		_create_fallback_inventory()
-
 	_content_stack.add_child(_inventory_panel)
 
 func _create_fallback_inventory() -> void:
@@ -236,7 +204,7 @@ func _create_placeholder_panel(title: String, message: String) -> PanelContainer
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	panel.add_child(center)
 
-	var vbox := VBoxContainer.new()
+	var vbox := UIThemeManager.make_vbox("small")
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	center.add_child(vbox)
 
@@ -263,11 +231,7 @@ func _connect_signals() -> void:
 	_character_panel.character_changed.connect(_on_character_changed)
 	_character_panel.equipment_changed.connect(_on_equipment_changed)
 	_character_panel.unequip_requested.connect(_on_unequip_requested)
-	_character_panel.equipment_slot_clicked.connect(_on_equipment_slot_clicked)
-
-	# Connect inventory panel signals for cross-panel selection coordination
-	if _inventory_panel.has_signal("item_selected"):
-		_inventory_panel.item_selected.connect(_on_inventory_item_selected)
+	# Note: Cross-panel selection coordination handled by PartyMenuCoordinator
 
 func _load_party_data() -> void:
 	# Try to load party from PlayerData
@@ -325,24 +289,8 @@ func _on_character_changed(index: int) -> void:
 func _on_equipment_changed(slot: EquipmentSlot, _old_item: Variant, new_item: Variant) -> void:
 	equipment_changed.emit(slot, new_item)
 
-func _on_equipment_slot_clicked(slot: EquipmentSlot) -> void:
-	# Clear inventory panel selection when equipment slot is clicked
-	if _inventory_panel.has_method("clear_selection"):
-		# Only clear selection, don't call show_item_info if slot is being deselected
-		var selected := _character_panel.get_selected_slot()
-		if selected == null:
-			_inventory_panel.clear_selection()
-		else:
-			# Show equipment info in inventory panel
-			var equipment: Variant = slot.get_equipment()
-			if equipment and _inventory_panel.has_method("show_item_info"):
-				_inventory_panel.show_item_info(equipment)
-			else:
-				_inventory_panel.clear_selection()
-
-func _on_inventory_item_selected(_index: int, _data: Variant) -> void:
-	# Clear equipment panel selection when inventory item is selected
-	_character_panel.clear_selection()
+# Note: Cross-panel selection coordination (equipment_slot_clicked, item_selected)
+# is handled by PartyMenuCoordinator - see _setup_coordinator()
 
 func _on_unequip_requested(slot: EquipmentSlot) -> void:
 	# Move equipment to inventory
@@ -367,6 +315,12 @@ func _close_menu() -> void:
 func _on_theme_changed(_new_theme: Resource) -> void:
 	var theme := UIThemeManager.get_theme()
 	_background.color = theme.bg_overlay
+
+func _exit_tree() -> void:
+	# Clean up coordinator signal connections
+	if _coordinator:
+		_coordinator.cleanup()
+		_coordinator = null
 
 func _input(event: InputEvent) -> void:
 	# Close on ESC

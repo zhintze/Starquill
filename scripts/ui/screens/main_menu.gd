@@ -53,7 +53,7 @@ func _build_ui() -> void:
 	# Main panel with paper styling
 	_panel = BasePanel.create(BasePanel.PanelStyle.PRIMARY, true)
 	_panel.name = "MenuPanel"
-	_panel.custom_minimum_size = Vector2(300, 400)
+	_panel.custom_minimum_size = Vector2(UIConstants.MENU_PANEL_WIDTH_SMALL, UIConstants.MENU_PANEL_HEIGHT_SMALL)
 	center.add_child(_panel)
 
 	# Margin container for padding
@@ -116,7 +116,7 @@ func _create_menu_button(label: String, style: ThemedButton.ButtonStyle = Themed
 	var btn := ThemedButton.new()
 	btn.text = label
 	btn.button_style = style
-	btn.custom_minimum_size = Vector2(200, 48)
+	btn.custom_minimum_size = Vector2(UIConstants.MENU_BUTTON_WIDTH, UIConstants.MENU_BUTTON_HEIGHT)
 	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	return btn
 

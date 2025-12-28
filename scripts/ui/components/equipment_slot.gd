@@ -90,9 +90,9 @@ func _apply_label_styles() -> void:
 	_slot_label.add_theme_font_size_override("font_size", theme.font_size_small)
 	_slot_label.add_theme_color_override("font_color", theme.text_color_secondary)
 
-	# Empty label style
+	# Empty label style - black text for slot type
 	_empty_label.add_theme_font_size_override("font_size", theme.font_size_small)
-	_empty_label.add_theme_color_override("font_color", theme.text_color_disabled)
+	_empty_label.add_theme_color_override("font_color", theme.text_color)
 
 	# Item name style
 	_item_name_label.add_theme_font_size_override("font_size", theme.font_size_small)

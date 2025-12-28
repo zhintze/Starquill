@@ -99,7 +99,7 @@ func _build_ui() -> void:
 	# Main panel
 	_main_panel = BasePanel.create(BasePanel.PanelStyle.PRIMARY, true)
 	_main_panel.name = "SaveLoadPanel"
-	_main_panel.custom_minimum_size = Vector2(450, 500)
+	_main_panel.custom_minimum_size = Vector2(UIConstants.MENU_PANEL_WIDTH, UIConstants.MENU_PANEL_HEIGHT)
 	center.add_child(_main_panel)
 
 	# Panel margin
@@ -162,7 +162,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	_close_button.preset_icon = IconButton.PresetIcon.CLOSE
 	_close_button.icon_position = IconButton.IconPosition.ONLY
 	_close_button.button_style = ThemedButton.ButtonStyle.GHOST
-	_close_button.custom_minimum_size = Vector2(40, 40)
+	_close_button.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE, UIConstants.ICON_BUTTON_SIZE)
 	_close_button.pressed.connect(_on_close_pressed)
 	header.add_child(_close_button)
 
@@ -182,20 +182,16 @@ func _create_save_slot(index: int) -> Control:
 	# Slot container button
 	var slot_btn := Button.new()
 	slot_btn.name = "SaveSlot_%d" % index
-	slot_btn.custom_minimum_size.y = 70
+	slot_btn.custom_minimum_size.y = UIConstants.BUTTON_HEIGHT_LARGE
 	slot_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slot_btn.pressed.connect(_on_slot_pressed.bind(index))
 
-	# Style the button
+	# Style the button (no content margins - use internal MarginContainer)
 	var normal_style := StyleBoxFlat.new()
 	normal_style.bg_color = theme.bg_secondary
 	normal_style.border_color = theme.border_panel
 	normal_style.set_border_width_all(1)
 	normal_style.set_corner_radius_all(4)
-	normal_style.content_margin_left = theme.padding_container
-	normal_style.content_margin_right = theme.padding_container
-	normal_style.content_margin_top = theme.padding_container
-	normal_style.content_margin_bottom = theme.padding_container
 	slot_btn.add_theme_stylebox_override("normal", normal_style)
 
 	var hover_style := normal_style.duplicate()
@@ -204,21 +200,31 @@ func _create_save_slot(index: int) -> Control:
 	slot_btn.add_theme_stylebox_override("hover", hover_style)
 
 	var pressed_style := normal_style.duplicate()
-	pressed_style.bg_color = theme.slot_filled
+	pressed_style.bg_color = theme.slot_filled_color
 	slot_btn.add_theme_stylebox_override("pressed", pressed_style)
 
-	# Content HBox inside button
+	# Padding via MarginContainer (per UI rules)
+	var slot_margin := MarginContainer.new()
+	slot_margin.name = "SlotMargin"
+	slot_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot_margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	slot_margin.add_theme_constant_override("margin_left", theme.padding_container)
+	slot_margin.add_theme_constant_override("margin_right", theme.padding_container)
+	slot_margin.add_theme_constant_override("margin_top", theme.padding_container)
+	slot_margin.add_theme_constant_override("margin_bottom", theme.padding_container)
+	slot_btn.add_child(slot_margin)
+
+	# Content HBox inside margin
 	var hbox := HBoxContainer.new()
 	hbox.name = "Content"
 	hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hbox.add_theme_constant_override("separation", theme.spacing_medium)
-	slot_btn.add_child(hbox)
+	slot_margin.add_child(hbox)
 
 	# Thumbnail placeholder
 	var thumb := ColorRect.new()
 	thumb.name = "Thumbnail"
-	thumb.custom_minimum_size = Vector2(80, 50)
+	thumb.custom_minimum_size = Vector2(UIConstants.THUMBNAIL_WIDTH, UIConstants.THUMBNAIL_HEIGHT)
 	thumb.color = theme.bg_primary if has_save else Color(0.3, 0.3, 0.3, 0.5)
 	thumb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hbox.add_child(thumb)
@@ -276,7 +282,7 @@ func _create_save_slot(index: int) -> Control:
 		delete_btn.preset_icon = IconButton.PresetIcon.TRASH
 		delete_btn.icon_position = IconButton.IconPosition.ONLY
 		delete_btn.button_style = ThemedButton.ButtonStyle.GHOST
-		delete_btn.custom_minimum_size = Vector2(36, 36)
+		delete_btn.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE_SMALL, UIConstants.ICON_BUTTON_SIZE_SMALL)
 		delete_btn.tooltip_text = "Delete save"
 		delete_btn.pressed.connect(_on_delete_pressed.bind(index))
 		hbox.add_child(delete_btn)

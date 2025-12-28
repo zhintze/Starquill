@@ -4,6 +4,14 @@ extends NinePatchRect
 ## BasePanel
 ## A themed panel using 9-slice texture with optional paper shader
 ## Use for main containers, dialog boxes, and panel backgrounds
+##
+## PADDING PATTERN:
+## BasePanel has no built-in padding. Add a MarginContainer as a child
+## to provide content padding:
+##   var panel := BasePanel.create(BasePanel.PanelStyle.PRIMARY)
+##   var padding := UIThemeManager.make_margin_container("panel")
+##   panel.add_child(padding)
+##   padding.add_child(your_content)
 
 signal panel_ready
 

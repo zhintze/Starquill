@@ -172,6 +172,56 @@ func create_overlay_stylebox() -> StyleBoxFlat:
 func create_bg_stylebox(bg_type: String = "primary") -> StyleBoxFlat:
 	return get_theme().create_bg_stylebox(bg_type)
 
+# Container factory helpers
+# These ensure consistent spacing throughout the UI
+
+## Create a VBoxContainer with themed separation
+## separation: "tiny", "small", "medium", "large", or "huge"
+func make_vbox(separation: String = "medium") -> VBoxContainer:
+	var container := VBoxContainer.new()
+	apply_separation(container, separation)
+	return container
+
+## Create an HBoxContainer with themed separation
+## separation: "tiny", "small", "medium", "large", or "huge"
+func make_hbox(separation: String = "medium") -> HBoxContainer:
+	var container := HBoxContainer.new()
+	apply_separation(container, separation)
+	return container
+
+## Create a MarginContainer with themed padding on all sides
+## padding: "button", "container", or "panel"
+func make_margin_container(padding: String = "panel") -> MarginContainer:
+	var container := MarginContainer.new()
+	apply_padding(container, padding)
+	return container
+
+## Apply separation to an existing BoxContainer
+## size: "tiny", "small", "medium", "large", or "huge"
+func apply_separation(container: BoxContainer, size: String) -> void:
+	var spacing := get_spacing(size)
+	container.add_theme_constant_override("separation", spacing)
+
+## Apply padding to a MarginContainer on all sides
+## size: "button", "container", or "panel"
+func apply_padding(container: MarginContainer, size: String = "panel") -> void:
+	var theme := get_theme()
+	var padding: int
+	match size:
+		"button":
+			padding = theme.padding_button
+		"container":
+			padding = theme.padding_container
+		"panel":
+			padding = theme.padding_panel
+		_:
+			padding = theme.padding_panel
+
+	container.add_theme_constant_override("margin_left", padding)
+	container.add_theme_constant_override("margin_right", padding)
+	container.add_theme_constant_override("margin_top", padding)
+	container.add_theme_constant_override("margin_bottom", padding)
+
 # Background color helpers
 func get_bg_primary() -> Color:
 	return get_theme().bg_primary

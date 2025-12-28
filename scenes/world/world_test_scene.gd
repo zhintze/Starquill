@@ -118,29 +118,26 @@ func _setup_debug_ui() -> void:
 	controls_label.add_theme_font_size_override("font_size", 12)
 	ui_layer.add_child(controls_label)
 
-	# Add party menu button (top-right corner)
+	# Add party menu button (top-left corner)
 	_setup_menu_buttons()
 
 func _setup_menu_buttons() -> void:
-	# Container for menu buttons (top-right)
-	var button_container = HBoxContainer.new()
-	button_container.name = "MenuButtons"
-	button_container.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	button_container.anchor_left = 1.0
-	button_container.anchor_right = 1.0
-	button_container.offset_left = -120
-	button_container.offset_right = -10
-	button_container.offset_top = 10
-	button_container.add_theme_constant_override("separation", 8)
-	ui_layer.add_child(button_container)
+	# Party menu button in top-left corner using OverlayButtonContainer
+	var button_overlay := OverlayButtonContainer.create(
+		OverlayButtonContainer.Position.TOP_LEFT,
+		true  # use safe area
+	)
+	button_overlay.name = "PartyButtonOverlay"
+	ui_layer.add_child(button_overlay)
 
-	# Party menu button
-	party_menu_button = Button.new()
+	# Party menu button as ThemedButton with text
+	party_menu_button = ThemedButton.new()
 	party_menu_button.name = "PartyButton"
-	party_menu_button.text = "Party"
-	party_menu_button.custom_minimum_size = Vector2(80, 40)
+	party_menu_button.text = "Menu"
+	party_menu_button.button_style = ThemedButton.ButtonStyle.SECONDARY
+	party_menu_button.custom_minimum_size = Vector2(UIConstants.ICON_BUTTON_SIZE, UIConstants.ICON_BUTTON_SIZE)
 	party_menu_button.pressed.connect(_open_party_menu)
-	button_container.add_child(party_menu_button)
+	button_overlay.add_child(party_menu_button)
 
 func _open_party_menu() -> void:
 	if active_menu:
