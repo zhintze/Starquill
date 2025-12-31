@@ -141,13 +141,14 @@ func _create_default_preview(source: Control) -> Control:
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
-	# Try to get slot_size from source
+	# Try to get slot_size from source, account for icon margins (4px each side)
 	var slot_size := Vector2(48, 48)
 	if "slot_size" in source:
 		slot_size = source.slot_size
+	var icon_display_size := slot_size - Vector2(8, 8)
 
-	preview.custom_minimum_size = slot_size
-	preview.size = slot_size
+	preview.custom_minimum_size = icon_display_size
+	preview.size = icon_display_size
 	return preview
 
 func _collect_drop_targets() -> void:

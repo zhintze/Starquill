@@ -16,13 +16,13 @@ const DEFAULT_SIZE := Vector2(96, 96)
 # scale: float - multiplier after auto-fit
 # allow_overflow: bool - weapons can extend beyond bounds
 const ICON_CONFIG: Dictionary = {
-	"hd": { "offset": Vector2(0, 0.3), "scale": 1.2, "allow_overflow": false },
-	"tr": { "offset": Vector2(0, 0.1), "scale": 1.1, "allow_overflow": false },
-	"ar": { "offset": Vector2(0, 0), "scale": 1.15, "allow_overflow": false },
-	"lg": { "offset": Vector2(0, -0.1), "scale": 1.1, "allow_overflow": false },
-	"fe": { "offset": Vector2(0, -0.25), "scale": 1.2, "allow_overflow": false },
-	"w0": { "offset": Vector2(0, 0), "scale": 1.0, "allow_overflow": true },
-	"w1": { "offset": Vector2(0, 0), "scale": 1.0, "allow_overflow": true },
+	"hd": { "offset": Vector2(0, 0.27), "scale": 1.7, "allow_overflow": true },
+	"tr": { "offset": Vector2(0, -0.1), "scale": 2, "allow_overflow": true },
+	"ar": { "offset": Vector2(-0.1, -0.1), "scale": 2.7, "allow_overflow": true },
+	"lg": { "offset": Vector2(0, -0.2), "scale": 2.2, "allow_overflow": true },
+	"fe": { "offset": Vector2(0, -0.25), "scale": 2, "allow_overflow": true },
+	"w0": { "offset": Vector2(0, -0.1), "scale": 2, "allow_overflow": true },
+	"w1": { "offset": Vector2(0, -0.1), "scale": 2, "allow_overflow": true },
 }
 const ICON_CONFIG_DEFAULT: Dictionary = { "offset": Vector2(0, 0), "scale": 1.0, "allow_overflow": false }
 
@@ -102,10 +102,11 @@ static func _composite_pieces(pieces: Array[DisplayPiece], target_size: Vector2,
 	if content_size.x <= 0 or content_size.y <= 0:
 		return null
 
-	# For weapons with overflow, render to larger canvas then crop
+	# For items with overflow, render to larger canvas proportional to scale
 	var render_size := target_size
 	if allow_overflow:
-		render_size = target_size * 1.25  # 25% larger canvas for overflow
+		# Canvas must be large enough to hold scaled content (scale * 1.1 for margin)
+		render_size = target_size * maxf(type_scale, 1.0) * 1.1
 
 	# Create render image
 	var img := Image.create(int(render_size.x), int(render_size.y), false, Image.FORMAT_RGBA8)

@@ -255,9 +255,9 @@ func _apply_style() -> void:
 	add_theme_stylebox_override("panel", stylebox)
 
 func _update_display() -> void:
-	# Update arrow states
-	_left_arrow.disabled = (_current_character_index <= 0)
-	_right_arrow.disabled = (_current_character_index >= _party_size - 1)
+	# Arrows always enabled (wrap-around navigation)
+	_left_arrow.disabled = false
+	_right_arrow.disabled = false
 
 	# Update character info
 	if _character_data:
@@ -314,18 +314,22 @@ func _clear_equipment_slots() -> void:
 	for slot_type in _equipment_slots:
 		_equipment_slots[slot_type].clear_equipment()
 
-# Navigation
+# Navigation (wraps around)
 func _on_previous_character() -> void:
 	if _current_character_index > 0:
 		_current_character_index -= 1
-		_update_display()
-		character_changed.emit(_current_character_index)
+	else:
+		_current_character_index = _party_size - 1  # Wrap to last
+	_update_display()
+	character_changed.emit(_current_character_index)
 
 func _on_next_character() -> void:
 	if _current_character_index < _party_size - 1:
 		_current_character_index += 1
-		_update_display()
-		character_changed.emit(_current_character_index)
+	else:
+		_current_character_index = 0  # Wrap to first
+	_update_display()
+	character_changed.emit(_current_character_index)
 
 # Equipment slot events
 func _on_equipment_slot_clicked(slot: EquipmentSlot) -> void:

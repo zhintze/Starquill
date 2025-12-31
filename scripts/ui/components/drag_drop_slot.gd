@@ -295,13 +295,15 @@ func _on_drag_motion(_event: InputEventMouseMotion) -> void:
 	pass
 
 func _create_drag_preview() -> Control:
-	# Create a visual preview of the dragged item
+	# Create a visual preview matching the icon display in the slot
+	# Icon rect has 4px margins on each side, so effective size is slot_size - 8
+	var icon_display_size := slot_size - Vector2(8, 8)
 	var preview := TextureRect.new()
 	preview.texture = _icon_rect.texture
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	preview.custom_minimum_size = slot_size * 0.8
-	preview.size = slot_size * 0.8
+	preview.custom_minimum_size = icon_display_size
+	preview.size = icon_display_size
 	preview.modulate = Color(1, 1, 1, 0.8)
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return preview

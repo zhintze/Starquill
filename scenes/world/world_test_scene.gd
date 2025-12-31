@@ -118,13 +118,13 @@ func _setup_debug_ui() -> void:
 	controls_label.add_theme_font_size_override("font_size", 12)
 	ui_layer.add_child(controls_label)
 
-	# Add party menu button (top-left corner)
+	# Add party menu button (top-right corner)
 	_setup_menu_buttons()
 
 func _setup_menu_buttons() -> void:
-	# Party menu button in top-left corner using OverlayButtonContainer
+	# Party menu button in top-right corner using OverlayButtonContainer
 	var button_overlay := OverlayButtonContainer.create(
-		OverlayButtonContainer.Position.TOP_LEFT,
+		OverlayButtonContainer.Position.TOP_RIGHT,
 		true  # use safe area
 	)
 	button_overlay.name = "PartyButtonOverlay"
