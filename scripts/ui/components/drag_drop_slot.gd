@@ -382,6 +382,7 @@ func get_slot_data() -> Variant:
 func clear_slot() -> void:
 	_slot_data = null
 	_icon_rect.texture = null
+	_update_display()
 	_set_state(SlotState.EMPTY)
 
 func is_empty() -> bool:
