@@ -67,7 +67,8 @@ func set_equipment(slot: int, e: EquipmentInstance) -> void:
 				off_hand = null
 		EquipSlot.OFF_HAND:
 			# Clear main_hand if it has two-handed weapon (can't dual wield with two-handed)
-			if main_hand != null and main_hand.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(main_hand.item_type):
+			# Only clear when actually equipping something, not when clearing the slot
+			if e != null and main_hand != null and main_hand.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(main_hand.item_type):
 				main_hand = null
 			off_hand = e
 		EquipSlot.MISC1:     misc1 = e
