@@ -99,32 +99,26 @@ func _setup_camera() -> void:
 		camera.position = target
 
 func _setup_debug_ui() -> void:
-	# Create debug label
+	# Create UI layer
 	ui_layer = CanvasLayer.new()
 	ui_layer.name = "UILayer"
 	add_child(ui_layer)
 
+	# Debug label (hidden by default, toggle with F3)
 	debug_label = Label.new()
 	debug_label.name = "DebugLabel"
 	debug_label.position = Vector2(10, 10)
 	debug_label.add_theme_font_size_override("font_size", 14)
+	debug_label.visible = false  # Hidden by default
 	ui_layer.add_child(debug_label)
 
-	# Add controls info
-	var controls_label = Label.new()
-	controls_label.name = "ControlsLabel"
-	controls_label.position = Vector2(10, 100)
-	controls_label.text = "Controls:\nArrow Keys/WASD - Move\nSpace - Interact\n+/- - Zoom In/Out\n0 - Reset Zoom\nP - Party Menu\n\nTouch:\nTap - Path to tile\nSwipe - Move direction\nPinch - Zoom"
-	controls_label.add_theme_font_size_override("font_size", 12)
-	ui_layer.add_child(controls_label)
-
-	# Add party menu button (top-right corner)
+	# Add party menu button
 	_setup_menu_buttons()
 
 func _setup_menu_buttons() -> void:
-	# Party menu button in top-right corner using OverlayButtonContainer
+	# Party menu button in top-left using OverlayButtonContainer (respects safe area)
 	var button_overlay := OverlayButtonContainer.create(
-		OverlayButtonContainer.Position.TOP_RIGHT,
+		OverlayButtonContainer.Position.TOP_LEFT,
 		true  # use safe area
 	)
 	button_overlay.name = "PartyButtonOverlay"

@@ -18,11 +18,11 @@ const DEFAULT_SIZE := Vector2(96, 96)
 const ICON_CONFIG: Dictionary = {
 	"hd": { "offset": Vector2(0, 0.27), "scale": 1.7, "allow_overflow": true },
 	"tr": { "offset": Vector2(0, -0.1), "scale": 2, "allow_overflow": true },
-	"ar": { "offset": Vector2(-0.1, -0.1), "scale": 2.7, "allow_overflow": true },
+	"ar": { "offset": Vector2(-0.03, -0.1), "scale": 2.7, "allow_overflow": true },
 	"lg": { "offset": Vector2(0, -0.2), "scale": 2.2, "allow_overflow": true },
 	"fe": { "offset": Vector2(0, -0.25), "scale": 2, "allow_overflow": true },
-	"w0": { "offset": Vector2(0, -0.1), "scale": 2, "allow_overflow": true },
-	"w1": { "offset": Vector2(0, -0.1), "scale": 2, "allow_overflow": true },
+	"w0": { "offset": Vector2(0, -0.16), "scale": 2, "allow_overflow": true },
+	"w1": { "offset": Vector2(0, -0.16), "scale": 2, "allow_overflow": true },
 }
 const ICON_CONFIG_DEFAULT: Dictionary = { "offset": Vector2(0, 0), "scale": 1.0, "allow_overflow": false }
 

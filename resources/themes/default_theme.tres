@@ -6,59 +6,112 @@
 script = ExtResource("1_theme_script")
 theme_name = "Fantasy Default"
 theme_description = "Medieval fantasy theme with parchment textures and ornate styling"
-primary_color = Color(0.824, 0.745, 0.627, 1)
-secondary_color = Color(0.294, 0.231, 0.18, 1)
-accent_color = Color(0.882, 0.702, 0.31, 1)
-background_color = Color(0.18, 0.141, 0.102, 0.92)
-panel_color = Color(0.89, 0.82, 0.69, 1)
-text_color = Color(0.098, 0.082, 0.055, 1)
-text_color_secondary = Color(0.392, 0.329, 0.251, 1)
-text_color_disabled = Color(0.502, 0.502, 0.502, 1)
-text_color_highlight = Color(0.933, 0.765, 0.357, 1)
-hover_color = Color(0.969, 0.91, 0.745, 1)
-pressed_color = Color(0.706, 0.627, 0.478, 1)
-selected_color = Color(0.918, 0.827, 0.576, 1)
-disabled_color = Color(0.502, 0.502, 0.502, 0.502)
-success_color = Color(0.349, 0.718, 0.349, 1)
-warning_color = Color(0.91, 0.733, 0.251, 1)
-error_color = Color(0.804, 0.239, 0.239, 1)
-info_color = Color(0.329, 0.51, 0.78, 1)
+
+; Color Palette
+primary_color = Color(0.8, 0.7, 0.5, 1)
+secondary_color = Color(0.4, 0.3, 0.2, 1)
+accent_color = Color(0.2, 0.2, 0.3, 1)
+background_color = Color(0.2, 0.15, 0.1, 0.9)
+panel_color = Color(0.85, 0.75, 0.6, 1)
+
+; Text Colors
+text_color = Color(0.1, 0.08, 0.05, 1)
+text_color_secondary = Color(0.4, 0.35, 0.25, 1)
+text_color_disabled = Color(0.5, 0.5, 0.5, 1)
+text_color_highlight = Color(0.2, 0.2, 0.3, 1)
+
+; State Colors
+hover_color = Color(1.0, 0.9, 0.7, 1)
+pressed_color = Color(0.7, 0.6, 0.4, 1)
+selected_color = Color(0.9, 0.8, 0.5, 1)
+disabled_color = Color(0.5, 0.5, 0.5, 0.5)
+
+; Feedback Colors
+success_color = Color(0.3, 0.7, 0.3, 1)
+warning_color = Color(0.9, 0.7, 0.2, 1)
+error_color = Color(0.8, 0.2, 0.2, 1)
+info_color = Color(0.3, 0.5, 0.8, 1)
+
+; Fonts
 font_header = null
 font_body = null
 font_button = null
 font_small = null
-font_size_header = 24
-font_size_subheader = 18
-font_size_body = 14
-font_size_button = 16
-font_size_small = 12
+
+; Font Sizes
+font_size_header = 64
+font_size_subheader = 36
+font_size_body = 32
+font_size_button = 32
+font_size_small = 24
+
+; Textures
 panel_texture = null
 button_texture = null
 border_texture = null
 slot_texture = null
 icon_frame_texture = null
-panel_border_width = 4
-panel_corner_radius = 8
-panel_shadow_size = 4
+
+; Panel Style
+panel_border_width = 8
+panel_corner_radius = 16
+panel_shadow_size = 8
 panel_shadow_color = Color(0, 0, 0, 0.5)
-button_border_width = 2
-button_corner_radius = 6
-button_padding_horizontal = 16
-button_padding_vertical = 8
+
+; Button Style
+button_border_width = 4
+button_corner_radius = 12
+button_padding_horizontal = 32
+button_padding_vertical = 16
 button_hover_scale = 1.05
-slot_size = Vector2i(64, 64)
-slot_border_width = 2
-slot_border_color = Color(0.392, 0.314, 0.235, 1)
-slot_border_color_highlight = Color(0.933, 0.737, 0.314, 1)
-slot_empty_color = Color(0.302, 0.255, 0.204, 0.502)
-spacing_tiny = 4
-spacing_small = 8
-spacing_medium = 16
-spacing_large = 24
-spacing_huge = 32
-padding_panel = 16
-padding_container = 12
-padding_button = 8
+
+; Equipment Slot Style
+slot_size = Vector2i(128, 128)
+slot_border_width = 4
+slot_border_color = Color(0.4, 0.3, 0.2, 1)
+slot_border_color_highlight = Color(0.9, 0.7, 0.3, 1)
+slot_empty_color = Color(0.3, 0.25, 0.2, 0.5)
+slot_filled_color = Color(0.5, 0.4, 0.3, 0.7)
+slot_valid_drop_color = Color(0.3, 0.6, 0.3, 0.7)
+slot_invalid_drop_color = Color(0.6, 0.3, 0.3, 0.7)
+
+; Background Colors
+bg_primary = Color(0.85, 0.75, 0.6, 1)
+bg_secondary = Color(0.75, 0.65, 0.5, 1)
+bg_overlay = Color(0.1, 0.08, 0.05, 0.85)
+
+; Border Colors
+border_panel = Color(0.4, 0.3, 0.2, 1)
+border_slot = Color(0.35, 0.28, 0.18, 1)
+border_highlight = Color(0.9, 0.7, 0.3, 1)
+
+; Button Colors
+btn_normal = Color(0.8, 0.7, 0.5, 1)
+btn_hover = Color(0.9, 0.8, 0.6, 1)
+btn_pressed = Color(0.65, 0.55, 0.4, 1)
+btn_disabled = Color(0.5, 0.45, 0.4, 0.6)
+btn_text = Color(0.15, 0.1, 0.05, 1)
+btn_text_disabled = Color(0.4, 0.35, 0.3, 1)
+
+; Tab Colors
+tab_active = Color(0.85, 0.75, 0.6, 1)
+tab_inactive = Color(0.65, 0.55, 0.45, 1)
+tab_hover = Color(0.75, 0.65, 0.5, 1)
+tab_border = Color(0.4, 0.3, 0.2, 1)
+
+; Spacing
+spacing_tiny = 8
+spacing_small = 16
+spacing_medium = 32
+spacing_large = 48
+spacing_huge = 64
+
+; Padding
+padding_panel = 32
+padding_container = 24
+padding_button = 16
+
+; Animation
 transition_duration = 0.2
 hover_duration = 0.1
 fade_duration = 0.3

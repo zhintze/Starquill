@@ -35,27 +35,28 @@ func _ready() -> void:
 	if UIThemeManager:
 		UIThemeManager.theme_changed.connect(_on_theme_changed)
 
-	# Apply position after a frame to ensure parent is sized
+	# Reposition when viewport size changes
+	get_tree().root.size_changed.connect(_apply_position)
+
+	# Apply position after a frame to ensure viewport is ready
 	await get_tree().process_frame
 	_apply_position()
 
 func _apply_position() -> void:
-	var theme := UIThemeManager.get_theme()
-	var margin := theme.padding_panel
+	if not is_inside_tree():
+		return
 
+	var theme := UIThemeManager.get_theme()
+	var margin := 4  # Minimal margin - safe area handles notch avoidance
+
+	# Safe area disabled - buttons sit at screen corners with minimal margin
 	var safe_top := 0
 	var safe_bottom := 0
 	var safe_left := 0
 	var safe_right := 0
 
-	if use_safe_area and UIScaler:
-		safe_top = maxi(0, int(UIScaler.get_safe_top()))
-		safe_bottom = maxi(0, int(UIScaler.get_safe_bottom()))
-		safe_left = maxi(0, int(UIScaler.get_safe_left()))
-		safe_right = maxi(0, int(UIScaler.get_safe_right()))
-
-	# Get parent size
-	var parent_size := get_parent_area_size()
+	# Get viewport size (works correctly even when parent is CanvasLayer)
+	var parent_size := get_viewport_rect().size
 	var btn_size := custom_minimum_size
 
 	# Position based on corner - use direct position since we're not stretching

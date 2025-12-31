@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://c3xm7k5qn9f2a"]
+[gd_scene load_steps=2 format=3 uid="uid://c3xm7k5qoaf2a"]
 
-[ext_resource type="Script" path="res://scripts/ui/panels/character_panel.gd" id="1_character_panel"]
+[ext_resource type="Script" uid="uid://bdxt0b7xlavf6" path="res://scripts/ui/panels/character_panel.gd" id="1_character_panel"]
 
 [node name="CharacterPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(280, 400)

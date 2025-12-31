@@ -114,9 +114,10 @@ func _build_portrait_equipment_section() -> void:
 	center_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	portrait_margin.add_child(center_container)
 
-	# CharacterDisplay for rendering the character (centered)
+	# CharacterDisplay for rendering the character (centered, 2x scale)
 	_portrait_display = CharacterDisplay.new()
 	_portrait_display.name = "CharacterDisplay"
+	_portrait_display.scale = Vector2(2.0, 2.0)
 	center_container.add_child(_portrait_display)
 
 	# Weapon slots row (left-aligned under portrait)

@@ -13,7 +13,7 @@ class_name UITheme
 @export_group("Colors")
 @export var primary_color: Color = Color(0.8, 0.7, 0.5)  # Parchment/tan
 @export var secondary_color: Color = Color(0.4, 0.3, 0.2)  # Dark brown
-@export var accent_color: Color = Color(0.9, 0.7, 0.3)  # Gold
+@export var accent_color: Color = Color(0.2, 0.2, 0.3)
 @export var background_color: Color = Color(0.2, 0.15, 0.1, 0.9)  # Dark translucent
 @export var panel_color: Color = Color(0.85, 0.75, 0.6)  # Light parchment
 
@@ -21,7 +21,7 @@ class_name UITheme
 @export var text_color: Color = Color(0.1, 0.08, 0.05)  # Dark brown text
 @export var text_color_secondary: Color = Color(0.4, 0.35, 0.25)  # Medium brown
 @export var text_color_disabled: Color = Color(0.5, 0.5, 0.5)  # Gray
-@export var text_color_highlight: Color = Color(0.9, 0.7, 0.3)  # Gold highlight
+@export var text_color_highlight: Color = Color(0.2, 0.2, 0.3) 
 
 @export_subgroup("State Colors")
 @export var hover_color: Color = Color(1.0, 0.9, 0.7)  # Light hover
@@ -43,9 +43,9 @@ class_name UITheme
 @export var font_small: Font = null  # Small labels
 
 @export_subgroup("Font Sizes")
-@export var font_size_header: int = 48
+@export var font_size_header: int = 64
 @export var font_size_subheader: int = 36
-@export var font_size_body: int = 28
+@export var font_size_body: int = 32
 @export var font_size_button: int = 32
 @export var font_size_small: int = 24
 
