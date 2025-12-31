@@ -66,10 +66,9 @@ func set_equipment(slot: int, e: EquipmentInstance) -> void:
 			if e != null and e.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(e.item_type):
 				off_hand = null
 		EquipSlot.OFF_HAND:
-			# Prevent equipping off_hand if main_hand has two-handed weapon
+			# Clear main_hand if it has two-handed weapon (can't dual wield with two-handed)
 			if main_hand != null and main_hand.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(main_hand.item_type):
-				push_warning("Character: Cannot equip off_hand when main_hand has two-handed weapon")
-				return
+				main_hand = null
 			off_hand = e
 		EquipSlot.MISC1:     misc1 = e
 		EquipSlot.MISC2:     misc2 = e
@@ -214,10 +213,9 @@ func equip_to_hand_slot(ei: EquipmentInstance, hand_slot: String) -> bool:
 			push_warning("Character: Cannot equip two-handed weapon '%s' to off_hand" % ei.item_type)
 			return false
 
-		# Cannot equip to off_hand if main_hand has a two-handed weapon
+		# Clear main_hand if it has a two-handed weapon (can't dual wield with two-handed)
 		if main_hand != null and StarquillData.is_handheld_two_handed(main_hand.item_type):
-			push_warning("Character: Cannot equip to off_hand while main_hand has two-handed weapon")
-			return false
+			main_hand = null
 
 		off_hand = ei
 	elif hand_slot == "main_hand":

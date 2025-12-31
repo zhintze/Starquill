@@ -194,8 +194,11 @@ func _is_compatible_equipment(equipment: EquipmentInstance) -> bool:
 	var item_type := equipment.item_type
 	var prefix := item_type.substr(0, 2) if item_type.length() >= 2 else item_type
 
-	# Misc slots accept any equipment
+	# Misc slots accept any equipment (except weapons)
 	if slot_type in [SlotType.MISC_1, SlotType.MISC_2, SlotType.MISC_3, SlotType.MISC_4]:
+		# Weapons cannot go in misc slots
+		if prefix in ["w0", "w1"]:
+			return false
 		return true
 
 	# Match prefix to slot type
@@ -213,7 +216,13 @@ func _is_compatible_equipment(equipment: EquipmentInstance) -> bool:
 		SlotType.MAIN_HAND:
 			return prefix in ["w0", "w1"]
 		SlotType.OFF_HAND:
-			return prefix in ["w0", "w1"]
+			# Weapons must be one-handed for off-hand slot
+			if prefix in ["w0", "w1"]:
+				# Two-handed weapons and bows cannot be equipped in off-hand
+				if StarquillData.is_handheld_two_handed(item_type):
+					return false
+				return true
+			return false
 		_:
 			return true
 

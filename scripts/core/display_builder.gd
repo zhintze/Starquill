@@ -181,12 +181,12 @@ func build_equipment_pieces_with_slots(equipment_with_slots: Array[Dictionary], 
 					if StarquillData.is_handheld_shield(ei.item_type):
 						# Shields: translate position to align with off-hand
 						# Note: X offset will be mirrored when character faces left
-						piece.offset = Vector2(42, 0)
+						piece.offset = DisplayConstants.OFFHAND_SHIELD_OFFSET
 					else:
 						# One-handed weapons: rotate counter-clockwise and translate
 						# Note: X offset will be mirrored when character faces left
-						piece.rotation_degrees = -40.0
-						piece.offset = Vector2(-21, 15)
+						piece.rotation_degrees = DisplayConstants.OFFHAND_WEAPON_ROTATION
+						piece.offset = DisplayConstants.OFFHAND_WEAPON_OFFSET
 
 				result.pieces.append(piece)
 			else:

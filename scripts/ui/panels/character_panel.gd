@@ -351,10 +351,34 @@ func _on_equipment_changed(_slot: EquipmentSlot, old_item: Variant, new_item: Va
 	# Update actual character equipment model
 	if _character_data is Character:
 		var equip_slot := _slot_type_to_equip_slot(source_slot.slot_type)
+
+		# Check if equipping two-handed weapon to main_hand - save off_hand for inventory
+		var displaced_off_hand: EquipmentInstance = null
+		if equip_slot == Character.EquipSlot.MAIN_HAND and new_item is EquipmentInstance:
+			if new_item.item_type.begins_with("w") and StarquillData.is_handheld_two_handed(new_item.item_type):
+				displaced_off_hand = _character_data.off_hand
+
+		# Check if equipping to off_hand while main_hand has two-handed - save main_hand for inventory
+		var displaced_main_hand: EquipmentInstance = null
+		if equip_slot == Character.EquipSlot.OFF_HAND and new_item is EquipmentInstance:
+			if _character_data.main_hand and _character_data.main_hand.item_type.begins_with("w"):
+				if StarquillData.is_handheld_two_handed(_character_data.main_hand.item_type):
+					displaced_main_hand = _character_data.main_hand
+
 		if new_item and new_item is EquipmentInstance:
 			_character_data.set_equipment(equip_slot, new_item)
 		else:
 			_character_data.unequip(equip_slot)
+
+		# Add displaced items to inventory
+		if displaced_off_hand:
+			PlayerData.add_to_inventory(displaced_off_hand)
+		if displaced_main_hand:
+			PlayerData.add_to_inventory(displaced_main_hand)
+
+		# Refresh all equipment slots to reflect model changes
+		# (e.g., off_hand cleared when two-handed weapon equipped to main_hand)
+		_update_equipment_display()
 
 	equipment_changed.emit(source_slot, old_item, new_item)
 

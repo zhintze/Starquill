@@ -58,13 +58,49 @@ func _setup_test_party() -> void:
 			PlayerData.add_character(character)
 		print("Created test party with %d members" % PlayerData.party.members.size())
 
-		# Add 10 random equipment items to shared inventory
-		var prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe", "w"]
-		for i in range(10):
-			var prefix: String = prefixes[randi() % prefixes.size()]
+		# Add equipment items to shared inventory - at least one of each type
+		# First, add one of each equipment type to ensure coverage
+		var required_prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe"]
+		for prefix in required_prefixes:
 			var equipment: EquipmentInstance = equipment_factory.create_random_from_prefix(prefix)
 			if equipment:
 				PlayerData.add_to_inventory(equipment)
+
+		# Add weapon variety: one-handed, two-handed, and shield
+		var one_handed_types: Array[String] = ["w01", "w02", "w03"]  # sword, axe, mace
+		var two_handed_types: Array[String] = ["w04", "w05", "w07"]  # 2h sword, 2h axe, bow
+
+		# Add one one-handed weapon
+		var oh_type: String = one_handed_types[randi() % one_handed_types.size()]
+		var oh_dict: Dictionary = StarquillData.get_handheld_by_type(oh_type)
+		if not oh_dict.is_empty():
+			var oh_weapon: EquipmentInstance = equipment_factory.create_from_handheld_dict(oh_dict)
+			if oh_weapon:
+				PlayerData.add_to_inventory(oh_weapon)
+
+		# Add one two-handed weapon
+		var th_type: String = two_handed_types[randi() % two_handed_types.size()]
+		var th_dict: Dictionary = StarquillData.get_handheld_by_type(th_type)
+		if not th_dict.is_empty():
+			var th_weapon: EquipmentInstance = equipment_factory.create_from_handheld_dict(th_dict)
+			if th_weapon:
+				PlayerData.add_to_inventory(th_weapon)
+
+		# Add one shield
+		var shield_dict: Dictionary = StarquillData.get_handheld_by_type("w06")
+		if not shield_dict.is_empty():
+			var shield: EquipmentInstance = equipment_factory.create_from_handheld_dict(shield_dict)
+			if shield:
+				PlayerData.add_to_inventory(shield)
+
+		# Add 12 more random items for variety (total ~20 items)
+		var all_prefixes: Array[String] = ["hd", "tr", "ar", "lg", "fe", "w"]
+		for i in range(12):
+			var prefix: String = all_prefixes[randi() % all_prefixes.size()]
+			var equipment: EquipmentInstance = equipment_factory.create_random_from_prefix(prefix)
+			if equipment:
+				PlayerData.add_to_inventory(equipment)
+
 		print("Added %d items to shared inventory" % PlayerData.inventory.size())
 
 func _setup_world() -> void:
