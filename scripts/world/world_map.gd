@@ -148,12 +148,9 @@ func initialize_world() -> void:
 	EventBus.world_created.emit(world_name, world_seed)
 
 func _find_valid_spawn_position(start_pos: Vector2i, max_search_radius: int = 50) -> Vector2i:
-	# First, ensure chunks are loaded around the start position
-	var start_chunk = WorldCoordinate.world_to_chunk(start_pos)
-	chunk_manager.update_loaded_chunks(start_chunk)
-
+	# Uses synchronous chunk generation to ensure tiles exist before checking passability
 	# Check if start position is valid
-	if _is_valid_spawn_tile(start_pos):
+	if _is_valid_spawn_tile_sync(start_pos):
 		return start_pos
 
 	# Search in expanding square spiral pattern
@@ -167,12 +164,7 @@ func _find_valid_spawn_position(start_pos: Vector2i, max_search_radius: int = 50
 
 				var check_pos = start_pos + Vector2i(dx, dy)
 
-				# Load chunk if needed
-				var check_chunk = WorldCoordinate.world_to_chunk(check_pos)
-				if check_chunk != start_chunk:
-					chunk_manager.get_chunk(check_chunk)  # Ensure chunk is loaded
-
-				if _is_valid_spawn_tile(check_pos):
+				if _is_valid_spawn_tile_sync(check_pos):
 					print("Found valid spawn position at %v (offset %v from center)" % [check_pos, Vector2i(dx, dy)])
 					return check_pos
 
@@ -206,6 +198,47 @@ func _is_valid_spawn_tile(pos: Vector2i) -> bool:
 
 	# Require at least 2 passable neighbors to ensure player isn't stuck
 	return passable_neighbors >= 2
+
+func _is_valid_spawn_tile_sync(pos: Vector2i) -> bool:
+	# Synchronous version that generates chunks on-demand for spawn validation
+	if not WorldCoordinate.is_valid_position(pos):
+		return false
+
+	# Check if tile is passable (generates chunk if needed)
+	var tile = get_tile_sync(pos)
+	if not tile or not tile.is_passable:
+		return false
+
+	# Check that at least 2 cardinal neighbors are passable (so player can move)
+	var passable_neighbors = 0
+	var cardinal_directions = [
+		Vector2i(0, -1),  # North
+		Vector2i(1, 0),   # East
+		Vector2i(0, 1),   # South
+		Vector2i(-1, 0)   # West
+	]
+
+	for direction in cardinal_directions:
+		var neighbor_pos = pos + direction
+		var neighbor_tile = get_tile_sync(neighbor_pos)
+		if neighbor_tile and neighbor_tile.is_passable:
+			passable_neighbors += 1
+
+	# Require at least 2 passable neighbors to ensure player isn't stuck
+	return passable_neighbors >= 2
+
+func get_tile_sync(world_pos: Vector2i) -> Tile:
+	# Synchronous version that generates chunk if needed (used for spawn validation)
+	if not WorldCoordinate.is_valid_position(world_pos):
+		return null
+
+	var chunk_pos = WorldCoordinate.world_to_chunk(world_pos)
+	var chunk = chunk_manager.get_or_generate_chunk_sync(chunk_pos)
+
+	if chunk:
+		return chunk.get_tile_world(world_pos.x, world_pos.y)
+
+	return null
 
 func _generate_biome_seeds(rng: RandomNumberGenerator) -> void:
 	# Generate biome seed points across the world

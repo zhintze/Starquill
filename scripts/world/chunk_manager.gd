@@ -99,6 +99,40 @@ func get_chunk(chunk_pos: Vector2i) -> Chunk:
 
 	return null
 
+func get_or_generate_chunk_sync(chunk_pos: Vector2i) -> Chunk:
+	# Check if already loaded
+	if chunk_pos in loaded_chunks:
+		_update_cache_access(loaded_chunks[chunk_pos])
+		return loaded_chunks[chunk_pos]
+
+	# Check cache
+	if chunk_pos in cache_lookup:
+		var chunk = _get_from_cache(chunk_pos)
+		if chunk:
+			chunks_loaded_from_cache += 1
+			_load_chunk(chunk)
+			return chunk
+
+	# Generate synchronously (blocking) - used for spawn validation
+	var thread_data = {
+		"chunk_pos": chunk_pos,
+		"world_seed": world_map.world_seed,
+		"location_density": world_map.location_density,
+		"biome_seed_points": world_map.biome_seed_points.duplicate()
+	}
+
+	var result = ChunkGenerator.generate_chunk(thread_data)
+	var chunk = result["chunk"]
+
+	chunks_generated_count += 1
+	_load_chunk(chunk)
+
+	# Emit location signals
+	for location in chunk.locations:
+		EventBus.location_spawned.emit(location.world_position, location)
+
+	return chunk
+
 func _request_chunk(chunk_pos: Vector2i) -> void:
 	if chunk_pos in loaded_chunks:
 		return
