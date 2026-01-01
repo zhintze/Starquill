@@ -25,6 +25,11 @@ func create_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int = -1) 
 
 	var ei := EquipmentInstance.new()
 	ei._init_from_catalog(cat, chosen_num, _main_palette)
+
+	# Apply random stats for testing
+	var random_stats := _generate_random_stats()
+	ei._set_stat_mods_from_factory(random_stats)
+
 	return ei
 
 # Create an EquipmentInstance from a handheld catalog dictionary (weapons/shields).
@@ -44,6 +49,11 @@ func create_from_handheld_dict(handheld_dict: Dictionary, item_num: int = -1) ->
 
 	var ei := EquipmentInstance.new()
 	ei._init_from_handheld_dict(handheld_dict, chosen_num, _main_palette)
+
+	# Apply random stats for testing
+	var random_stats := _generate_random_stats()
+	ei._set_stat_mods_from_factory(random_stats)
+
 	return ei
 
 # Create a random EquipmentInstance from a slot prefix (e.g., "hd","tr","ar","lg","fe","mc").
@@ -70,6 +80,33 @@ func create_random_weapon() -> EquipmentInstance:
 		return null
 
 	return create_from_handheld_dict(handheld_dict)
+
+# -------------------------------
+# PRIVATE: Random stat generation
+# -------------------------------
+
+const AVAILABLE_STATS: Array[String] = ["armor", "damage", "str", "dex", "con", "int", "wis", "cha"]
+const STAT_MIN_VALUE: int = 1
+const STAT_MAX_VALUE: int = 5
+const STAT_MIN_COUNT: int = 1
+const STAT_MAX_COUNT: int = 3
+
+## Generate random stats for equipment (for testing purposes)
+## Returns a Dictionary with 1-3 random stats, each with value 1-5
+func _generate_random_stats() -> Dictionary:
+	var stats: Dictionary = {}
+	var stat_count: int = randi_range(STAT_MIN_COUNT, STAT_MAX_COUNT)
+
+	# Shuffle available stats and pick the first N
+	var shuffled_stats: Array[String] = AVAILABLE_STATS.duplicate()
+	shuffled_stats.shuffle()
+
+	for i in range(stat_count):
+		var stat_key: String = shuffled_stats[i]
+		var stat_value: int = randi_range(STAT_MIN_VALUE, STAT_MAX_VALUE)
+		stats[stat_key] = stat_value
+
+	return stats
 
 # Create random equipment with slot-specific restrictions
 func create_random_from_prefix_restricted(prefix: String) -> EquipmentInstance:

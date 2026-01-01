@@ -75,6 +75,14 @@ func get_display_name() -> String:
 		_:
 			return _item_type.capitalize()
 
+# --------- Factory-only methods (private) ---------
+
+## Factory-only: Set or merge stat mods after initialization
+## This allows EquipmentFactory to apply random stats after creation
+func _set_stat_mods_from_factory(stats: Dictionary) -> void:
+	for key in stats:
+		_stat_mods[key] = stats[key]
+
 # --------- Factory-only initializer (private) ---------
 func _init_from_catalog(cat: EquipmentCatalog.CatalogItem, item_num: int, palette: PackedStringArray) -> void:
 	_item_type = cat.item_type

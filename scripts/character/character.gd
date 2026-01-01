@@ -299,8 +299,8 @@ func _recalc_stats() -> void:
 		stats = Stats.new()
 
 	for ei in get_all_equipment_instances():
-		if ei and ei.stats:
-			stats.add(ei.stats)
+		if ei and ei.stat_mods:
+			stats.add_from_equipment(ei.stat_mods)
 
 # --------------- Display pieces merge ---------------
 func get_display_pieces() -> Array[DisplayPiece]:
