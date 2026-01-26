@@ -44,3 +44,6 @@ addons/godot_mcp/
 build/
 *.apk
 *.apk.idsig
+
+# Node.js
+node_modules/
