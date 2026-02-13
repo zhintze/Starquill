@@ -26,6 +26,7 @@ namespace Starquill.Display
             imageResolver = resolver;
             SetupCompositingCamera();
             SetupRenderTexture();
+            ExcludeCompositingLayerFromAllCameras();
         }
 
         public void SetPieces(List<DisplayPiece> pieces)
@@ -34,6 +35,9 @@ namespace Starquill.Display
 
             while (spritePool.Count < pieces.Count)
                 CreatePooledRenderer();
+
+            // Activate root for setup
+            compositingRoot.gameObject.SetActive(true);
 
             for (int i = 0; i < pieces.Count; i++)
             {
@@ -55,7 +59,9 @@ namespace Starquill.Display
             for (int i = pieces.Count; i < spritePool.Count; i++)
                 spritePool[i].gameObject.SetActive(false);
 
+            // Render to texture then hide compositing objects
             Composite();
+            compositingRoot.gameObject.SetActive(false);
         }
 
         private void Composite()
@@ -91,6 +97,19 @@ namespace Starquill.Display
             renderTexture = new RenderTexture(textureSize, textureSize, 0, RenderTextureFormat.ARGB32);
             renderTexture.filterMode = FilterMode.Bilinear;
             renderTexture.Create();
+        }
+
+        private void ExcludeCompositingLayerFromAllCameras()
+        {
+            int mask = ~(1 << compositingLayer);
+            foreach (var cam in Camera.allCameras)
+            {
+                if (cam == compositingCamera) continue;
+                cam.cullingMask &= mask;
+            }
+
+            if (Camera.main != null && Camera.main != compositingCamera)
+                Camera.main.cullingMask &= mask;
         }
 
         private void CreatePooledRenderer()
