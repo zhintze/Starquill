@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cgk4afthwnbnk"
+
+[deps]
+
+files=["res://documents/Layer Export - speciesModularParts.amount.translation"]
+
+source_file="res://documents/Layer Export - speciesModularParts.csv"
+dest_files=["res://documents/Layer Export - speciesModularParts.amount.translation"]
+
+[params]
+
+compress=true
+delimiter=0

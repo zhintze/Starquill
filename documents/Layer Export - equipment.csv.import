@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://disq7dic2jhy8"
+
+[deps]
+
+files=["res://documents/Layer Export - equipment.Item type.translation", "res://documents/Layer Export - equipment.Layer Code1.translation", "res://documents/Layer Export - equipment.Layer Code2.translation", "res://documents/Layer Export - equipment.Layer Code3.translation", "res://documents/Layer Export - equipment.hidden layer numbers.translation", "res://documents/Layer Export - equipment.layer color variance.translation", "res://documents/Layer Export - equipment.modular.translation", "res://documents/Layer Export - equipment.amount.translation"]
+
+source_file="res://documents/Layer Export - equipment.csv"
+dest_files=["res://documents/Layer Export - equipment.Item type.translation", "res://documents/Layer Export - equipment.Layer Code1.translation", "res://documents/Layer Export - equipment.Layer Code2.translation", "res://documents/Layer Export - equipment.Layer Code3.translation", "res://documents/Layer Export - equipment.hidden layer numbers.translation", "res://documents/Layer Export - equipment.layer color variance.translation", "res://documents/Layer Export - equipment.modular.translation", "res://documents/Layer Export - equipment.amount.translation"]
+
+[params]
+
+compress=true
+delimiter=0

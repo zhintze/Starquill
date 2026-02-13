@@ -1,0 +1,15 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://j8ygn70ilsrn"
+valid=false
+
+[deps]
+
+source_file="res://documents/color_skin_human.csv"
+
+[params]
+
+compress=true
+delimiter=0

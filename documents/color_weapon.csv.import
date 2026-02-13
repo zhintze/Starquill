@@ -1,0 +1,15 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bqa5bfd6u6qs0"
+valid=false
+
+[deps]
+
+source_file="res://documents/color_weapon.csv"
+
+[params]
+
+compress=true
+delimiter=0

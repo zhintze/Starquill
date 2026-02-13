@@ -1,0 +1,15 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dstpaxls4ryfm"
+valid=false
+
+[deps]
+
+source_file="res://documents/color_eyes.csv"
+
+[params]
+
+compress=true
+delimiter=0

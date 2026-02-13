@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bn6bna56bnl17"
+
+[deps]
+
+files=["res://documents/Layer Export - species.X scale.translation", "res://documents/Layer Export - species.Y scale.translation", "res://documents/Layer Export - species.backArm.translation", "res://documents/Layer Export - species.legs.translation", "res://documents/Layer Export - species.body.translation", "res://documents/Layer Export - species.head.translation", "res://documents/Layer Export - species.frontArm.translation", "res://documents/Layer Export - species.eyes.translation", "res://documents/Layer Export - species.nose.translation", "res://documents/Layer Export - species.mouth.translation", "res://documents/Layer Export - species.ears.translation", "res://documents/Layer Export - species.facialHair.translation", "res://documents/Layer Export - species.FacialDetail.translation", "res://documents/Layer Export - species.hair.translation", "res://documents/Layer Export - species.OtherBodyParts.translation", "res://documents/Layer Export - species.SkinColor.translation", "res://documents/Layer Export - species.HairColor.translation", "res://documents/Layer Export - species.EyeColor.translation", "res://documents/Layer Export - species.FacialDetailColor.translation", "res://documents/Layer Export - species.ItemRestrictions.translation", "res://documents/Layer Export - species.SkinVariance.translation"]
+
+source_file="res://documents/Layer Export - species.csv"
+dest_files=["res://documents/Layer Export - species.X scale.translation", "res://documents/Layer Export - species.Y scale.translation", "res://documents/Layer Export - species.backArm.translation", "res://documents/Layer Export - species.legs.translation", "res://documents/Layer Export - species.body.translation", "res://documents/Layer Export - species.head.translation", "res://documents/Layer Export - species.frontArm.translation", "res://documents/Layer Export - species.eyes.translation", "res://documents/Layer Export - species.nose.translation", "res://documents/Layer Export - species.mouth.translation", "res://documents/Layer Export - species.ears.translation", "res://documents/Layer Export - species.facialHair.translation", "res://documents/Layer Export - species.FacialDetail.translation", "res://documents/Layer Export - species.hair.translation", "res://documents/Layer Export - species.OtherBodyParts.translation", "res://documents/Layer Export - species.SkinColor.translation", "res://documents/Layer Export - species.HairColor.translation", "res://documents/Layer Export - species.EyeColor.translation", "res://documents/Layer Export - species.FacialDetailColor.translation", "res://documents/Layer Export - species.ItemRestrictions.translation", "res://documents/Layer Export - species.SkinVariance.translation"]
+
+[params]
+
+compress=true
+delimiter=0

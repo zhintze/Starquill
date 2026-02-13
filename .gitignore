@@ -1,46 +1,45 @@
-# Godot 4+ specific ignores
-.godot/
-.android/
-.import/
-export.cfg
-export_presets.cfg
-mono/
-*.import
-*.mono
-*.gd.uid
-*.translation
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+Asset[Ss]tore[Tt]ools/
 
-# Godot Git Plugin (built binaries)
-addons/godot-git-plugin/bin/*.so
-addons/godot-git-plugin/bin/*.dll
-addons/godot-git-plugin/bin/*.dylib
+# Unity meta
+*.pidb
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
 
-# OS-specific
+# Builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Python bytecode
-__pycache__/
-*.pyc
+# IDE
+.idea/
+.vs/
+.vscode/
+*.swp
+*.swo
 
-# Backup files
-*.tmp
-*.bak
-*.old
-*.orig
-*.rej
+# Dependencies
+node_modules/
 
-# Local agent guide (unversioned)
-AGENTS.md
-
-# Claude Code project instructions
-CLAUDE.md
-
-# Godot MCP server (local only)
-godot-mcp/
-addons/godot_mcp/
-
-# Build artifacts
-build/
-*.apk
-*.apk.idsig
+# Godot (archived)
+.godot/
