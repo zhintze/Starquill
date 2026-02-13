@@ -53,10 +53,12 @@ namespace Starquill.UI
             if (partySlots == null || partySlots.Length == 0) return;
 
             var registry = DisplayDataRegistry.Instance;
+            if (registry.Species.Count == 0)
+                registry.LoadAll();
             var speciesKeys = registry.Species.Keys.ToList();
             if (speciesKeys.Count == 0) return;
 
-            var builder = new DisplayBuilder();
+            var builder = new DisplayBuilder(registry);
             var resolver = new ImageResolver();
 
             for (int i = 0; i < partySlots.Length && i < 4; i++)
@@ -140,6 +142,10 @@ namespace Starquill.UI
 
         private void OnDestroy()
         {
+            foreach (var display in characterDisplays)
+                if (display != null) Destroy(display.gameObject);
+            characterDisplays.Clear();
+
             foreach (var tex in placeholderTextures)
                 if (tex != null) Destroy(tex);
             placeholderTextures.Clear();

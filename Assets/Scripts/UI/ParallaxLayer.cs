@@ -39,6 +39,7 @@ namespace Starquill.UI
 
         public void SetTexture(Texture2D texture)
         {
+            if (texture == null) return;
             if (rawImage == null) rawImage = GetComponent<RawImage>();
             rawImage.texture = texture;
             uvWidth = ParallaxMath.CalculateUVWidth(
