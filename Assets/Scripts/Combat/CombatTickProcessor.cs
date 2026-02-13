@@ -32,6 +32,7 @@ namespace Starquill.Combat
                 var highestStat = stats.HighestStat();
                 float autoAtk = stats.GetStat(highestStat) * economyConfig.autoAttackDPSFraction;
                 var target = aliveEnemies[rng.Next(aliveEnemies.Count)];
+                if (target.HasStatus(StatusEffectType.Expose)) autoAtk *= 1.25f;
                 target.TakeDamage(autoAtk);
                 result.TotalDamageDealt += autoAtk;
             }
@@ -47,8 +48,8 @@ namespace Starquill.Combat
             foreach (var enemy in aliveEnemies)
                 result.TotalDamageReceived += enemy.GetDamageOutput();
 
-            // Kill check
-            foreach (var enemy in enemies.Where(e => !e.IsAlive))
+            // Kill check — only count enemies that died this tick
+            foreach (var enemy in aliveEnemies.Where(e => !e.IsAlive))
             {
                 result.EnemiesKilled++;
                 result.GoldEarned += economyConfig.GoldPerKill(questLevel, prestigeMult: prestigeMultiplier, boostMult: boostMultiplier);

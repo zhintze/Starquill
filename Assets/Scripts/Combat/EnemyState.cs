@@ -20,7 +20,6 @@ namespace Starquill.Combat
 
         public void TakeDamage(float amount)
         {
-            if (HasStatus(StatusEffectType.Expose)) amount *= 1.25f;
             CurrentHP -= amount;
             if (CurrentHP < 0) CurrentHP = 0;
         }

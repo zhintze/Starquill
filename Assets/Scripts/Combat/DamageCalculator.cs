@@ -1,6 +1,3 @@
-using Starquill.Core;
-using Starquill.Data;
-
 namespace Starquill.Combat
 {
     public static class DamageCalculator

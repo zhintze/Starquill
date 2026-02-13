@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Starquill.Core;
 using Starquill.Data;
 
 namespace Starquill.Characters
