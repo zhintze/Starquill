@@ -145,6 +145,110 @@ e4829e66 Add GameManager with tick loop, verb activation, and auto-save
 
 ---
 
-## Sprint 2: [Planned]
+## Sprint 2: Paper Doll Display System
+
+**Date:** 2026-02-13
+**Branch:** `unity-idle-clicker`
+**Base:** `dev`
+**Status:** Complete — code compiles, pending visual verification in Unity Editor
+
+### Goal
+
+Port the Godot layered paper doll character rendering system to Unity using RenderTexture compositing with bilinear filtering for smooth scaling of pencil-drawn art across all mobile resolutions.
+
+### Architecture
+
+A 4-stage DisplayBuilder pipeline produces sorted DisplayPiece lists from character data. Species body part tokens (static, modular full, modular group) resolve to sprite paths via ImageToken. A compositing camera renders all layers into a single 400x400 RenderTexture. The composited texture displays via UI.RawImage with bilinear filtering. All logic except CharacterDisplay is plain C# — fully testable in EditMode.
+
+### Deliverables
+
+#### Asset Migration
+- Copied 5 JSON data files to `Assets/Resources/Data/`
+- Copied 4,108 sprite PNGs to `Assets/Resources/Images/` (1,284 species + 2,615 equipment + 209 weapons)
+- Sprite import settings (Bilinear, No compression) must be configured in Unity Editor
+
+#### Display System (11 files in `Starquill.Display` assembly)
+| File | Purpose |
+|------|---------|
+| `DisplayPiece.cs` | Plain C# data class: layer, sprite path, tint color, offset, scale, rotation, flip |
+| `ImageToken.cs` | Parses 3 token formats (static, modular full, modular group) and constructs sprite resource paths |
+| `ColorManager.cs` | Loads color palettes from JSON, hex parsing, random color selection, palette/hex field resolution |
+| `MiniJSON.cs` | MIT-licensed single-file JSON parser for Unity (Dictionary/List deserialization) |
+| `SimpleJson.cs` | Extension methods for typed access to MiniJSON Dictionary objects |
+| `DisplayDataRegistry.cs` | Singleton: loads species, equipment, modular parts from JSON; hardcoded layer mappings |
+| `SpeciesInstanceData.cs` | Runtime display state: persistent colors, modular image numbers, weighted hair group selection |
+| `DisplayBuilder.cs` | 4-stage pipeline: build species pieces, build equipment pieces, filter hidden layers, merge and sort |
+| `ImageResolver.cs` | Sprite loading with Dictionary cache and warning suppression for missing sprites |
+| `CharacterDisplay.cs` | MonoBehaviour: compositing camera + RenderTexture + bilinear RawImage output |
+| `DisplayTestRunner.cs` | Test harness: loads first species, creates random instance, renders via CharacterDisplay |
+
+#### Assembly Definition Updates
+| File | Change |
+|------|--------|
+| `Starquill.Display.asmdef` | New assembly depending on Core and Data |
+| `Starquill.Managers.asmdef` | Added Display reference |
+| `EditModeTests.asmdef` | Added Display reference |
+
+#### Test Coverage (3 test files, ~26 tests)
+| Test File | Tests | What's Covered |
+|-----------|-------|----------------|
+| `ImageTokenTests.cs` | 10 | Static/modular full/modular group parsing, sprite path construction, equipment/weapon paths |
+| `ColorManagerTests.cs` | 9 | Hex parsing (with/without #), palette loading, fallback, random color, hex array vs keyword resolution |
+| `DisplayBuilderTests.cs` | 7 | Species piece creation, modular group expansion, hair/eyes color application, hidden layers, hat deduplication, merge and sort |
+
+### Design Decisions
+
+1. **RenderTexture Compositing** — All character layers (30-50 sprites) render to a single 400x400 off-screen texture. The composited image scales via RawImage with bilinear filtering. This prevents sprite distortion at different mobile resolutions.
+
+2. **Bilinear Filtering** — Chosen over Point/Nearest because the art is pencil-drawn, not pixel art. Bilinear produces smooth scaling without jagged artifacts.
+
+3. **MiniJSON for JSON Parsing** — Unity's `JsonUtility` cannot handle heterogeneous JSON structures (arrays with mixed types). MiniJSON provides `Dictionary<string, object>` / `List<object>` deserialization. `SimpleJson` extension methods add typed accessors.
+
+4. **Hardcoded Layer Mappings** — Species modular group codes (e.g., `h02` → layers [92, 128]) are hardcoded in `DisplayDataRegistry.LoadLayerMappings()`, matching the original Godot `ConfigManager.species_layers` dictionary.
+
+5. **Weighted Hair Selection** — Hair group codes are selected by weighting each code's variant count from `speciesModularParts.json`. More variants = more likely to be chosen.
+
+### Commits
+
+```
+344ebfc6 Add paper doll display system design for Unity port
+b89e6d08 Add Sprint 2 implementation plan: paper doll display system (11 tasks)
+07b0eccd Migrate asset files to Unity Resources directory
+34663dbd Add DisplayPiece data class for paper doll layers
+7873faef Add ImageToken parser for species/equipment sprite path construction
+f346e99e Add ColorManager with palette loading, hex parsing, and color field resolution
+8d233aa5 Add DisplayDataRegistry with JSON parsing for species, equipment, and modular parts
+ca105cd4 Add ImageResolver with sprite caching for display pipeline
+5dc1b53f Add DisplayBuilder with 4-stage pipeline, species instance data, and tests
+a3d8a986 Add Starquill.Display assembly definition and update references
+8ec9d73e Add CharacterDisplay with RenderTexture compositing and bilinear output
+13c67972 Add DisplayTestRunner for visual verification of paper doll rendering
+```
+
+### Stats
+
+- **Source files:** 11 (.cs) in Starquill.Display assembly
+- **Test files:** 3 (.cs), ~26 test cases
+- **Asset files:** 4,108 PNGs + 5 JSONs migrated to Resources/
+- **Lines added:** ~2,000 (source + tests)
+- **Commits:** 12
+
+### Known Issues
+
+- Unity sprite import settings (Bilinear filter, No compression, Sprite type, Max 256) must be configured manually in Unity Editor for all 4,108 PNGs. Default import settings may differ.
+- DisplayTest scene (`Assets/Scenes/DisplayTest.unity`) must be created manually in Unity Editor — cannot be scripted via CLI.
+- Tests cannot be run in headless batch mode on Arch Linux (same `ScriptableRuntimeReflectionSystem` hang as Sprint 1). Must use Unity Editor GUI.
+- `DisplayDataRegistry` is a lazy singleton — not thread-safe, but fine for Unity's single-threaded model.
+
+### Next Steps for Sprint 3
+
+- Create DisplayTest scene in Unity Editor and run visual verification
+- Configure sprite import settings for all migrated PNGs
+- Build Explore screen UI using the paper doll display system
+- Wire CharacterDisplay to the gameplay CharacterInstance via bridge adapter
+
+---
+
+## Sprint 3: [Planned]
 
 *To be filled after sprint completion.*
