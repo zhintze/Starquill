@@ -1,0 +1,14 @@
+{
+    "name": "Starquill.UI",
+    "rootNamespace": "Starquill.UI",
+    "references": [
+        "Starquill.Core",
+        "Starquill.Data",
+        "Starquill.Display",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

@@ -10,7 +10,8 @@
         "Starquill.Equipment",
         "Starquill.Exploration",
         "Starquill.Managers",
-        "Starquill.Display"
+        "Starquill.Display",
+        "Starquill.UI"
     ],
     "includePlatforms": [
         "Editor"
