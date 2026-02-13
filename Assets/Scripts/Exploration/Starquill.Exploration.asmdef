@@ -1,0 +1,9 @@
+{
+    "name": "Starquill.Exploration",
+    "rootNamespace": "Starquill.Exploration",
+    "references": ["Starquill.Core", "Starquill.Data"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

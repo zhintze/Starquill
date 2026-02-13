@@ -1,0 +1,9 @@
+{
+    "name": "Starquill.Equipment",
+    "rootNamespace": "Starquill.Equipment",
+    "references": ["Starquill.Core", "Starquill.Data"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

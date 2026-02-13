@@ -1,0 +1,16 @@
+{
+    "name": "Starquill.Managers",
+    "rootNamespace": "Starquill.Managers",
+    "references": [
+        "Starquill.Core",
+        "Starquill.Data",
+        "Starquill.Combat",
+        "Starquill.Characters",
+        "Starquill.Equipment",
+        "Starquill.Exploration"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

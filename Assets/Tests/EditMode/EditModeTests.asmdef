@@ -1,0 +1,30 @@
+{
+    "name": "EditModeTests",
+    "rootNamespace": "Starquill.Tests",
+    "references": [
+        "Starquill.Core",
+        "Starquill.Data",
+        "Starquill.Combat",
+        "Starquill.Economy",
+        "Starquill.Characters",
+        "Starquill.Equipment",
+        "Starquill.Exploration",
+        "Starquill.Managers"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

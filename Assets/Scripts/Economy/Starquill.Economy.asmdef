@@ -1,0 +1,9 @@
+{
+    "name": "Starquill.Economy",
+    "rootNamespace": "Starquill.Economy",
+    "references": ["Starquill.Core", "Starquill.Data"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

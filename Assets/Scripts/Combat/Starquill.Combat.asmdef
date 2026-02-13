@@ -1,0 +1,9 @@
+{
+    "name": "Starquill.Combat",
+    "rootNamespace": "Starquill.Combat",
+    "references": ["Starquill.Core", "Starquill.Data"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

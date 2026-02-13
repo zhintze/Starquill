@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  serializedVersion: 26
+  productName: Starquill
+  companyName: Starquill
+  defaultScreenWidth: 1080
+  defaultScreenHeight: 1920
+  defaultIsNativeResolution: 0
+  defaultScreenOrientation: 1
+  useOnDemandResources: 0
+  stripEngineCode: 1
+  scriptingBackend:
+    Android: 1
+  il2CppCompilerConfiguration: {}
+  apiCompatibilityLevel: 8
