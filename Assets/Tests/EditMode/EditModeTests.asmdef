@@ -9,7 +9,8 @@
         "Starquill.Characters",
         "Starquill.Equipment",
         "Starquill.Exploration",
-        "Starquill.Managers"
+        "Starquill.Managers",
+        "Starquill.Display"
     ],
     "includePlatforms": [
         "Editor"

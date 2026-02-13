@@ -7,7 +7,8 @@
         "Starquill.Combat",
         "Starquill.Characters",
         "Starquill.Equipment",
-        "Starquill.Exploration"
+        "Starquill.Exploration",
+        "Starquill.Display"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
