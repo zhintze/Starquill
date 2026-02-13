@@ -41,5 +41,14 @@ Thumbs.db
 # Dependencies
 node_modules/
 
+# Crash dumps
+mono_crash.*.blob
+
+# Nested Unity project (created by Unity Hub)
+/Starquill/
+
+# Solution files
+*.slnx
+
 # Godot (archived)
 .godot/
