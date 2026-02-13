@@ -47,8 +47,15 @@ mono_crash.*.blob
 # Nested Unity project (created by Unity Hub)
 /Starquill/
 
-# Solution files
+# Solution and project files
 *.slnx
+*.csproj
+
+# Auto-generated Unity plugins
+Assets/MobileDependencyResolver/
+Assets/MobileDependencyResolver.meta
+Assets/Resources/BillingMode.json
+Assets/Resources/BillingMode.json.meta
 
 # Godot (archived)
 .godot/
