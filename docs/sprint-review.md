@@ -150,7 +150,7 @@ e4829e66 Add GameManager with tick loop, verb activation, and auto-save
 **Date:** 2026-02-13
 **Branch:** `unity-idle-clicker`
 **Base:** `dev`
-**Status:** Complete — code compiles, pending visual verification in Unity Editor
+**Status:** Complete — all 75 tests passing, visual verification confirmed in Unity Editor
 
 ### Goal
 
@@ -162,10 +162,12 @@ A 4-stage DisplayBuilder pipeline produces sorted DisplayPiece lists from charac
 
 ### Deliverables
 
-#### Asset Migration
+#### Asset Migration & Cleanup
 - Copied 5 JSON data files to `Assets/Resources/Data/`
 - Copied 4,108 sprite PNGs to `Assets/Resources/Images/` (1,284 species + 2,615 equipment + 209 weapons)
-- Sprite import settings (Bilinear, No compression) must be configured in Unity Editor
+- Removed 4,108 Godot `.import` files (not needed by Unity)
+- Moved original Godot `assets/` directory to `godot-archive/assets/`
+- Bulk-configured all sprites as Sprite type with Bilinear filtering, no compression via SpriteImportFixer editor tool
 
 #### Display System (11 files in `Starquill.Display` assembly)
 | File | Purpose |
@@ -179,8 +181,9 @@ A 4-stage DisplayBuilder pipeline produces sorted DisplayPiece lists from charac
 | `SpeciesInstanceData.cs` | Runtime display state: persistent colors, modular image numbers, weighted hair group selection |
 | `DisplayBuilder.cs` | 4-stage pipeline: build species pieces, build equipment pieces, filter hidden layers, merge and sort |
 | `ImageResolver.cs` | Sprite loading with Dictionary cache and warning suppression for missing sprites |
-| `CharacterDisplay.cs` | MonoBehaviour: compositing camera + RenderTexture + bilinear RawImage output |
+| `CharacterDisplay.cs` | MonoBehaviour: compositing camera + RenderTexture + bilinear RawImage output, auto-excludes compositing layer from other cameras |
 | `DisplayTestRunner.cs` | Test harness: loads first species, creates random instance, renders via CharacterDisplay |
+| `SpriteImportFixer.cs` | Editor tool (Tools menu): bulk-updates all sprite import settings |
 
 #### Assembly Definition Updates
 | File | Change |
@@ -208,6 +211,16 @@ A 4-stage DisplayBuilder pipeline produces sorted DisplayPiece lists from charac
 
 5. **Weighted Hair Selection** — Hair group codes are selected by weighting each code's variant count from `speciesModularParts.json`. More variants = more likely to be chosen.
 
+### Bugs Found & Fixed
+
+1. **Ghost duplicate rendering** — Compositing SpriteRenderers on layer 31 were visible to the main camera, showing a tiny duplicate character behind the RawImage. Fixed: `ExcludeCompositingLayerFromAllCameras()` strips layer 31 from all non-compositing cameras, plus compositing root is deactivated after render.
+
+2. **Sprites not loading** — All 4,108 PNGs imported as Default texture type (`textureType: 0`), causing `Resources.Load<Sprite>()` to return null. Fixed: `SpriteImportFixer` editor tool bulk-updates to Sprite type with Bilinear filtering.
+
+3. **Godot .import files cluttering Resources** — 4,108 `.import` files from Godot's import cache were copied alongside PNGs. Removed them and moved original `assets/` to `godot-archive/assets/`.
+
+4. **Unity failing to open project** — The original Godot `assets/` directory in the project root caused Unity to fail importing `assets/data/config.meta`. Fixed by moving to `godot-archive/`.
+
 ### Commits
 
 ```
@@ -223,29 +236,27 @@ ca105cd4 Add ImageResolver with sprite caching for display pipeline
 a3d8a986 Add Starquill.Display assembly definition and update references
 8ec9d73e Add CharacterDisplay with RenderTexture compositing and bilinear output
 13c67972 Add DisplayTestRunner for visual verification of paper doll rendering
+b5e21c64 Add Sprint 2 paper doll display system to sprint review
+d71366a5 Move Godot assets to godot-archive and add Unity meta files
+0bd0b3a1 Fix ghost duplicate by excluding compositing layer from all cameras
+2b8e06f9 Add editor script for bulk sprite import settings fix
+443203c6 Remove Godot .import files, fix sprite imports, add DisplayTest scene
 ```
 
 ### Stats
 
-- **Source files:** 11 (.cs) in Starquill.Display assembly
-- **Test files:** 3 (.cs), ~26 test cases
+- **Source files:** 12 (.cs) in Starquill.Display assembly + 1 Editor tool
+- **Test files:** 3 (.cs), 26 test cases (75 total with Sprint 1)
 - **Asset files:** 4,108 PNGs + 5 JSONs migrated to Resources/
-- **Lines added:** ~2,000 (source + tests)
-- **Commits:** 12
+- **Lines added:** ~2,200 (source + tests)
+- **Commits:** 17
 
 ### Known Issues
 
-- Unity sprite import settings (Bilinear filter, No compression, Sprite type, Max 256) must be configured manually in Unity Editor for all 4,108 PNGs. Default import settings may differ.
-- DisplayTest scene (`Assets/Scenes/DisplayTest.unity`) must be created manually in Unity Editor — cannot be scripted via CLI.
 - Tests cannot be run in headless batch mode on Arch Linux (same `ScriptableRuntimeReflectionSystem` hang as Sprint 1). Must use Unity Editor GUI.
 - `DisplayDataRegistry` is a lazy singleton — not thread-safe, but fine for Unity's single-threaded model.
-
-### Next Steps for Sprint 3
-
-- Create DisplayTest scene in Unity Editor and run visual verification
-- Configure sprite import settings for all migrated PNGs
-- Build Explore screen UI using the paper doll display system
-- Wire CharacterDisplay to the gameplay CharacterInstance via bridge adapter
+- Unity 6 `BuildProfileContext` NullReferenceException on Linux — internal Unity bug, non-blocking. Fixed by deleting `Library/BuildProfileContext.asset`.
+- Input System conflict: Canvas EventSystem defaults to legacy `StandaloneInputModule`. Must replace with `InputSystemUIInputModule` on new scenes.
 
 ---
 
