@@ -260,6 +260,140 @@ d71366a5 Move Godot assets to godot-archive and add Unity meta files
 
 ---
 
-## Sprint 3: [Planned]
+## Sprint 3: Explore Screen UI
 
-*To be filled after sprint completion.*
+**Date:** 2026-02-13
+**Branch:** `unity-idle-clicker`
+**Base:** `dev`
+**Status:** Complete — scene rendering, visual verification confirmed in Unity Editor
+
+### Goal
+
+Build the Explore screen as a static UI layout with live paper doll rendering of the party, parallax scrolling background, placeholder verb cards, and navigation bar. No gameplay wiring — validates the full screen structure before Sprint 4 adds combat.
+
+### Architecture
+
+Canvas + TextMeshPro UI with a new `Starquill.UI` assembly (9th assembly definition). Parallax scrolling via RawImage UV offset manipulation with `Repeat` wrap mode textures. Four CharacterDisplay instances from Sprint 2 render party paper dolls into staggered RawImage slots. All content is placeholder data — no GameManager wiring. Scene hierarchy built programmatically via `ExploreSceneBuilder` editor script (Tools > Build Explore Scene) which creates all GameObjects, wires SerializeField references via reflection, and marks the scene dirty.
+
+### Deliverables
+
+#### UI System (7 files in `Starquill.UI` assembly)
+| File | Purpose |
+|------|---------|
+| `Starquill.UI.asmdef` | Assembly definition: depends on Core, Data, Display, Unity.TextMeshPro |
+| `ParallaxMath.cs` | Pure C# static class: UV width calculation, offset advance with wrapping |
+| `ParallaxLayer.cs` | MonoBehaviour: RawImage UV scroll driven by ParallaxMath, SetTexture() API |
+| `TopBarDisplay.cs` | Gold, fragments, wave info, quest level (single row, no level label) |
+| `VerbBarDisplay.cs` | Verb card grid with colored backgrounds + cooldown text, max 3 cards |
+| `BottomNavDisplay.cs` | 5 tab buttons with active/inactive highlighting |
+| `ExploreSceneController.cs` | Scene orchestrator: creates CharacterDisplay instances, procedural parallax textures, populates all panels |
+
+#### Editor Tooling (1 file)
+| File | Purpose |
+|------|---------|
+| `ExploreSceneBuilder.cs` | Editor script (Tools menu): builds entire ExploreScene hierarchy programmatically with reflection-based SerializeField wiring |
+
+#### Test Coverage (1 file, 8 tests)
+| Test File | Tests | What's Covered |
+|-----------|-------|----------------|
+| `ParallaxMathTests.cs` | 8 | UV width ratio, same size, zero width, forward offset, wrap at 1, negative speed, negative wrap, zero texture width |
+
+### Layout (Revised — 1080x1920 Reference)
+
+```
+┌─────────────────────────────────────────┐
+│  💰 1.2M   🧩 7/12   Wave 3/5   Q.34  │  ← TopBar (100px, single row)
+├─────────────────────────────────────────┤
+│ ░░░░░ sky / distant mountains ░░░░░░░░ │  ← BG Layer 0 (scroll 5px/s)
+│ ▒▒▒▒▒▒▒ mid hills / trees ▒▒▒▒▒▒▒▒▒▒ │  ← BG Layer 1 (scroll 15px/s)
+│ ▓▓▓▓▓▓▓▓▓ near ground ▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │  ← BG Layer 2 (scroll 30px/s)
+│                                         │
+│  👤👤 (360x360)    ▓▓▓ (240x360)       │  ← Party (staggered) + Enemies
+│  👤👤 (440x440)    ▓▓▓                 │
+│                                         │
+│ 🌿🌿 foreground grass 🌿🌿🌿🌿🌿🌿🌿 │  ← FG Layer (scroll 50px/s, 140px)
+├─────────────────────────────────────────┤
+│    [Bash]      [Analyze]     [Slash]    │  ← VerbBar (130px, single row, 3 cards)
+├─────────────────────────────────────────┤
+│  ⚔️  |  📜  |  🎒  |  👥  |  🏪       │  ← BottomNav (120px)
+└─────────────────────────────────────────┘
+```
+
+**Panel heights (reference 1920):**
+- TopBar: 100px (single row)
+- CombatArea: ~1570px (flexible fill)
+- VerbBar: 130px (single row, 3 verb cards)
+- BottomNav: 120px
+
+### Design Decisions
+
+1. **ExploreSceneBuilder Editor Script** — Individual MCP tool calls to build the scene were too slow. Created a comprehensive C# editor script that builds the entire hierarchy in one execution, using reflection (`SetPrivateField`) to wire all `[SerializeField]` references programmatically.
+
+2. **Procedural Placeholder Textures** — Rather than requiring actual image files for development, `ExploreSceneController.SetupPlaceholderParallax()` generates striped/gradient textures at runtime. These demonstrate scrolling movement and will be replaced by artist-created assets.
+
+3. **Single Row TopBar** — Originally 2 rows (160px), revised to 1 row (100px) containing gold, fragments, wave info, and quest level. The "Lv 34" label was redundant (quest level already shown) and removed.
+
+4. **3-Card Verb Bar** — Originally 2 rows of 5 cards (240px), revised to 1 row of 3 cards (130px). This gives significantly more space to the combat area while keeping the most relevant verbs visible.
+
+5. **Doubled Character/Enemy Sizes** — Initial sizes (180-220px party, 120x180 enemies) were too small in the combat area. Doubled to 360-440px party slots and 240x360 enemy silhouettes for better visual prominence.
+
+### Bugs Found & Fixed
+
+1. **DisplayBuilder constructor mismatch** — Plan specified `new DisplayBuilder()` but the actual constructor requires a `DisplayDataRegistry` parameter. Fixed to `new DisplayBuilder(registry)`.
+
+2. **DisplayDataRegistry empty species** — `DisplayDataRegistry.Instance.Species` could be empty if `LoadAll()` was never called. Added guard: `if (registry.Species.Count == 0) registry.LoadAll()`.
+
+3. **ParallaxLayer null texture** — `SetTexture(Texture2D)` could throw NullReferenceException if texture is null. Added `if (texture == null) return;` guard.
+
+4. **TMP font NullReferenceException** — TextMeshProUGUI components created before TMP Essential Resources were imported had no default font. Resolved by importing TMP Essential Resources and rebuilding the scene.
+
+5. **Duplicate scene file** — `save_scene` MCP command created `Assets/ExploreScene.unity` instead of `Assets/Scenes/ExploreScene.unity`. Cleaned up duplicate and re-saved to correct path.
+
+### Commits
+
+```
+8be74769 Add Sprint 3 explore screen design doc and implementation plan
+485447f1 Add Starquill.UI assembly definition and update test references
+df394a92 Add ParallaxMath with UV scroll math and 8 tests
+036e0e5d Add ParallaxLayer with RawImage UV scrolling
+c0333f22 Add TopBarDisplay, VerbBarDisplay, and BottomNavDisplay UI components
+b0bd9e6c Add ExploreSceneController with placeholder party, parallax, and UI
+ac1cc361 Fix DisplayBuilder constructor, add registry LoadAll guard, and null checks
+70d8c936 Clean up project structure: archive Godot files, organize docs
+fc7d21f3 Add TextMesh Pro Essential Resources
+4344ecad Build ExploreScene with full UI hierarchy and Coplay MCP integration
+b200274e Revise Explore screen layout: larger characters, compact UI panels
+```
+
+### Stats
+
+- **Source files:** 8 (.cs) in Starquill.UI assembly + 1 Editor tool
+- **Test files:** 1 (.cs), 8 test cases (83 total with Sprint 1+2)
+- **Lines added:** ~800 (source + tests)
+- **Commits:** 11
+
+### Known Issues
+
+- Tests cannot be run in headless batch mode on Arch Linux (same issue as Sprint 1+2). Must use Unity Editor GUI.
+- `Economy` assembly still empty — `EconomyConfig` lives in `Data` assembly.
+- Input System `activeInputHandler` setting warning (`-1`) on editor startup — non-blocking.
+- Coplay MCP assembly update timeout on first import — non-blocking, resolves on second compile.
+
+### Open Questions for Sprint 4
+
+- Wire GameManager tick loop to TopBarDisplay (gold/wave/quest updates)?
+- VerbPool → VerbBarDisplay card tap-to-activate interaction model?
+- Damage number float-up animation system (TextMeshPro or custom)?
+- Should combat area respond to tap/drag for targeting, or auto-target only?
+
+---
+
+## Sprint 4: [Planned — Minimum Viable Combat]
+
+*Wire GameManager to Explore screen for live auto-combat, verb activation, wave progression.*
+
+---
+
+## Sprint 5: [Planned — Full Explore Screen]
+
+*Add damage numbers, floating icons, boost indicators, bottom nav screen switching, real art assets.*
