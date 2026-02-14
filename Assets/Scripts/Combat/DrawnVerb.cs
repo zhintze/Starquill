@@ -9,6 +9,7 @@ namespace Starquill.Combat
         public float DrawTime { get; set; }
         public float CooldownRemaining { get; set; }
         public bool IsOnCooldown => CooldownRemaining > 0;
+        public int PassCount { get; private set; }
 
         public DrawnVerb(VerbDefinition verb, int ownerIndex, float drawTime)
         {
@@ -20,5 +21,7 @@ namespace Starquill.Combat
 
         public void StartCooldown() { CooldownRemaining = Verb.cooldownTicks; }
         public void TickCooldown() { if (CooldownRemaining > 0) CooldownRemaining -= 1f; }
+        public void IncrementPassCount() { PassCount++; }
+        public void ResetPassCount() { PassCount = 0; }
     }
 }

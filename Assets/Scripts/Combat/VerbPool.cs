@@ -22,6 +22,9 @@ namespace Starquill.Combat
         public IReadOnlyList<DrawnVerb> DrawnSlots => drawnSlots;
         public int AvailableCount => allVerbs.Count - onCooldown.Count;
 
+        public event System.Action<int, DrawnVerb> OnVerbDrawn;
+        public event System.Action<int, DrawnVerb> OnVerbRemoved;
+
         public VerbPool(int maxSlots, float rotationTime, int? seed = null)
         {
             this.maxSlots = maxSlots;
@@ -49,6 +52,7 @@ namespace Starquill.Combat
                 var drawn = DrawRandom(currentTime);
                 if (drawn == null) break;
                 drawnSlots.Add(drawn);
+                OnVerbDrawn?.Invoke(drawnSlots.Count - 1, drawn);
             }
         }
 
@@ -66,11 +70,37 @@ namespace Starquill.Combat
             return rotated;
         }
 
+        public void IncrementPassCounts(int activatedSlotIndex)
+        {
+            for (int i = 0; i < drawnSlots.Count; i++)
+            {
+                if (i != activatedSlotIndex)
+                    drawnSlots[i].IncrementPassCount();
+            }
+        }
+
+        public List<DrawnVerb> ReplaceStaleVerbs(float currentTime, int passThreshold = 2)
+        {
+            var removed = new List<DrawnVerb>();
+            for (int i = drawnSlots.Count - 1; i >= 0; i--)
+            {
+                if (drawnSlots[i].PassCount >= passThreshold)
+                {
+                    var verb = drawnSlots[i];
+                    drawnSlots.RemoveAt(i);
+                    OnVerbRemoved?.Invoke(i, verb);
+                    removed.Add(verb);
+                }
+            }
+            return removed;
+        }
+
         public DrawnVerb ActivateVerb(int slotIndex)
         {
             if (slotIndex < 0 || slotIndex >= drawnSlots.Count) return null;
             var verb = drawnSlots[slotIndex];
             drawnSlots.RemoveAt(slotIndex);
+            OnVerbRemoved?.Invoke(slotIndex, verb);
             verb.StartCooldown();
             onCooldown.Add(verb);
             return verb;

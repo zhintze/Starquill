@@ -83,5 +83,39 @@ namespace Starquill.Tests.Combat
             pool.FillSlots(0f);
             Assert.AreEqual(2, pool.DrawnSlots.Count);
         }
+
+        [Test]
+        public void IncrementPassCounts_BumpsNonActivatedSlots()
+        {
+            pool.AddVerbs(0, new[] { CreateVerb("v1", StatType.STR), CreateVerb("v2", StatType.DEX), CreateVerb("v3", StatType.INT) });
+            pool.FillSlots(0f);
+            pool.IncrementPassCounts(0);
+            Assert.AreEqual(0, pool.DrawnSlots[0].PassCount);
+            Assert.AreEqual(1, pool.DrawnSlots[1].PassCount);
+            Assert.AreEqual(1, pool.DrawnSlots[2].PassCount);
+        }
+
+        [Test]
+        public void ReplaceStaleVerbs_RemovesVerbsWithPassCountAtThreshold()
+        {
+            pool.AddVerbs(0, new[] { CreateVerb("v1", StatType.STR), CreateVerb("v2", StatType.DEX), CreateVerb("v3", StatType.INT), CreateVerb("v4", StatType.WIS) });
+            pool.FillSlots(0f);
+            pool.IncrementPassCounts(0);
+            pool.IncrementPassCounts(0);
+            var removed = pool.ReplaceStaleVerbs(0f, passThreshold: 2);
+            Assert.AreEqual(2, removed.Count);
+            Assert.AreEqual(1, pool.DrawnSlots.Count);
+        }
+
+        [Test]
+        public void IncrementPassCounts_DoesNotIncrementActivatedSlot()
+        {
+            pool.AddVerbs(0, new[] { CreateVerb("v1", StatType.STR), CreateVerb("v2", StatType.DEX), CreateVerb("v3", StatType.INT) });
+            pool.FillSlots(0f);
+            pool.IncrementPassCounts(1);
+            pool.IncrementPassCounts(1);
+            pool.IncrementPassCounts(1);
+            Assert.AreEqual(0, pool.DrawnSlots[1].PassCount);
+        }
     }
 }
