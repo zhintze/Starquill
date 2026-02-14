@@ -385,6 +385,9 @@ b200274e Revise Explore screen layout: larger characters, compact UI panels
 - VerbPool → VerbBarDisplay card tap-to-activate interaction model?
 - Damage number float-up animation system (TextMeshPro or custom)?
 - Should combat area respond to tap/drag for targeting, or auto-target only?
+- **Path indicator bar** — a horizontal progress bar below the TopBar that serves dual purpose:
+  - **Combat mode:** Visual wave progress (e.g. wave 3/5 fills as enemies are cleared)
+  - **Explore mode:** Travel percentage showing party moving along a path toward a guaranteed encounter/location; if a random event hasn't triggered by arrival, the destination encounter fires. Design and implement in Sprint 5 (Full Explore Screen).
 
 ---
 
@@ -396,4 +399,4 @@ b200274e Revise Explore screen layout: larger characters, compact UI panels
 
 ## Sprint 5: [Planned — Full Explore Screen]
 
-*Add damage numbers, floating icons, boost indicators, bottom nav screen switching, real art assets.*
+*Add damage numbers, floating icons, boost indicators, bottom nav screen switching, real art assets, and path indicator bar (dual-mode progress for combat waves and exploration travel).*
