@@ -175,7 +175,7 @@ namespace Starquill.Managers
 
             for (int i = 0; i < enemyCount; i++)
             {
-                var type = statTypes[Random.Range(0, statTypes.Length)];
+                var type = statTypes[UnityEngine.Random.Range(0, statTypes.Length)];
                 float hp = economyConfig.EnemyHP(questLevel);
                 currentEnemies.Add(new EnemyState($"enemy_{i}", type, hp, hp * 0.05f));
             }
