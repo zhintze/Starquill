@@ -89,6 +89,14 @@ public static class ExploreSceneBuilder
         var enemy2 = CreateImage("EnemySilhouette_2", enemyRT, silhouetteColor);
         SetImageRect(enemy2, new Vector2(-20, 150), new Vector2(240, 360));
 
+        // EnemyDisplayController on enemyContainer
+        var enemyDisplayCtrl = enemyContainer.AddComponent<Starquill.UI.EnemyDisplayController>();
+        SetPrivateField(enemyDisplayCtrl, "silhouettes", new Image[] {
+            enemy0.GetComponent<Image>(),
+            enemy1.GetComponent<Image>(),
+            enemy2.GetComponent<Image>()
+        });
+
         // FG_Grass - bottom 140px, on top of characters
         var fgGrass = CreateRawImage("FG_Grass", combatRT);
         AnchorBottom(fgGrass, 140);
@@ -178,8 +186,18 @@ public static class ExploreSceneBuilder
         var verbBarDisplay = verbBar.AddComponent<Starquill.UI.VerbBarDisplay>();
         SetPrivateField(verbBarDisplay, "cardContainer", verbGrid.transform);
 
+        // VerbCardAnimator on VerbBarPanel
+        verbBar.AddComponent<Starquill.UI.VerbCardAnimator>();
+
         // BottomNavDisplay
         var bottomNavDisplay = bottomNav.AddComponent<Starquill.UI.BottomNavDisplay>();
+
+        // DamageNumberSpawner on CombatAreaPanel
+        var damageSpawner = combatArea.AddComponent<Starquill.UI.DamageNumberSpawner>();
+
+        // GoldCounterAnimator on TopBarPanel
+        var goldAnimator = topBar.AddComponent<Starquill.UI.GoldCounterAnimator>();
+        SetPrivateField(goldAnimator, "label", goldLabel.GetComponent<TMP_Text>());
 
         // ExploreSceneController on Canvas
         var controller = canvas.AddComponent<Starquill.UI.ExploreSceneController>();
@@ -196,11 +214,9 @@ public static class ExploreSceneBuilder
         SetPrivateField(controller, "bgMid", bgMid.GetComponent<Starquill.UI.ParallaxLayer>());
         SetPrivateField(controller, "bgGround", bgGround.GetComponent<Starquill.UI.ParallaxLayer>());
         SetPrivateField(controller, "fgGrass", fgGrass.GetComponent<Starquill.UI.ParallaxLayer>());
-        SetPrivateField(controller, "enemySilhouettes", new Image[] {
-            enemy0.GetComponent<Image>(),
-            enemy1.GetComponent<Image>(),
-            enemy2.GetComponent<Image>()
-        });
+        SetPrivateField(controller, "enemyDisplay", enemyDisplayCtrl);
+        SetPrivateField(controller, "damageNumbers", damageSpawner);
+        SetPrivateField(controller, "goldCounter", goldAnimator);
 
         EditorUtility.SetDirty(canvas);
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
