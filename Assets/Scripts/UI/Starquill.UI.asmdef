@@ -5,6 +5,10 @@
         "Starquill.Core",
         "Starquill.Data",
         "Starquill.Display",
+        "Starquill.Combat",
+        "Starquill.Managers",
+        "Starquill.Characters",
+        "Starquill.Exploration",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
