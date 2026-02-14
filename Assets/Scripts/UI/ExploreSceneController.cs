@@ -98,7 +98,6 @@ namespace Starquill.UI
             if (topBar != null)
             {
                 topBar.SetGold("1.2M");
-                topBar.SetLevel(34);
                 topBar.SetFragments(7, 12);
                 topBar.SetWaveInfo(3, 5);
                 topBar.SetQuestLevel(34);

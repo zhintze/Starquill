@@ -6,9 +6,7 @@ namespace Starquill.UI
 {
     public class TopBarDisplay : MonoBehaviour
     {
-        [Header("Top Row")]
         [SerializeField] private TMP_Text goldLabel;
-        [SerializeField] private TMP_Text levelLabel;
 
         [Header("Fragment Bar")]
         [SerializeField] private Image fragmentBarFill;
@@ -21,11 +19,6 @@ namespace Starquill.UI
         public void SetGold(string formatted)
         {
             if (goldLabel != null) goldLabel.text = formatted;
-        }
-
-        public void SetLevel(int level)
-        {
-            if (levelLabel != null) levelLabel.text = $"Lv {level}";
         }
 
         public void SetFragments(int current, int max)

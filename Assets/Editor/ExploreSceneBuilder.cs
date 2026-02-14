@@ -29,8 +29,8 @@ public static class ExploreSceneBuilder
         var combatRT = combatArea.GetComponent<RectTransform>();
         combatRT.anchorMin = new Vector2(0, 0);
         combatRT.anchorMax = new Vector2(1, 1);
-        combatRT.offsetMin = new Vector2(0, 360); // bottom = VerbBar(240) + BottomNav(120)
-        combatRT.offsetMax = new Vector2(0, -160); // top = TopBar(160)
+        combatRT.offsetMin = new Vector2(0, 250); // bottom = VerbBar(130) + BottomNav(120)
+        combatRT.offsetMax = new Vector2(0, -100); // top = TopBar(100)
 
         // BG_Sky - full fill
         var bgSky = CreateRawImage("BG_Sky", combatRT);
@@ -58,16 +58,16 @@ public static class ExploreSceneBuilder
 
         // Party slots - staggered layout (back row higher/smaller, front row lower/larger)
         var backLeft = CreateRawImage("PartySlot_BackLeft", partyRT);
-        SetRawImageRect(backLeft, new Vector2(100, 350), new Vector2(180, 180));
+        SetRawImageRect(backLeft, new Vector2(150, 500), new Vector2(360, 360));
 
         var backRight = CreateRawImage("PartySlot_BackRight", partyRT);
-        SetRawImageRect(backRight, new Vector2(260, 320), new Vector2(180, 180));
+        SetRawImageRect(backRight, new Vector2(400, 450), new Vector2(360, 360));
 
         var frontLeft = CreateRawImage("PartySlot_FrontLeft", partyRT);
-        SetRawImageRect(frontLeft, new Vector2(60, 150), new Vector2(220, 220));
+        SetRawImageRect(frontLeft, new Vector2(100, 150), new Vector2(440, 440));
 
         var frontRight = CreateRawImage("PartySlot_FrontRight", partyRT);
-        SetRawImageRect(frontRight, new Vector2(230, 120), new Vector2(220, 220));
+        SetRawImageRect(frontRight, new Vector2(380, 100), new Vector2(440, 440));
 
         // Enemy Container
         var enemyContainer = CreatePanel("EnemyContainer", combatRT);
@@ -81,85 +81,58 @@ public static class ExploreSceneBuilder
         // Enemy silhouettes
         var silhouetteColor = new Color(0.15f, 0.15f, 0.2f, 0.8f);
         var enemy0 = CreateImage("EnemySilhouette_0", enemyRT, silhouetteColor);
-        SetImageRect(enemy0, new Vector2(-100, 300), new Vector2(120, 180));
+        SetImageRect(enemy0, new Vector2(-60, 400), new Vector2(240, 360));
 
         var enemy1 = CreateImage("EnemySilhouette_1", enemyRT, silhouetteColor);
-        SetImageRect(enemy1, new Vector2(20, 250), new Vector2(120, 180));
+        SetImageRect(enemy1, new Vector2(60, 300), new Vector2(240, 360));
 
         var enemy2 = CreateImage("EnemySilhouette_2", enemyRT, silhouetteColor);
-        SetImageRect(enemy2, new Vector2(-40, 150), new Vector2(120, 180));
+        SetImageRect(enemy2, new Vector2(-20, 150), new Vector2(240, 360));
 
-        // FG_Grass - bottom 280px, on top of characters
+        // FG_Grass - bottom 140px, on top of characters
         var fgGrass = CreateRawImage("FG_Grass", combatRT);
-        AnchorBottom(fgGrass, 280);
+        AnchorBottom(fgGrass, 140);
         AddParallaxLayer(fgGrass, 50f);
 
-        // === TOP BAR PANEL (anchored top, 160px) ===
+        // === TOP BAR PANEL (anchored top, 100px, single row) ===
         var topBar = CreatePanel("TopBarPanel", canvasRT);
         var topBarRT = topBar.GetComponent<RectTransform>();
         topBarRT.anchorMin = new Vector2(0, 1);
         topBarRT.anchorMax = new Vector2(1, 1);
         topBarRT.pivot = new Vector2(0.5f, 1);
         topBarRT.anchoredPosition = Vector2.zero;
-        topBarRT.sizeDelta = new Vector2(0, 160);
+        topBarRT.sizeDelta = new Vector2(0, 100);
         topBar.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.9f);
 
-        var topBarVL = topBar.AddComponent<VerticalLayoutGroup>();
-        topBarVL.spacing = 0;
-        topBarVL.padding = new RectOffset(0, 0, 0, 0);
-        topBarVL.childControlWidth = true;
-        topBarVL.childControlHeight = true;
-        topBarVL.childForceExpandWidth = true;
-        topBarVL.childForceExpandHeight = false;
+        var topBarHL = topBar.AddComponent<HorizontalLayoutGroup>();
+        topBarHL.spacing = 20;
+        topBarHL.padding = new RectOffset(20, 20, 10, 10);
+        topBarHL.childAlignment = TextAnchor.MiddleCenter;
+        topBarHL.childControlWidth = true;
+        topBarHL.childControlHeight = true;
+        topBarHL.childForceExpandWidth = true;
+        topBarHL.childForceExpandHeight = true;
 
-        // TopRow
-        var topRow = new GameObject("TopRow", typeof(RectTransform));
-        topRow.transform.SetParent(topBar.transform, false);
-        var topRowHL = topRow.AddComponent<HorizontalLayoutGroup>();
-        topRowHL.spacing = 20;
-        topRowHL.padding = new RectOffset(20, 20, 10, 0);
-        topRowHL.childAlignment = TextAnchor.MiddleCenter;
-        topRowHL.childControlWidth = true;
-        topRowHL.childControlHeight = true;
-        topRowHL.childForceExpandWidth = true;
-        topRowHL.childForceExpandHeight = true;
-        var topRowLE = topRow.AddComponent<LayoutElement>();
-        topRowLE.preferredHeight = 100;
-
-        var goldLabel = CreateTMPLabel("GoldLabel", topRow.transform, "1.2M Gold", 36, new Color(1, 0.84f, 0, 1), TextAlignmentOptions.MidlineLeft);
+        var goldLabel = CreateTMPLabel("GoldLabel", topBar.transform, "1.2M Gold", 36, new Color(1, 0.84f, 0, 1), TextAlignmentOptions.MidlineLeft);
         goldLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var levelLabel = CreateTMPLabel("LevelLabel", topRow.transform, "Lv 34", 36, Color.white, TextAlignmentOptions.Center);
-        levelLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
-
-        var fragLabel = CreateTMPLabel("FragmentLabel", topRow.transform, "7/12", 28, new Color(0.2f, 0.8f, 0.7f, 1), TextAlignmentOptions.MidlineRight);
+        var fragLabel = CreateTMPLabel("FragmentLabel", topBar.transform, "7/12", 28, new Color(0.2f, 0.8f, 0.7f, 1), TextAlignmentOptions.Center);
         fragLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        // WaveRow
-        var waveRow = new GameObject("WaveRow", typeof(RectTransform));
-        waveRow.transform.SetParent(topBar.transform, false);
-        var waveRowHL = waveRow.AddComponent<HorizontalLayoutGroup>();
-        waveRowHL.spacing = 40;
-        waveRowHL.padding = new RectOffset(20, 20, 0, 5);
-        waveRowHL.childAlignment = TextAnchor.MiddleCenter;
-        waveRowHL.childControlWidth = true;
-        waveRowHL.childControlHeight = true;
-        waveRowHL.childForceExpandWidth = true;
-        waveRowHL.childForceExpandHeight = true;
-        var waveRowLE = waveRow.AddComponent<LayoutElement>();
-        waveRowLE.preferredHeight = 60;
+        var waveLabel = CreateTMPLabel("WaveLabel", topBar.transform, "Wave 3/5", 28, Color.white, TextAlignmentOptions.Center);
+        waveLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var waveLabel = CreateTMPLabel("WaveLabel", waveRow.transform, "Wave 3/5", 28, Color.white, TextAlignmentOptions.Center);
-        var questLabel = CreateTMPLabel("QuestLevelLabel", waveRow.transform, "Quest Lv 34", 28, Color.white, TextAlignmentOptions.Center);
+        var questLabel = CreateTMPLabel("QuestLevelLabel", topBar.transform, "Quest Lv 34", 28, Color.white, TextAlignmentOptions.MidlineRight);
+        questLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        // === VERB BAR PANEL (above bottom nav, 240px) ===
+        // === VERB BAR PANEL (above bottom nav, 130px, single row) ===
         var verbBar = CreatePanel("VerbBarPanel", canvasRT);
         var verbBarRT = verbBar.GetComponent<RectTransform>();
         verbBarRT.anchorMin = new Vector2(0, 0);
         verbBarRT.anchorMax = new Vector2(1, 0);
         verbBarRT.pivot = new Vector2(0.5f, 0);
         verbBarRT.anchoredPosition = new Vector2(0, 120);
-        verbBarRT.sizeDelta = new Vector2(0, 240);
+        verbBarRT.sizeDelta = new Vector2(0, 130);
         verbBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.85f);
 
         var verbGrid = new GameObject("VerbGrid", typeof(RectTransform));
@@ -169,11 +142,11 @@ public static class ExploreSceneBuilder
         verbGridRT.offsetMin = new Vector2(10, 10);
         verbGridRT.offsetMax = new Vector2(-10, -10);
         var gridLayout = verbGrid.AddComponent<GridLayoutGroup>();
-        gridLayout.cellSize = new Vector2(300, 100);
-        gridLayout.spacing = new Vector2(15, 10);
+        gridLayout.cellSize = new Vector2(330, 100);
+        gridLayout.spacing = new Vector2(15, 0);
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         gridLayout.constraintCount = 3;
-        gridLayout.childAlignment = TextAnchor.UpperCenter;
+        gridLayout.childAlignment = TextAnchor.MiddleCenter;
 
         // === BOTTOM NAV PANEL (anchored bottom, 120px) ===
         var bottomNav = CreatePanel("BottomNavPanel", canvasRT);
@@ -197,7 +170,6 @@ public static class ExploreSceneBuilder
         // TopBarDisplay
         var topBarDisplay = topBar.AddComponent<Starquill.UI.TopBarDisplay>();
         SetPrivateField(topBarDisplay, "goldLabel", goldLabel.GetComponent<TMP_Text>());
-        SetPrivateField(topBarDisplay, "levelLabel", levelLabel.GetComponent<TMP_Text>());
         SetPrivateField(topBarDisplay, "fragmentLabel", fragLabel.GetComponent<TMP_Text>());
         SetPrivateField(topBarDisplay, "waveLabel", waveLabel.GetComponent<TMP_Text>());
         SetPrivateField(topBarDisplay, "questLevelLabel", questLabel.GetComponent<TMP_Text>());

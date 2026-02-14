@@ -9,7 +9,7 @@ namespace Starquill.UI
     {
         [SerializeField] private Transform cardContainer;
         [SerializeField] private Vector2 cardSize = new Vector2(300, 100);
-        [SerializeField] private int maxCards = 6;
+        [SerializeField] private int maxCards = 3;
 
         private readonly List<GameObject> cards = new();
 
