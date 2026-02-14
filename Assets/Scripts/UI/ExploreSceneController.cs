@@ -1,8 +1,13 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using Starquill.Combat;
+using Starquill.Core;
+using Starquill.Data;
 using Starquill.Display;
+using Starquill.Managers;
 
 namespace Starquill.UI
 {
@@ -22,19 +27,165 @@ namespace Starquill.UI
         [SerializeField] private ParallaxLayer bgGround;
         [SerializeField] private ParallaxLayer fgGrass;
 
-        [Header("Enemy Silhouettes")]
-        [SerializeField] private Image[] enemySilhouettes;
+        [Header("Enemy Display")]
+        [SerializeField] private EnemyDisplayController enemyDisplay;
+
+        [Header("Combat Feedback")]
+        [SerializeField] private DamageNumberSpawner damageNumbers;
+        [SerializeField] private GoldCounterAnimator goldCounter;
 
         private readonly List<CharacterDisplay> characterDisplays = new();
         private readonly List<Texture2D> placeholderTextures = new();
+        private GameManager gm;
+        private Coroutine verbLockCoroutine;
 
         private void Start()
         {
             SetupPlaceholderParallax();
-            SetupPlaceholderParty();
-            SetupPlaceholderEnemies();
             SetupPlaceholderUI();
+
+            gm = GameManager.Instance;
+            if (gm != null)
+            {
+                BindToGameManager();
+            }
+            else
+            {
+                SetupPlaceholderParty();
+            }
         }
+
+        private void OnEnable()
+        {
+            if (gm != null) BindToGameManager();
+        }
+
+        private void OnDisable()
+        {
+            if (gm != null) UnbindFromGameManager();
+        }
+
+        private void BindToGameManager()
+        {
+            gm.OnCombatTick += HandleCombatTick;
+            gm.OnGoldChanged += HandleGoldChanged;
+            gm.OnWaveStarted += HandleWaveStarted;
+            gm.OnWaveCleared += HandleWaveCleared;
+            gm.OnVerbActivated += HandleVerbActivated;
+
+            if (verbBar != null)
+                verbBar.OnCardTapped += HandleVerbCardTapped;
+
+            if (goldCounter != null)
+                goldCounter.SetImmediate(gm.gold);
+            if (topBar != null)
+            {
+                topBar.SetQuestLevel(gm.questLevel);
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+            }
+
+            if (verbBar != null && gm.VerbPool != null)
+                verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
+
+            if (enemyDisplay != null && gm.CurrentEnemies.Count > 0)
+                enemyDisplay.SetupEnemies(gm.CurrentEnemies);
+        }
+
+        private void UnbindFromGameManager()
+        {
+            gm.OnCombatTick -= HandleCombatTick;
+            gm.OnGoldChanged -= HandleGoldChanged;
+            gm.OnWaveStarted -= HandleWaveStarted;
+            gm.OnWaveCleared -= HandleWaveCleared;
+            gm.OnVerbActivated -= HandleVerbActivated;
+
+            if (verbBar != null)
+                verbBar.OnCardTapped -= HandleVerbCardTapped;
+        }
+
+        private void HandleCombatTick(CombatTickResult result)
+        {
+            if (topBar != null && gm != null)
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+
+            if (verbBar != null && gm.VerbPool != null && !gm.VerbsLocked)
+                verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
+        }
+
+        private void HandleGoldChanged(double newGold)
+        {
+            if (goldCounter != null)
+                goldCounter.SetTarget(newGold);
+        }
+
+        private void HandleWaveStarted(IReadOnlyList<EnemyState> enemies)
+        {
+            if (enemyDisplay != null)
+                enemyDisplay.SetupEnemies(enemies);
+        }
+
+        private void HandleWaveCleared()
+        {
+            if (topBar != null && gm != null)
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+        }
+
+        private void HandleVerbCardTapped(int slotIndex)
+        {
+            if (gm == null || gm.VerbsLocked) return;
+            gm.OnVerbTapped(slotIndex);
+        }
+
+        private void HandleVerbActivated(int slotIndex, CombatTickResult result)
+        {
+            if (damageNumbers != null && gm != null && enemyDisplay != null)
+            {
+                var alive = gm.CurrentEnemies.Where(e => e.IsAlive || e.CurrentHP <= 0).ToList();
+                if (alive.Count > 0)
+                {
+                    for (int i = 0; i < alive.Count && i < 3; i++)
+                    {
+                        var pos = enemyDisplay.GetEnemyPosition(i);
+                        if (result.TotalDamageDealt > 0)
+                        {
+                            var advColor = result.AdvantageHits > 0
+                                ? StatTypeColors.GetAdvantageColor(Advantage.Strong)
+                                : result.DisadvantageHits > 0
+                                    ? StatTypeColors.GetAdvantageColor(Advantage.Weak)
+                                    : Color.white;
+                            damageNumbers.SpawnDamage(pos, result.TotalDamageDealt / alive.Count, advColor, true);
+                        }
+                    }
+                }
+
+                if (result.GoldEarned > 0)
+                {
+                    var goldPos = enemyDisplay.GetEnemyPosition(0) + Vector2.up * 50;
+                    damageNumbers.SpawnGold(goldPos, result.GoldEarned);
+                }
+            }
+
+            if (verbBar != null)
+            {
+                verbBar.SetLocked(true);
+                if (verbLockCoroutine != null) StopCoroutine(verbLockCoroutine);
+                verbLockCoroutine = StartCoroutine(UnlockVerbBarAfterDelay());
+            }
+        }
+
+        private IEnumerator UnlockVerbBarAfterDelay()
+        {
+            float lockDuration = gm != null ? gm.economyConfig.verbLockDuration : 3f;
+            yield return new WaitForSeconds(lockDuration);
+            if (verbBar != null)
+            {
+                verbBar.SetLocked(false);
+                if (gm != null && gm.VerbPool != null)
+                    verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
+            }
+        }
+
+        // === PLACEHOLDER SETUP (no GameManager fallback) ===
 
         private void SetupPlaceholderParallax()
         {
@@ -80,16 +231,6 @@ namespace Starquill.UI
 
                 partySlots[i].texture = display.Texture;
                 characterDisplays.Add(display);
-            }
-        }
-
-        private void SetupPlaceholderEnemies()
-        {
-            if (enemySilhouettes == null) return;
-            foreach (var silhouette in enemySilhouettes)
-            {
-                if (silhouette == null) continue;
-                silhouette.color = new Color(0.15f, 0.15f, 0.2f, 0.8f);
             }
         }
 
