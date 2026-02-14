@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Starquill.Characters;
@@ -10,6 +11,8 @@ namespace Starquill.Managers
 {
     public class GameManager : MonoBehaviour
     {
+        public static GameManager Instance { get; private set; }
+
         [Header("Config")]
         public EconomyConfig economyConfig;
         public AdvantageMatrix advantageMatrix;
@@ -17,6 +20,12 @@ namespace Starquill.Managers
         [Header("State")]
         public double gold;
         public int questLevel = 1;
+
+        public event Action<CombatTickResult> OnCombatTick;
+        public event Action<double> OnGoldChanged;
+        public event Action<IReadOnlyList<EnemyState>> OnWaveStarted;
+        public event Action OnWaveCleared;
+        public event Action<int, CombatTickResult> OnVerbActivated;
 
         private Party party;
         private VerbPool verbPool;
@@ -27,13 +36,24 @@ namespace Starquill.Managers
         private List<EnemyState> currentEnemies = new();
         private float tickTimer;
         private float currentTime;
+        private float verbLockTimer;
 
         public Party Party => party;
         public VerbPool VerbPool => verbPool;
         public ExplorationManager Exploration => exploration;
+        public IReadOnlyList<EnemyState> CurrentEnemies => currentEnemies;
+        public bool VerbsLocked => verbLockTimer > 0f;
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+
             saveManager = GetComponent<SaveManager>();
             if (saveManager == null)
                 saveManager = gameObject.AddComponent<SaveManager>();
@@ -65,6 +85,8 @@ namespace Starquill.Managers
 
         private void Update()
         {
+            if (verbLockTimer > 0f) verbLockTimer -= Time.deltaTime;
+
             tickTimer += Time.deltaTime;
             currentTime += Time.deltaTime;
 
@@ -77,7 +99,6 @@ namespace Starquill.Managers
 
         private void ProcessTick()
         {
-            verbPool.RotateStaleVerbs(currentTime);
             verbPool.FillSlots(currentTime);
             verbPool.TickCooldowns();
 
@@ -85,10 +106,17 @@ namespace Starquill.Managers
                 currentEnemies, party.GetAllStats(), null,
                 questLevel, economyConfig.prestigeMultiplierBase);
 
-            gold += result.GoldEarned;
+            if (result.GoldEarned > 0)
+            {
+                gold += result.GoldEarned;
+                OnGoldChanged?.Invoke(gold);
+            }
+
+            OnCombatTick?.Invoke(result);
 
             if (result.WaveCleared)
             {
+                OnWaveCleared?.Invoke();
                 exploration.ProcessWaveCleared();
                 SpawnWave();
             }
@@ -103,17 +131,32 @@ namespace Starquill.Managers
 
         public void OnVerbTapped(int slotIndex)
         {
+            if (VerbsLocked) return;
+
             var activated = verbPool.ActivateVerb(slotIndex);
             if (activated == null) return;
+
+            verbPool.IncrementPassCounts(slotIndex);
+            verbPool.ReplaceStaleVerbs(currentTime);
+            verbPool.FillSlots(currentTime);
+
+            verbLockTimer = economyConfig.verbLockDuration;
 
             var result = combatProcessor.ProcessTick(
                 currentEnemies, party.GetAllStats(), activated,
                 questLevel, economyConfig.prestigeMultiplierBase);
 
-            gold += result.GoldEarned;
+            if (result.GoldEarned > 0)
+            {
+                gold += result.GoldEarned;
+                OnGoldChanged?.Invoke(gold);
+            }
+
+            OnVerbActivated?.Invoke(slotIndex, result);
 
             if (result.WaveCleared)
             {
+                OnWaveCleared?.Invoke();
                 exploration.ProcessWaveCleared();
                 SpawnWave();
             }
@@ -136,6 +179,8 @@ namespace Starquill.Managers
                 float hp = economyConfig.EnemyHP(questLevel);
                 currentEnemies.Add(new EnemyState($"enemy_{i}", type, hp, hp * 0.05f));
             }
+
+            OnWaveStarted?.Invoke(currentEnemies);
         }
 
         private void RebuildVerbPool()

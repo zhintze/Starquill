@@ -28,6 +28,7 @@ namespace Starquill.Data
 
         [Header("Combat")]
         public float autoAttackDPSFraction = 0.3f;
+        public float verbLockDuration = 3.0f;
 
         [Header("Pity Timers")]
         public int pityUncommon = 50;
