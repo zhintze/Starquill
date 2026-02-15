@@ -38,11 +38,15 @@ namespace Starquill.UI
         private readonly List<Texture2D> placeholderTextures = new();
         private GameManager gm;
         private Coroutine verbLockCoroutine;
+        private RectTransform spawnerRT;
 
         private void Start()
         {
             SetupPlaceholderParallax();
             SetupPlaceholderParty();
+
+            if (damageNumbers != null)
+                spawnerRT = (RectTransform)damageNumbers.transform;
 
             gm = GameManager.Instance;
             if (gm != null)
@@ -132,7 +136,7 @@ namespace Starquill.UI
                     {
                         if (gm.CurrentEnemies[i].IsAlive)
                         {
-                            var pos = enemyDisplay.GetEnemyPosition(i);
+                            var pos = EnemyPositionInSpawnerSpace(i);
                             damageNumbers.SpawnDamage(pos, perEnemy, Color.white, false);
                         }
                     }
@@ -173,7 +177,7 @@ namespace Starquill.UI
                 {
                     for (int i = 0; i < alive.Count && i < 3; i++)
                     {
-                        var pos = enemyDisplay.GetEnemyPosition(i);
+                        var pos = EnemyPositionInSpawnerSpace(i);
                         if (result.TotalDamageDealt > 0)
                         {
                             var advColor = result.AdvantageHits > 0
@@ -188,7 +192,7 @@ namespace Starquill.UI
 
                 if (result.GoldEarned > 0)
                 {
-                    var goldPos = enemyDisplay.GetEnemyPosition(0) + Vector2.up * 50;
+                    var goldPos = EnemyPositionInSpawnerSpace(0) + Vector2.up * 50;
                     damageNumbers.SpawnGold(goldPos, result.GoldEarned);
                 }
             }
@@ -211,6 +215,15 @@ namespace Starquill.UI
                 if (gm != null && gm.VerbPool != null)
                     verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
             }
+        }
+
+        private Vector2 EnemyPositionInSpawnerSpace(int index)
+        {
+            Vector3 worldPos = enemyDisplay.GetEnemyWorldPosition(index);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                spawnerRT, RectTransformUtility.WorldToScreenPoint(null, worldPos),
+                null, out var localPoint);
+            return localPoint;
         }
 
         // === PLACEHOLDER SETUP (no GameManager fallback) ===

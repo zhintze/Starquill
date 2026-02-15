@@ -111,6 +111,16 @@ namespace Starquill.UI
             return silhouettes[index].rectTransform.anchoredPosition;
         }
 
+        /// <summary>
+        /// Returns the world-space position of the enemy silhouette at the given index.
+        /// Use this when you need to convert the position into another RectTransform's space.
+        /// </summary>
+        public Vector3 GetEnemyWorldPosition(int index)
+        {
+            if (index < 0 || index >= silhouettes.Length) return Vector3.zero;
+            return silhouettes[index].rectTransform.position;
+        }
+
         private void ClearHPBars()
         {
             foreach (var bg in hpBarBgs)
