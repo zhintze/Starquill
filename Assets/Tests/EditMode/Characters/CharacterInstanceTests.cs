@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Starquill.Characters;
 using Starquill.Data;
+using UnityEngine;
 
 namespace Starquill.Tests.Characters
 {
@@ -107,6 +108,77 @@ namespace Starquill.Tests.Characters
             Assert.LessOrEqual(totalGained, 35, $"Expected ~30 points over {levels} levels, got {totalGained}");
         }
 
+        [Test]
+        public void UnlockedVerbs_InitiallyEmpty()
+        {
+            var c = CreateCharacter(1);
+            Assert.AreEqual(0, c.unlockedVerbs.Count);
+        }
+
+        [Test]
+        public void EquipVerb_FromUnlocked_Succeeds()
+        {
+            var c = CreateCharacter(1);
+            var verb = CreateTestVerb("slash");
+            c.unlockedVerbs.Add(verb);
+            Assert.IsTrue(c.EquipVerb(verb));
+            Assert.AreEqual(1, c.equippedVerbs.Count);
+        }
+
+        [Test]
+        public void EquipVerb_NotUnlocked_Fails()
+        {
+            var c = CreateCharacter(1);
+            var verb = CreateTestVerb("slash");
+            Assert.IsFalse(c.EquipVerb(verb));
+            Assert.AreEqual(0, c.equippedVerbs.Count);
+        }
+
+        [Test]
+        public void EquipVerb_SlotsFull_Fails()
+        {
+            var c = CreateCharacter(1); // level 1 = 2 slots
+            var v1 = CreateTestVerb("v1");
+            var v2 = CreateTestVerb("v2");
+            var v3 = CreateTestVerb("v3");
+            c.unlockedVerbs.Add(v1);
+            c.unlockedVerbs.Add(v2);
+            c.unlockedVerbs.Add(v3);
+            c.EquipVerb(v1);
+            c.EquipVerb(v2);
+            Assert.IsFalse(c.EquipVerb(v3));
+        }
+
+        [Test]
+        public void UnequipVerb_RemovesFromEquipped()
+        {
+            var c = CreateCharacter(1);
+            var verb = CreateTestVerb("slash");
+            c.unlockedVerbs.Add(verb);
+            c.EquipVerb(verb);
+            c.UnequipVerb(verb);
+            Assert.AreEqual(0, c.equippedVerbs.Count);
+            Assert.AreEqual(1, c.unlockedVerbs.Count); // still unlocked
+        }
+
+        [Test]
+        public void SwapVerb_ReplacesEquipped()
+        {
+            var c = CreateCharacter(1); // 2 slots
+            var v1 = CreateTestVerb("v1");
+            var v2 = CreateTestVerb("v2");
+            var v3 = CreateTestVerb("v3");
+            c.unlockedVerbs.Add(v1);
+            c.unlockedVerbs.Add(v2);
+            c.unlockedVerbs.Add(v3);
+            c.EquipVerb(v1);
+            c.EquipVerb(v2);
+
+            Assert.IsTrue(c.SwapVerb(0, v3)); // replace slot 0 (v1) with v3
+            Assert.AreEqual(v3, c.equippedVerbs[0]);
+            Assert.AreEqual(v2, c.equippedVerbs[1]);
+        }
+
         private CharacterInstance CreateCharacter(int level)
         {
             return new CharacterInstance
@@ -114,6 +186,14 @@ namespace Starquill.Tests.Characters
                 id = "test", displayName = "Test", level = level,
                 baseStats = new Stats { STR = 5, DEX = 5, CON = 5, INT = 5, WIS = 5, CHA = 5 }
             };
+        }
+
+        private VerbDefinition CreateTestVerb(string id)
+        {
+            var verb = ScriptableObject.CreateInstance<VerbDefinition>();
+            verb.verbId = id;
+            verb.displayName = id;
+            return verb;
         }
     }
 }
