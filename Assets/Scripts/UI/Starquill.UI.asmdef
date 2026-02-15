@@ -6,6 +6,7 @@
         "Starquill.Data",
         "Starquill.Display",
         "Starquill.Combat",
+        "Starquill.Equipment",
         "Starquill.Managers",
         "Starquill.Characters",
         "Starquill.Exploration",
