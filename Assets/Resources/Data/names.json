@@ -1,0 +1,21 @@
+{
+  "first_names": [
+    "Aldric", "Brenna", "Caelum", "Daria", "Elric",
+    "Freya", "Gareth", "Helena", "Idris", "Juno",
+    "Kael", "Lyra", "Magnus", "Nyx", "Orin",
+    "Petra", "Quinn", "Rowan", "Sera", "Theron",
+    "Uma", "Vesper", "Wren", "Xander", "Yara",
+    "Zephyr", "Ash", "Bram", "Cass", "Dorian",
+    "Ember", "Flint", "Gale", "Hazel", "Iris",
+    "Jace", "Kai", "Lux", "Mira", "Nolan",
+    "Onyx", "Pike", "Raven", "Sage", "Thorn",
+    "Vale", "Wolf", "Astra", "Blaze", "Coral"
+  ],
+  "epithets": [
+    "the Bold", "the Swift", "Ironheart", "Shadowstep",
+    "Brightblade", "Stormborn", "the Keen", "Firebrand",
+    "Stonefist", "the Wise", "Dawnbringer", "Nightwhisper",
+    "the Brave", "Frostweaver", "Thunderstrike", "the Calm",
+    "Stargazer", "Windwalker", "the Fierce", "Silvertongue"
+  ]
+}
