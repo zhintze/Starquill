@@ -179,6 +179,21 @@ namespace Starquill.Tests.Characters
             Assert.AreEqual(v2, c.equippedVerbs[1]);
         }
 
+        [Test]
+        public void SwapVerb_AlreadyEquipped_Fails()
+        {
+            var c = CreateCharacter(1); // 2 slots
+            var v1 = CreateTestVerb("v1");
+            var v2 = CreateTestVerb("v2");
+            c.unlockedVerbs.Add(v1);
+            c.unlockedVerbs.Add(v2);
+            c.EquipVerb(v1);
+            c.EquipVerb(v2);
+
+            Assert.IsFalse(c.SwapVerb(0, v2)); // v2 already in slot 1
+            Assert.AreEqual(v1, c.equippedVerbs[0]); // unchanged
+        }
+
         private CharacterInstance CreateCharacter(int level)
         {
             return new CharacterInstance

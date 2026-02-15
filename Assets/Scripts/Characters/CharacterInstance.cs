@@ -105,6 +105,7 @@ namespace Starquill.Characters
         {
             if (equippedIndex < 0 || equippedIndex >= equippedVerbs.Count) return false;
             if (!unlockedVerbs.Contains(newVerb)) return false;
+            if (equippedVerbs.Contains(newVerb) && equippedVerbs[equippedIndex] != newVerb) return false;
             equippedVerbs[equippedIndex] = newVerb;
             return true;
         }
