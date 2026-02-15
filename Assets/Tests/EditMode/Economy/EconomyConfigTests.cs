@@ -75,5 +75,11 @@ namespace Starquill.Tests.Economy
             float expected = 100f * 3600f * 0.5f;
             Assert.AreEqual(expected, offline, 0.1f);
         }
+
+        [Test]
+        public void BaseDropRate_DefaultValue_Is015()
+        {
+            Assert.AreEqual(0.15f, config.baseDropRate, 0.001f);
+        }
     }
 }

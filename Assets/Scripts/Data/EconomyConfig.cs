@@ -42,6 +42,9 @@ namespace Starquill.Data
         public float questDiscoveryRate = 0.03f;
         public float fragmentDropRate = 0.01f;
 
+        [Header("Loot")]
+        public float baseDropRate = 0.15f;
+
         [Header("Prestige (Stub)")]
         public float prestigeMultiplierBase = 1.0f;
 
