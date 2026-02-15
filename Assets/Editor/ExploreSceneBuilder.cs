@@ -17,6 +17,10 @@ public static class ExploreSceneBuilder
 
         var canvasRT = canvas.GetComponent<RectTransform>();
 
+        // Clean existing components added by this builder
+        foreach (var c in canvas.GetComponents<Starquill.UI.ExploreSceneController>())
+            Object.DestroyImmediate(c);
+
         // Clean existing children except EventSystem-related
         for (int i = canvasRT.childCount - 1; i >= 0; i--)
         {
