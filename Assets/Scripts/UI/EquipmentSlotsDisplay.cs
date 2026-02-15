@@ -83,7 +83,7 @@ namespace Starquill.UI
             tmp.fontSize = 11;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = item != null ? Color.white : new Color(0.5f, 0.5f, 0.5f);
-            tmp.enableWordWrapping = true;
+            tmp.textWrappingMode = TMPro.TextWrappingModes.Normal;
 
             return slot;
         }
