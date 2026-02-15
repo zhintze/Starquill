@@ -368,6 +368,7 @@ public static class ExploreSceneBuilder
         subTabHL.childForceExpandHeight = true;
 
         var subTabNames = new[] { "Roster", "Equipment", "Actions" };
+        var subTabButtons = new Button[3];
         for (int i = 0; i < 3; i++)
         {
             var tabBtnObj = new GameObject($"SubTab_{subTabNames[i]}", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -375,6 +376,7 @@ public static class ExploreSceneBuilder
             tabBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.28f);
             var tabLabel = CreateTMPLabel("Label", tabBtnObj.transform, subTabNames[i], 22, Color.white, TextAlignmentOptions.Center);
             StretchFill(tabLabel);
+            subTabButtons[i] = tabBtnObj.GetComponent<Button>();
         }
 
         // --- Content Area (fill remaining space below sub-tab bar) ---
@@ -602,6 +604,7 @@ public static class ExploreSceneBuilder
 
         // PartyScreenController on PartyPanel
         var partyScreenCtrl = partyPanel.AddComponent<Starquill.UI.PartyScreenController>();
+        // (PartyScreenController SerializeField wiring is done below after all components exist)
 
         // CharacterFocusDisplay on PartyPanel
         var focusDisplay = partyPanel.AddComponent<Starquill.UI.CharacterFocusDisplay>();
@@ -636,6 +639,20 @@ public static class ExploreSceneBuilder
         SetPrivateField(actionLoadoutDisplay, "equippedContainer", equippedContainer.transform);
         SetPrivateField(actionLoadoutDisplay, "availableContainer", availableContainer.transform);
 
+        // Wire PartyScreenController SerializeField references (all components now exist)
+        SetPrivateField(partyScreenCtrl, "focusDisplay", focusDisplay);
+        SetPrivateField(partyScreenCtrl, "portraitStrip", portraitStripComp);
+        SetPrivateField(partyScreenCtrl, "rosterGrid", rosterGridDisplay);
+        SetPrivateField(partyScreenCtrl, "equipmentSlots", equipSlotsDisplay);
+        SetPrivateField(partyScreenCtrl, "actionLoadout", actionLoadoutDisplay);
+        SetPrivateField(partyScreenCtrl, "screenManager", screenManager);
+        SetPrivateField(partyScreenCtrl, "rosterContent", rosterContent);
+        SetPrivateField(partyScreenCtrl, "equipmentContent", equipContent);
+        SetPrivateField(partyScreenCtrl, "actionsContent", actionsContent);
+        SetPrivateField(partyScreenCtrl, "portraitStripObj", portraitStrip);
+        SetPrivateField(partyScreenCtrl, "characterInfoObj", charInfo);
+        SetPrivateField(partyScreenCtrl, "subTabButtons", subTabButtons);
+
         // ExploreSceneController on Canvas
         var controller = canvas.AddComponent<Starquill.UI.ExploreSceneController>();
         SetPrivateField(controller, "topBar", topBarDisplay);
@@ -654,6 +671,9 @@ public static class ExploreSceneBuilder
         SetPrivateField(controller, "enemyDisplay", enemyDisplayCtrl);
         SetPrivateField(controller, "damageNumbers", damageSpawner);
         SetPrivateField(controller, "goldCounter", goldAnimator);
+
+        // Wire ExploreSceneController reference on PartyScreenController (now that controller exists)
+        SetPrivateField(partyScreenCtrl, "exploreController", controller);
 
         // Initially show only ExplorePanel (index 0), hide others
         screenManager.ShowScreen(0);

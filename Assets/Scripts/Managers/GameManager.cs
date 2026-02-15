@@ -28,6 +28,7 @@ namespace Starquill.Managers
         public event Action<IReadOnlyList<EnemyState>> OnWaveStarted;
         public event Action OnWaveCleared;
         public event Action<int, CombatTickResult> OnVerbActivated;
+        public event Action OnRosterChanged;
 
         private Party party;
         private VerbPool verbPool;
@@ -211,7 +212,7 @@ namespace Starquill.Managers
                 roster.ActivePartyIndices[i] = save.activePartyIndices[i];
         }
 
-        private void BuildPartyFromRoster()
+        public void BuildPartyFromRoster()
         {
             party = new Party();
             var activeParty = roster.GetActiveParty();
@@ -251,7 +252,7 @@ namespace Starquill.Managers
             OnWaveStarted?.Invoke(currentEnemies);
         }
 
-        private void RebuildVerbPool()
+        public void RebuildVerbPool()
         {
             verbPool.Clear();
             for (int i = 0; i < party.Members.Count; i++)
