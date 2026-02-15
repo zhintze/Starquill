@@ -229,6 +229,78 @@ namespace Starquill.Equipment
             return string.IsNullOrEmpty(rarityPrefix) ? desc : $"{rarityPrefix} {desc}";
         }
 
-        // Reconstruct is added in Task 10 after SerializedEquipment is defined
+        public EquipmentInstance Reconstruct(SerializedEquipment data)
+        {
+            var entry = catalog.GetEntry(data.itemType);
+            var weaponEntry = catalog.GetWeapon(data.itemType);
+
+            int[] layerCodes, hiddenLayers, layerColorVariance;
+            bool modular;
+            string handType = null;
+            string description = "";
+
+            if (weaponEntry != null)
+            {
+                layerCodes = weaponEntry.LayerCodes;
+                hiddenLayers = weaponEntry.HiddenLayers;
+                layerColorVariance = weaponEntry.LayerColorVariance;
+                modular = weaponEntry.Modular;
+                handType = weaponEntry.HandType;
+                description = weaponEntry.Description;
+            }
+            else if (entry != null)
+            {
+                layerCodes = entry.LayerCodes;
+                hiddenLayers = entry.HiddenLayers;
+                layerColorVariance = entry.LayerColorVariance;
+                modular = entry.Modular;
+                description = entry.Description;
+            }
+            else
+            {
+                layerCodes = Array.Empty<int>();
+                hiddenLayers = Array.Empty<int>();
+                layerColorVariance = Array.Empty<int>();
+                modular = false;
+            }
+
+            var baseColor = new Color(data.baseColor[0], data.baseColor[1], data.baseColor[2], data.baseColor[3]);
+            var varianceColors = new Dictionary<int, Color>();
+            if (data.varianceColorKeys != null)
+            {
+                for (int i = 0; i < data.varianceColorKeys.Length; i++)
+                {
+                    int offset = i * 4;
+                    varianceColors[data.varianceColorKeys[i]] = new Color(
+                        data.varianceColorValuesFlat[offset],
+                        data.varianceColorValuesFlat[offset + 1],
+                        data.varianceColorValuesFlat[offset + 2],
+                        data.varianceColorValuesFlat[offset + 3]);
+                }
+            }
+
+            var statMods = new Stats
+            {
+                STR = data.statMods[0], DEX = data.statMods[1], CON = data.statMods[2],
+                INT = data.statMods[3], WIS = data.statMods[4], CHA = data.statMods[5]
+            };
+
+            var affixes = new List<RolledAffix>();
+            if (data.affixes != null)
+            {
+                foreach (var sa in data.affixes)
+                {
+                    Enum.TryParse<StatType>(sa.statType, out var st);
+                    affixes.Add(new RolledAffix(sa.affixId, st, sa.value, sa.isPercentage));
+                }
+            }
+
+            return new EquipmentInstance(
+                data.itemType, data.itemNum, (EquipmentSlot)data.slot, (Rarity)data.rarity,
+                baseColor, varianceColors, statMods, affixes,
+                layerCodes, hiddenLayers, layerColorVariance,
+                modular, handType, GenerateDisplayName((Rarity)data.rarity, description)
+            );
+        }
     }
 }
