@@ -40,6 +40,8 @@ namespace Starquill.Managers
         private CharacterFactory characterFactory;
         private EquipmentCatalog equipmentCatalog;
         private EquipmentFactory equipmentFactory;
+        private LootInventory lootInventory;
+        private LootDropper lootDropper;
         private List<EnemyState> currentEnemies = new();
         private float tickTimer;
         private float currentTime;
@@ -51,6 +53,8 @@ namespace Starquill.Managers
         public IReadOnlyList<EnemyState> CurrentEnemies => currentEnemies;
         public bool VerbsLocked => verbLockTimer > 0f;
         public CharacterRoster Roster => roster;
+        public LootInventory LootInventory => lootInventory;
+        public event Action<EquipmentInstance> OnLootDropped;
 
         private void Awake()
         {
@@ -89,6 +93,9 @@ namespace Starquill.Managers
             combatProcessor = new CombatTickProcessor(advantageMatrix, economyConfig);
             exploration = new ExplorationManager(economyConfig);
             pityTracker = new PityTracker();
+
+            lootInventory = new LootInventory(50);
+            lootDropper = new LootDropper(equipmentFactory, economyConfig, pityTracker);
         }
 
         private void Start()
@@ -101,6 +108,15 @@ namespace Starquill.Managers
                 InitializeStarterRoster();
             else
                 LoadRosterFromSave(save);
+
+            if (save.inventory != null)
+            {
+                foreach (var si in save.inventory)
+                {
+                    if (si != null && !string.IsNullOrEmpty(si.itemType))
+                        lootInventory.AddItem(equipmentFactory.Reconstruct(si));
+                }
+            }
 
             BuildPartyFromRoster();
             SpawnWave();
@@ -135,6 +151,8 @@ namespace Starquill.Managers
                 gold += result.GoldEarned;
                 OnGoldChanged?.Invoke(gold);
             }
+
+            ProcessLootDrops(result.EnemiesKilled);
 
             OnCombatTick?.Invoke(result);
 
@@ -171,6 +189,8 @@ namespace Starquill.Managers
                 gold += result.GoldEarned;
                 OnGoldChanged?.Invoke(gold);
             }
+
+            ProcessLootDrops(result.EnemiesKilled);
 
             OnVerbActivated?.Invoke(slotIndex, result);
 
@@ -228,6 +248,9 @@ namespace Starquill.Managers
             foreach (var c in roster.Characters)
                 saveManager.CurrentSave.roster.Add(SerializedCharacter.FromInstance(c));
             saveManager.CurrentSave.activePartyIndices = (int[])roster.ActivePartyIndices.Clone();
+            saveManager.CurrentSave.inventory.Clear();
+            foreach (var item in lootInventory.Items)
+                saveManager.CurrentSave.inventory.Add(SerializedEquipment.FromInstance(item));
             saveManager.Save();
         }
 
@@ -258,6 +281,43 @@ namespace Starquill.Managers
             for (int i = 0; i < party.Members.Count; i++)
                 verbPool.AddVerbs(i, party.Members[i].equippedVerbs);
             verbPool.FillSlots(currentTime);
+        }
+
+        private void ProcessLootDrops(int killCount)
+        {
+            for (int k = 0; k < killCount; k++)
+            {
+                var rng = new System.Random(UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+                var drop = lootDropper.TryDrop(questLevel, rng);
+                if (drop != null && lootInventory.AddItem(drop))
+                    OnLootDropped?.Invoke(drop);
+            }
+        }
+
+        public void SellItem(EquipmentInstance item)
+        {
+            if (item == null || !lootInventory.RemoveItem(item)) return;
+            double value = SellCalculator.GetSellValue(item, questLevel);
+            gold += value;
+            OnGoldChanged?.Invoke(gold);
+        }
+
+        public void EquipItemFromInventory(EquipmentInstance item, int characterIndex)
+        {
+            if (item == null || roster == null) return;
+            if (characterIndex < 0 || characterIndex >= roster.Characters.Count) return;
+
+            var character = roster.Characters[characterIndex];
+            var oldItem = character.equipment[(int)item.Slot];
+
+            if (!lootInventory.RemoveItem(item)) return;
+
+            if (oldItem != null)
+                lootInventory.AddItem(oldItem);
+
+            character.EquipItem(item);
+            BuildPartyFromRoster();
+            OnRosterChanged?.Invoke();
         }
 
         private void OnApplicationPause(bool paused)

@@ -72,5 +72,28 @@ namespace Starquill.Tests.Save
             save.roster.Add(new SerializedCharacter { id = "c1" });
             Assert.IsFalse(save.NeedsRosterInitialization());
         }
+
+        [Test]
+        public void Inventory_SurvivesRoundTrip()
+        {
+            var save = new SaveData();
+            var equip = new SerializedEquipment
+            {
+                itemType = "hd01",
+                itemNum = 2,
+                slot = 0,
+                rarity = 2,
+                baseColor = new float[] { 1, 0, 0, 1 },
+                statMods = new int[] { 5, 0, 0, 0, 0, 0 }
+            };
+            save.inventory.Add(equip);
+
+            string json = JsonUtility.ToJson(save);
+            var loaded = JsonUtility.FromJson<SaveData>(json);
+
+            Assert.AreEqual(1, loaded.inventory.Count);
+            Assert.AreEqual("hd01", loaded.inventory[0].itemType);
+            Assert.AreEqual(2, loaded.inventory[0].rarity);
+        }
     }
 }

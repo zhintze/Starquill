@@ -17,6 +17,7 @@ namespace Starquill.Managers
         public List<SerializedCharacter> roster = new();
         public int[] activePartyIndices = { 0, 1, 2, 3 };
         public PityTracker pityTracker = new();
+        public List<SerializedEquipment> inventory = new();
         public long lastPlayedTimestamp;
         public float fragmentProgress;
 
