@@ -18,6 +18,8 @@ namespace Starquill.Display
         public string[] FacialDetailColor;
         public SkinVarianceSet[] SkinVarianceSets;
         public float XScale = 1f, YScale = 1f;
+        public float HeadYOffset;
+        public float HeadZoom = 0.5f;
     }
 
     public class SkinVarianceSet
@@ -132,6 +134,8 @@ namespace Starquill.Display
                 data.FacialDetailColor = obj.GetStringArray("facialDetail_color");
                 data.XScale = obj.GetFloat("x_scale", 1f);
                 data.YScale = obj.GetFloat("y_scale", 1f);
+                data.HeadYOffset = obj.GetFloat("head_y_offset", 0.35f);
+                data.HeadZoom = obj.GetFloat("head_zoom", 0.5f);
 
                 var sets = obj.GetArray("skinVariance_sets");
                 if (sets != null)
