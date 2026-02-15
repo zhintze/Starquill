@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a258e4cfe71c9c6f0b41b657798f62b2, type: 3}
+  m_Name: DefaultEconomyConfig
+  m_EditorClassIdentifier: Starquill.Data::Starquill.Data.EconomyConfig
+  baseHP: 50
+  hpGrowthRate: 0.12
+  baseGold: 5
+  goldGrowthRate: 0.1
+  baseCost: 10
+  costGrowthRate: 0.15
+  offlineEfficiency: 0.5
+  maxOfflineSeconds: 28800
+  offlineFragmentRate: 0.25
+  verbDrawCooldown: 10
+  verbSlotCount: 3
+  autoAttackDPSFraction: 0.3
+  verbLockDuration: 3
+  pityUncommon: 50
+  pityRare: 200
+  pityEpic: 1000
+  pityLegendary: 5000
+  questRetreatGoldPenalty: 0.5
+  exploreKillsPerMinute: 6
+  questDiscoveryRate: 0.03
+  fragmentDropRate: 0.01
+  prestigeMultiplierBase: 1

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Starquill.Characters;
 using Starquill.Combat;
+using Starquill.Core;
 using Starquill.Data;
 using Starquill.Equipment;
 using Starquill.Exploration;
@@ -78,6 +79,9 @@ namespace Starquill.Managers
                 float offlineGold = economyConfig.OfflineGold(goldPerSecond, offlineSeconds);
                 // TODO: Show claim screen instead of auto-adding
             }
+
+            if (party.Members.Count == 0)
+                InitializeStarterParty();
 
             SpawnWave();
             RebuildVerbPool();
@@ -160,6 +164,46 @@ namespace Starquill.Managers
                 exploration.ProcessWaveCleared();
                 SpawnWave();
             }
+        }
+
+        private void InitializeStarterParty()
+        {
+            var warrior = new CharacterInstance
+            {
+                id = "starter_warrior",
+                displayName = "Warrior",
+                baseStats = new Stats { STR = 14, DEX = 10, CON = 12, INT = 8, WIS = 9, CHA = 10 },
+                level = 1
+            };
+            warrior.equippedVerbs.Add(CreateVerb("slash", "Slash", StatType.STR, 50f, 2f));
+            warrior.equippedVerbs.Add(CreateVerb("shield_bash", "Shield Bash", StatType.CON, 30f, 3f));
+
+            var mage = new CharacterInstance
+            {
+                id = "starter_mage",
+                displayName = "Mage",
+                baseStats = new Stats { STR = 7, DEX = 9, CON = 8, INT = 15, WIS = 12, CHA = 10 },
+                level = 1
+            };
+            mage.equippedVerbs.Add(CreateVerb("fireball", "Fireball", StatType.INT, 65f, 3f));
+            mage.equippedVerbs.Add(CreateVerb("heal", "Heal", StatType.WIS, 0f, 4f, isHealing: true, healAmount: 40f));
+
+            party.AddMember(warrior);
+            party.AddMember(mage);
+        }
+
+        private static VerbDefinition CreateVerb(string id, string name, StatType type,
+            float damage, float cooldown, bool isHealing = false, float healAmount = 0f)
+        {
+            var verb = ScriptableObject.CreateInstance<VerbDefinition>();
+            verb.verbId = id;
+            verb.displayName = name;
+            verb.statType = type;
+            verb.baseDamage = damage;
+            verb.cooldownTicks = cooldown;
+            verb.isHealingVerb = isHealing;
+            verb.healAmount = healAmount;
+            return verb;
         }
 
         private void SpawnWave()

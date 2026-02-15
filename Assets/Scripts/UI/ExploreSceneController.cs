@@ -42,17 +42,38 @@ namespace Starquill.UI
         private void Start()
         {
             SetupPlaceholderParallax();
-            SetupPlaceholderUI();
+            SetupPlaceholderParty();
 
             gm = GameManager.Instance;
             if (gm != null)
             {
                 BindToGameManager();
+                StartCoroutine(DeferredInitialSync());
             }
             else
             {
-                SetupPlaceholderParty();
+                SetupPlaceholderUI();
             }
+        }
+
+        private IEnumerator DeferredInitialSync()
+        {
+            // Wait one frame so GameManager.Start() has run
+            yield return null;
+
+            if (gm == null) yield break;
+
+            if (goldCounter != null)
+                goldCounter.SetImmediate(gm.gold);
+            if (topBar != null)
+            {
+                topBar.SetQuestLevel(gm.questLevel);
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+            }
+            if (enemyDisplay != null && gm.CurrentEnemies.Count > 0)
+                enemyDisplay.SetupEnemies(gm.CurrentEnemies);
+            if (verbBar != null && gm.VerbPool != null)
+                verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
         }
 
         private void OnEnable()
@@ -75,20 +96,6 @@ namespace Starquill.UI
 
             if (verbBar != null)
                 verbBar.OnCardTapped += HandleVerbCardTapped;
-
-            if (goldCounter != null)
-                goldCounter.SetImmediate(gm.gold);
-            if (topBar != null)
-            {
-                topBar.SetQuestLevel(gm.questLevel);
-                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
-            }
-
-            if (verbBar != null && gm.VerbPool != null)
-                verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
-
-            if (enemyDisplay != null && gm.CurrentEnemies.Count > 0)
-                enemyDisplay.SetupEnemies(gm.CurrentEnemies);
         }
 
         private void UnbindFromGameManager()
@@ -110,6 +117,27 @@ namespace Starquill.UI
 
             if (verbBar != null && gm.VerbPool != null && !gm.VerbsLocked)
                 verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
+
+            // Spawn auto-attack damage numbers
+            if (damageNumbers != null && enemyDisplay != null && result.TotalDamageDealt > 0)
+            {
+                int aliveCount = 0;
+                for (int i = 0; i < gm.CurrentEnemies.Count; i++)
+                    if (gm.CurrentEnemies[i].IsAlive) aliveCount++;
+
+                if (aliveCount > 0)
+                {
+                    float perEnemy = result.TotalDamageDealt / aliveCount;
+                    for (int i = 0; i < gm.CurrentEnemies.Count && i < 3; i++)
+                    {
+                        if (gm.CurrentEnemies[i].IsAlive)
+                        {
+                            var pos = enemyDisplay.GetEnemyPosition(i);
+                            damageNumbers.SpawnDamage(pos, perEnemy, Color.white, false);
+                        }
+                    }
+                }
+            }
         }
 
         private void HandleGoldChanged(double newGold)

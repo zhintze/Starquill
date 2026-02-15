@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using UnityEditor;
@@ -221,6 +222,14 @@ public static class ExploreSceneBuilder
         SetPrivateField(controller, "enemyDisplay", enemyDisplayCtrl);
         SetPrivateField(controller, "damageNumbers", damageSpawner);
         SetPrivateField(controller, "goldCounter", goldAnimator);
+
+        // Ensure EventSystem has StandaloneInputModule for Canvas UI buttons
+        var eventSystem = Object.FindFirstObjectByType<EventSystem>();
+        if (eventSystem != null && eventSystem.GetComponent<StandaloneInputModule>() == null)
+        {
+            eventSystem.gameObject.AddComponent<StandaloneInputModule>();
+            EditorUtility.SetDirty(eventSystem.gameObject);
+        }
 
         EditorUtility.SetDirty(canvas);
         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
