@@ -20,6 +20,52 @@ namespace Starquill.Characters
         public List<VerbDefinition> equippedVerbs = new();
         public Stats allocatedStats = new();
 
+        // Fractional stat accumulation for weighted distribution
+        private float[] statAccumulator = new float[6];
+
+        public int XpToNextLevel()
+        {
+            return (int)(100 * System.Math.Pow(1.18, level));
+        }
+
+        public bool CanLevelUp()
+        {
+            return xp >= XpToNextLevel();
+        }
+
+        public void LevelUp()
+        {
+            int cost = XpToNextLevel();
+            if (xp < cost) return;
+
+            xp -= cost;
+            level++;
+
+            DistributeStats();
+        }
+
+        private void DistributeStats()
+        {
+            float totalBase = baseStats.Total;
+            if (totalBase <= 0) return;
+
+            float pointsPerLevel = 3f;
+            var types = (StatType[])System.Enum.GetValues(typeof(StatType));
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                float weight = baseStats.GetStat(types[i]) / totalBase;
+                statAccumulator[i] += weight * pointsPerLevel;
+
+                int whole = (int)statAccumulator[i];
+                if (whole > 0)
+                {
+                    allocatedStats.SetStat(types[i], allocatedStats.GetStat(types[i]) + whole);
+                    statAccumulator[i] -= whole;
+                }
+            }
+        }
+
         public Stats GetTotalStats()
         {
             var total = baseStats.Clone();
