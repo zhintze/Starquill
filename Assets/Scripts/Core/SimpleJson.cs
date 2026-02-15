@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Starquill.Display
+namespace Starquill.Core
 {
     public static class SimpleJson
     {
