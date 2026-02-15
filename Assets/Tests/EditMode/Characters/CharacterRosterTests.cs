@@ -170,6 +170,22 @@ namespace Starquill.Tests.Characters
             Assert.IsFalse(roster.IsInParty(0));
         }
 
+        [Test]
+        public void SwapPartyMember_RemovesDuplicateFromOtherSlot()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            roster.AddCharacter(CreateTestCharacter("c1"));
+            roster.AddCharacter(CreateTestCharacter("c2"));
+            roster.SetPartyMember(0, 0);
+            roster.SetPartyMember(1, 1);
+
+            roster.SwapPartyMember(0, 1); // c1 moves from slot 1 to slot 0
+
+            var party = roster.GetActiveParty();
+            Assert.AreEqual("c1", party[0].id);
+            Assert.IsNull(party[1]); // slot 1 cleared, no duplicate
+        }
+
         private CharacterInstance CreateTestCharacter(string id)
         {
             return new CharacterInstance

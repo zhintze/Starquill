@@ -99,6 +99,7 @@ namespace Starquill.Characters
         {
             if (partySlot < 0 || partySlot >= 4) return;
             if (newRosterIndex < 0 || newRosterIndex >= Characters.Count) return;
+            RemoveFromParty(newRosterIndex);
             ActivePartyIndices[partySlot] = newRosterIndex;
         }
     }
