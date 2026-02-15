@@ -7,7 +7,9 @@ using Starquill.Combat;
 using Starquill.Core;
 using Starquill.Data;
 using Starquill.Display;
+using Starquill.Equipment;
 using Starquill.Managers;
+using Starquill.Characters;
 
 namespace Starquill.UI
 {
@@ -43,7 +45,6 @@ namespace Starquill.UI
         private void Start()
         {
             SetupPlaceholderParallax();
-            SetupPlaceholderParty();
 
             if (damageNumbers != null)
                 spawnerRT = (RectTransform)damageNumbers.transform;
@@ -56,6 +57,7 @@ namespace Starquill.UI
             }
             else
             {
+                SetupPlaceholderParty();
                 SetupPlaceholderUI();
             }
         }
@@ -66,6 +68,8 @@ namespace Starquill.UI
             yield return null;
 
             if (gm == null) yield break;
+
+            SetupPlaceholderParty();
 
             if (goldCounter != null)
                 goldCounter.SetImmediate(gm.gold);
@@ -247,22 +251,59 @@ namespace Starquill.UI
             var registry = DisplayDataRegistry.Instance;
             if (registry.Species.Count == 0)
                 registry.LoadAll();
-            var speciesKeys = registry.Species.Keys.ToList();
-            if (speciesKeys.Count == 0) return;
 
             var builder = new DisplayBuilder(registry);
             var resolver = new ImageResolver();
+
+            CharacterInstance[] activeParty = null;
+            if (gm != null && gm.Roster != null)
+                activeParty = gm.Roster.GetActiveParty();
+
+            var speciesKeys = registry.Species.Keys.ToList();
+            if (speciesKeys.Count == 0) return;
 
             for (int i = 0; i < partySlots.Length && i < 4; i++)
             {
                 if (partySlots[i] == null) continue;
 
-                var speciesKey = speciesKeys[i % speciesKeys.Count];
-                var speciesData = registry.Species[speciesKey];
-                if (speciesData == null) continue;
+                string speciesKey;
+                EquipmentInstance[] equipment = null;
+
+                if (activeParty != null && activeParty[i] != null)
+                {
+                    speciesKey = activeParty[i].speciesId;
+                    equipment = activeParty[i].equipment;
+                }
+                else
+                {
+                    speciesKey = speciesKeys[i % speciesKeys.Count];
+                }
+
+                if (!registry.Species.TryGetValue(speciesKey, out var speciesData))
+                    speciesData = registry.Species[speciesKeys[i % speciesKeys.Count]];
 
                 var instance = SpeciesInstanceData.CreateFrom(speciesData, registry);
-                var pieces = builder.Build(instance, speciesData, new List<EquipmentDisplayInfo>());
+
+                var equipDisplayList = new List<EquipmentDisplayInfo>();
+                if (equipment != null)
+                {
+                    foreach (var eq in equipment)
+                    {
+                        if (eq == null) continue;
+                        var info = new EquipmentDisplayInfo
+                        {
+                            ItemType = eq.ItemType,
+                            ItemNum = eq.ItemNum,
+                            BaseColor = eq.BaseColor,
+                            VarianceColors = eq.VarianceColors as Dictionary<int, Color>
+                                ?? new Dictionary<int, Color>(eq.VarianceColors),
+                            IsOffhand = eq.Slot == EquipmentSlot.OffHand
+                        };
+                        equipDisplayList.Add(info);
+                    }
+                }
+
+                var pieces = builder.Build(instance, speciesData, equipDisplayList);
 
                 var displayObj = new GameObject($"CharDisplay_{i}");
                 displayObj.transform.SetParent(transform);
