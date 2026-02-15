@@ -5,6 +5,7 @@ using Starquill.Characters;
 using Starquill.Combat;
 using Starquill.Core;
 using Starquill.Data;
+using Starquill.Display;
 using Starquill.Equipment;
 using Starquill.Exploration;
 
@@ -34,6 +35,10 @@ namespace Starquill.Managers
         private ExplorationManager exploration;
         private PityTracker pityTracker;
         private SaveManager saveManager;
+        private CharacterRoster roster;
+        private CharacterFactory characterFactory;
+        private EquipmentCatalog equipmentCatalog;
+        private EquipmentFactory equipmentFactory;
         private List<EnemyState> currentEnemies = new();
         private float tickTimer;
         private float currentTime;
@@ -44,6 +49,7 @@ namespace Starquill.Managers
         public ExplorationManager Exploration => exploration;
         public IReadOnlyList<EnemyState> CurrentEnemies => currentEnemies;
         public bool VerbsLocked => verbLockTimer > 0f;
+        public CharacterRoster Roster => roster;
 
         private void Awake()
         {
@@ -59,6 +65,24 @@ namespace Starquill.Managers
             if (saveManager == null)
                 saveManager = gameObject.AddComponent<SaveManager>();
 
+            // Initialize equipment system
+            equipmentCatalog = new EquipmentCatalog();
+            equipmentCatalog.LoadFromResources();
+
+            var affixTable = new AffixTable();
+            affixTable.LoadFromResources();
+
+            var registry = DisplayDataRegistry.Instance;
+            if (registry.Species.Count == 0) registry.LoadAll();
+
+            equipmentFactory = new EquipmentFactory(equipmentCatalog, affixTable, registry.Colors);
+
+            var nameGen = new NameGenerator();
+            nameGen.LoadFromResources();
+
+            characterFactory = new CharacterFactory(registry, equipmentFactory, nameGen);
+            roster = new CharacterRoster();
+
             party = new Party();
             verbPool = new VerbPool(economyConfig.verbSlotCount, economyConfig.verbDrawCooldown);
             combatProcessor = new CombatTickProcessor(advantageMatrix, economyConfig);
@@ -72,17 +96,12 @@ namespace Starquill.Managers
             gold = save.gold;
             questLevel = save.currentQuestLevel;
 
-            float offlineSeconds = saveManager.GetOfflineSeconds();
-            if (offlineSeconds > 0)
-            {
-                float goldPerSecond = economyConfig.GoldPerKill(questLevel) * economyConfig.exploreKillsPerMinute / 60f;
-                float offlineGold = economyConfig.OfflineGold(goldPerSecond, offlineSeconds);
-                // TODO: Show claim screen instead of auto-adding
-            }
+            if (save.NeedsRosterInitialization())
+                InitializeStarterRoster();
+            else
+                LoadRosterFromSave(save);
 
-            if (party.Members.Count == 0)
-                InitializeStarterParty();
-
+            BuildPartyFromRoster();
             SpawnWave();
             RebuildVerbPool();
         }
@@ -126,11 +145,7 @@ namespace Starquill.Managers
             }
 
             if ((int)currentTime % 30 == 0)
-            {
-                saveManager.CurrentSave.gold = gold;
-                saveManager.CurrentSave.currentQuestLevel = questLevel;
-                saveManager.Save();
-            }
+                SaveState();
         }
 
         public void OnVerbTapped(int slotIndex)
@@ -166,44 +181,53 @@ namespace Starquill.Managers
             }
         }
 
-        private void InitializeStarterParty()
+        private void InitializeStarterRoster()
         {
-            var warrior = new CharacterInstance
-            {
-                id = "starter_warrior",
-                displayName = "Warrior",
-                baseStats = new Stats { STR = 14, DEX = 10, CON = 12, INT = 8, WIS = 9, CHA = 10 },
-                level = 1
-            };
-            warrior.equippedVerbs.Add(CreateVerb("slash", "Slash", StatType.STR, 50f, 2f));
-            warrior.equippedVerbs.Add(CreateVerb("shield_bash", "Shield Bash", StatType.CON, 30f, 3f));
-
-            var mage = new CharacterInstance
-            {
-                id = "starter_mage",
-                displayName = "Mage",
-                baseStats = new Stats { STR = 7, DEX = 9, CON = 8, INT = 15, WIS = 12, CHA = 10 },
-                level = 1
-            };
-            mage.equippedVerbs.Add(CreateVerb("fireball", "Fireball", StatType.INT, 65f, 3f));
-            mage.equippedVerbs.Add(CreateVerb("heal", "Heal", StatType.WIS, 0f, 4f, isHealing: true, healAmount: 40f));
-
-            party.AddMember(warrior);
-            party.AddMember(mage);
+            var rng = new System.Random();
+            var characters = characterFactory.CreateStarterRoster(8, rng);
+            foreach (var c in characters)
+                roster.AddCharacter(c);
+            roster.InitializeDefaultParty();
         }
 
-        private static VerbDefinition CreateVerb(string id, string name, StatType type,
-            float damage, float cooldown, bool isHealing = false, float healAmount = 0f)
+        private void LoadRosterFromSave(SaveData save)
         {
-            var verb = ScriptableObject.CreateInstance<VerbDefinition>();
-            verb.verbId = id;
-            verb.displayName = name;
-            verb.statType = type;
-            verb.baseDamage = damage;
-            verb.cooldownTicks = cooldown;
-            verb.isHealingVerb = isHealing;
-            verb.healAmount = healAmount;
-            return verb;
+            foreach (var sc in save.roster)
+            {
+                var character = sc.ToInstance();
+                for (int i = 0; i < sc.equipment.Length; i++)
+                {
+                    if (sc.equipment[i] != null && !string.IsNullOrEmpty(sc.equipment[i].itemType))
+                        character.equipment[i] = equipmentFactory.Reconstruct(sc.equipment[i]);
+                }
+                foreach (var verbId in sc.equippedVerbIds)
+                {
+                    var verb = CharacterFactory.CreateVerbById(verbId);
+                    if (verb != null) character.equippedVerbs.Add(verb);
+                }
+                roster.AddCharacter(character);
+            }
+            for (int i = 0; i < save.activePartyIndices.Length && i < 4; i++)
+                roster.ActivePartyIndices[i] = save.activePartyIndices[i];
+        }
+
+        private void BuildPartyFromRoster()
+        {
+            party = new Party();
+            var activeParty = roster.GetActiveParty();
+            foreach (var c in activeParty)
+                if (c != null) party.AddMember(c);
+        }
+
+        private void SaveState()
+        {
+            saveManager.CurrentSave.gold = gold;
+            saveManager.CurrentSave.currentQuestLevel = questLevel;
+            saveManager.CurrentSave.roster.Clear();
+            foreach (var c in roster.Characters)
+                saveManager.CurrentSave.roster.Add(SerializedCharacter.FromInstance(c));
+            saveManager.CurrentSave.activePartyIndices = (int[])roster.ActivePartyIndices.Clone();
+            saveManager.Save();
         }
 
         private void SpawnWave()
@@ -213,8 +237,8 @@ namespace Starquill.Managers
             if (enemyCount > 6) enemyCount = 6;
 
             var statTypes = new[] {
-                Core.StatType.STR, Core.StatType.DEX, Core.StatType.CON,
-                Core.StatType.INT, Core.StatType.WIS, Core.StatType.CHA
+                StatType.STR, StatType.DEX, StatType.CON,
+                StatType.INT, StatType.WIS, StatType.CHA
             };
 
             for (int i = 0; i < enemyCount; i++)
@@ -237,19 +261,12 @@ namespace Starquill.Managers
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused)
-            {
-                saveManager.CurrentSave.gold = gold;
-                saveManager.CurrentSave.currentQuestLevel = questLevel;
-                saveManager.Save();
-            }
+            if (paused) SaveState();
         }
 
         private void OnApplicationQuit()
         {
-            saveManager.CurrentSave.gold = gold;
-            saveManager.CurrentSave.currentQuestLevel = questLevel;
-            saveManager.Save();
+            SaveState();
         }
     }
 }
