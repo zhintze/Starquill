@@ -21,6 +21,8 @@ public static class ExploreSceneBuilder
         // Clean existing components added by this builder
         foreach (var c in canvas.GetComponents<Starquill.UI.ExploreSceneController>())
             Object.DestroyImmediate(c);
+        foreach (var c in canvas.GetComponents<Starquill.UI.ScreenManager>())
+            Object.DestroyImmediate(c);
 
         // Clean existing children except EventSystem-related
         for (int i = canvasRT.childCount - 1; i >= 0; i--)
@@ -29,13 +31,25 @@ public static class ExploreSceneBuilder
             Undo.DestroyObjectImmediate(child.gameObject);
         }
 
-        // === COMBAT AREA PANEL (middle fill) ===
-        var combatArea = CreatePanel("CombatAreaPanel", canvasRT);
+        // ============================================================
+        // === EXPLORE PANEL (screen index 0) ===
+        // Fills space between TopBar (top 100px) and BottomNav (bottom 120px)
+        // ============================================================
+        var explorePanel = CreatePanel("ExplorePanel", canvasRT);
+        var explorePanelRT = explorePanel.GetComponent<RectTransform>();
+        explorePanelRT.anchorMin = new Vector2(0, 0);
+        explorePanelRT.anchorMax = new Vector2(1, 1);
+        explorePanelRT.offsetMin = new Vector2(0, 120); // above BottomNav
+        explorePanelRT.offsetMax = new Vector2(0, -100); // below TopBar
+        explorePanel.GetComponent<Image>().color = Color.clear;
+
+        // --- CombatAreaPanel inside ExplorePanel ---
+        var combatArea = CreatePanel("CombatAreaPanel", explorePanel.transform);
         var combatRT = combatArea.GetComponent<RectTransform>();
         combatRT.anchorMin = new Vector2(0, 0);
         combatRT.anchorMax = new Vector2(1, 1);
-        combatRT.offsetMin = new Vector2(0, 250); // bottom = VerbBar(130) + BottomNav(120)
-        combatRT.offsetMax = new Vector2(0, -100); // top = TopBar(100)
+        combatRT.offsetMin = new Vector2(0, 130); // VerbBar height
+        combatRT.offsetMax = Vector2.zero; // TopBar handled by ExplorePanel
 
         // BG_Sky - full fill
         var bgSky = CreateRawImage("BG_Sky", combatRT);
@@ -107,7 +121,399 @@ public static class ExploreSceneBuilder
         AnchorBottom(fgGrass, 140);
         AddParallaxLayer(fgGrass, 50f);
 
+        // --- VerbBarPanel inside ExplorePanel ---
+        var verbBar = CreatePanel("VerbBarPanel", explorePanel.transform);
+        var verbBarRT = verbBar.GetComponent<RectTransform>();
+        verbBarRT.anchorMin = new Vector2(0, 0);
+        verbBarRT.anchorMax = new Vector2(1, 0);
+        verbBarRT.pivot = new Vector2(0.5f, 0);
+        verbBarRT.anchoredPosition = Vector2.zero; // ExplorePanel bottom is already above BottomNav
+        verbBarRT.sizeDelta = new Vector2(0, 130);
+        verbBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.85f);
+
+        var verbGrid = new GameObject("VerbGrid", typeof(RectTransform));
+        verbGrid.transform.SetParent(verbBar.transform, false);
+        var verbGridRT = verbGrid.GetComponent<RectTransform>();
+        StretchFill(verbGridRT);
+        verbGridRT.offsetMin = new Vector2(10, 10);
+        verbGridRT.offsetMax = new Vector2(-10, -10);
+        var gridLayout = verbGrid.AddComponent<GridLayoutGroup>();
+        gridLayout.cellSize = new Vector2(330, 100);
+        gridLayout.spacing = new Vector2(15, 0);
+        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayout.constraintCount = 3;
+        gridLayout.childAlignment = TextAnchor.MiddleCenter;
+
+        // ============================================================
+        // === QUESTS PLACEHOLDER (screen index 1) ===
+        // ============================================================
+        var questsPanel = CreatePlaceholderPanel("QuestsPlaceholder", canvasRT, "Quests\n(Coming Soon)");
+
+        // ============================================================
+        // === LOOT PLACEHOLDER (screen index 2) ===
+        // ============================================================
+        var lootPanel = CreatePlaceholderPanel("LootPlaceholder", canvasRT, "Loot\n(Coming Soon)");
+
+        // ============================================================
+        // === PARTY PANEL (screen index 3) ===
+        // ============================================================
+        var partyPanel = CreatePanel("PartyPanel", canvasRT);
+        var partyPanelRT = partyPanel.GetComponent<RectTransform>();
+        partyPanelRT.anchorMin = new Vector2(0, 0);
+        partyPanelRT.anchorMax = new Vector2(1, 1);
+        partyPanelRT.offsetMin = new Vector2(0, 120);
+        partyPanelRT.offsetMax = new Vector2(0, -100);
+        partyPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
+
+        // --- Header Strip (80px anchored top) ---
+        var headerStrip = CreatePanel("HeaderStrip", partyPanel.transform);
+        var headerRT = headerStrip.GetComponent<RectTransform>();
+        headerRT.anchorMin = new Vector2(0, 1);
+        headerRT.anchorMax = new Vector2(1, 1);
+        headerRT.pivot = new Vector2(0.5f, 1);
+        headerRT.anchoredPosition = Vector2.zero;
+        headerRT.sizeDelta = new Vector2(0, 80);
+        headerStrip.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.95f);
+
+        var headerHL = headerStrip.AddComponent<HorizontalLayoutGroup>();
+        headerHL.spacing = 10;
+        headerHL.padding = new RectOffset(20, 20, 8, 8);
+        headerHL.childAlignment = TextAnchor.MiddleCenter;
+        headerHL.childControlWidth = true;
+        headerHL.childControlHeight = true;
+        headerHL.childForceExpandWidth = false;
+        headerHL.childForceExpandHeight = true;
+
+        var partyNameLabel = CreateTMPLabel("NameLabel", headerStrip.transform, "Name", 28, Color.white, TextAlignmentOptions.MidlineLeft);
+        partyNameLabel.AddComponent<LayoutElement>().flexibleWidth = 2;
+
+        var partySpeciesLabel = CreateTMPLabel("SpeciesLabel", headerStrip.transform, "Species", 22, new Color(0.7f, 0.7f, 0.8f), TextAlignmentOptions.MidlineLeft);
+        partySpeciesLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var partyLevelLabel = CreateTMPLabel("LevelLabel", headerStrip.transform, "Lv 1", 24, new Color(0.9f, 0.85f, 0.5f), TextAlignmentOptions.Center);
+        partyLevelLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var partyXpLabel = CreateTMPLabel("XPLabel", headerStrip.transform, "0/100 XP", 20, new Color(0.6f, 0.8f, 1f), TextAlignmentOptions.Center);
+        partyXpLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        // Level Up Button
+        var levelUpBtnObj = new GameObject("LevelUpButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        levelUpBtnObj.transform.SetParent(headerStrip.transform, false);
+        levelUpBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.6f, 0.3f);
+        levelUpBtnObj.AddComponent<LayoutElement>().preferredWidth = 80;
+        var levelUpBtn = levelUpBtnObj.GetComponent<Button>();
+
+        var levelUpLabel = CreateTMPLabel("Label", levelUpBtnObj.transform, "Level Up", 16, Color.white, TextAlignmentOptions.Center);
+        StretchFill(levelUpLabel);
+
+        // Level Up Glow (Image overlay on the button)
+        var levelUpGlow = CreateImage("LevelUpGlow", levelUpBtnObj.transform, new Color(1f, 0.9f, 0.3f, 0.5f));
+        StretchFill(levelUpGlow);
+        levelUpGlow.GetComponent<Image>().enabled = false;
+
+        // --- Focus Area (670px, below header) ---
+        var focusArea = CreatePanel("FocusArea", partyPanel.transform);
+        var focusRT = focusArea.GetComponent<RectTransform>();
+        focusRT.anchorMin = new Vector2(0, 1);
+        focusRT.anchorMax = new Vector2(1, 1);
+        focusRT.pivot = new Vector2(0.5f, 1);
+        focusRT.anchoredPosition = new Vector2(0, -80); // below HeaderStrip
+        focusRT.sizeDelta = new Vector2(0, 670);
+        focusArea.GetComponent<Image>().color = Color.clear;
+
+        // Portrait Strip (left, 120px wide)
+        var portraitStrip = CreatePanel("PortraitStrip", focusArea.transform);
+        var portraitStripRT = portraitStrip.GetComponent<RectTransform>();
+        portraitStripRT.anchorMin = new Vector2(0, 0);
+        portraitStripRT.anchorMax = new Vector2(0, 1);
+        portraitStripRT.pivot = new Vector2(0, 0.5f);
+        portraitStripRT.anchoredPosition = Vector2.zero;
+        portraitStripRT.sizeDelta = new Vector2(120, 0);
+        portraitStrip.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.14f, 0.9f);
+
+        var portraitVL = portraitStrip.AddComponent<VerticalLayoutGroup>();
+        portraitVL.spacing = 8;
+        portraitVL.padding = new RectOffset(5, 5, 10, 10);
+        portraitVL.childAlignment = TextAnchor.UpperCenter;
+        portraitVL.childControlWidth = true;
+        portraitVL.childControlHeight = false;
+        portraitVL.childForceExpandWidth = true;
+        portraitVL.childForceExpandHeight = false;
+
+        // 4 portrait slots
+        var portraitImages = new RawImage[4];
+        var highlightRings = new Image[4];
+        var portraitNameLabels = new TMP_Text[4];
+        var portraitLevelLabels = new TMP_Text[4];
+        var portraitButtons = new Button[4];
+
+        for (int i = 0; i < 4; i++)
+        {
+            var slot = new GameObject($"PortraitSlot_{i}", typeof(RectTransform), typeof(Button));
+            slot.transform.SetParent(portraitStrip.transform, false);
+            var slotRT = slot.GetComponent<RectTransform>();
+            slotRT.sizeDelta = new Vector2(110, 140);
+            slot.AddComponent<LayoutElement>().preferredHeight = 140;
+
+            // Highlight ring (background)
+            var ring = CreateImage($"Ring_{i}", slot.transform, new Color(0.3f, 0.3f, 0.3f));
+            StretchFill(ring);
+            var ringRT = ring.GetComponent<RectTransform>();
+            ringRT.offsetMin = new Vector2(2, 20);
+            ringRT.offsetMax = new Vector2(-2, -2);
+
+            // Portrait RawImage
+            var portrait = CreateRawImage($"Portrait_{i}", slot.transform);
+            var portRT = portrait.GetComponent<RectTransform>();
+            portRT.anchorMin = new Vector2(0, 0);
+            portRT.anchorMax = new Vector2(1, 1);
+            portRT.offsetMin = new Vector2(6, 24);
+            portRT.offsetMax = new Vector2(-6, -6);
+            portrait.GetComponent<RawImage>().color = new Color(0.2f, 0.2f, 0.25f);
+
+            // Name label
+            var pNameLabel = CreateTMPLabel($"Name_{i}", slot.transform, "", 11, Color.white, TextAlignmentOptions.Center);
+            var pNameRT = pNameLabel.GetComponent<RectTransform>();
+            pNameRT.anchorMin = new Vector2(0, 0);
+            pNameRT.anchorMax = new Vector2(1, 0);
+            pNameRT.pivot = new Vector2(0.5f, 0);
+            pNameRT.anchoredPosition = new Vector2(0, 8);
+            pNameRT.sizeDelta = new Vector2(0, 14);
+
+            // Level label
+            var pLevelLabel = CreateTMPLabel($"Level_{i}", slot.transform, "", 10, new Color(0.8f, 0.8f, 0.5f), TextAlignmentOptions.Center);
+            var pLevelRT = pLevelLabel.GetComponent<RectTransform>();
+            pLevelRT.anchorMin = new Vector2(0, 0);
+            pLevelRT.anchorMax = new Vector2(1, 0);
+            pLevelRT.pivot = new Vector2(0.5f, 0);
+            pLevelRT.anchoredPosition = Vector2.zero;
+            pLevelRT.sizeDelta = new Vector2(0, 12);
+
+            portraitImages[i] = portrait.GetComponent<RawImage>();
+            highlightRings[i] = ring.GetComponent<Image>();
+            portraitNameLabels[i] = pNameLabel.GetComponent<TMP_Text>();
+            portraitLevelLabels[i] = pLevelLabel.GetComponent<TMP_Text>();
+            portraitButtons[i] = slot.GetComponent<Button>();
+        }
+
+        // Paper Doll Area (center, between portrait strip and character info)
+        var paperDollArea = CreatePanel("PaperDollArea", focusArea.transform);
+        var paperDollAreaRT = paperDollArea.GetComponent<RectTransform>();
+        paperDollAreaRT.anchorMin = new Vector2(0, 0);
+        paperDollAreaRT.anchorMax = new Vector2(1, 1);
+        paperDollAreaRT.offsetMin = new Vector2(120, 0); // right of portrait strip
+        paperDollAreaRT.offsetMax = new Vector2(-200, 0); // left of character info
+        paperDollArea.GetComponent<Image>().color = Color.clear;
+
+        var paperDollImage = CreateRawImage("PaperDollImage", paperDollArea.transform);
+        StretchFill(paperDollImage);
+        var paperDollRawImage = paperDollImage.GetComponent<RawImage>();
+        paperDollRawImage.color = Color.white;
+
+        // Character Info (right, 200px wide)
+        var charInfo = CreatePanel("CharacterInfo", focusArea.transform);
+        var charInfoRT = charInfo.GetComponent<RectTransform>();
+        charInfoRT.anchorMin = new Vector2(1, 0);
+        charInfoRT.anchorMax = new Vector2(1, 1);
+        charInfoRT.pivot = new Vector2(1, 0.5f);
+        charInfoRT.anchoredPosition = Vector2.zero;
+        charInfoRT.sizeDelta = new Vector2(200, 0);
+        charInfo.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.14f, 0.6f);
+
+        // --- Stat Bar (60px, below focus area) ---
+        var statBar = CreatePanel("StatBar", partyPanel.transform);
+        var statBarRT = statBar.GetComponent<RectTransform>();
+        statBarRT.anchorMin = new Vector2(0, 1);
+        statBarRT.anchorMax = new Vector2(1, 1);
+        statBarRT.pivot = new Vector2(0.5f, 1);
+        statBarRT.anchoredPosition = new Vector2(0, -750); // 80 (header) + 670 (focus)
+        statBarRT.sizeDelta = new Vector2(0, 60);
+        statBar.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.8f);
+
+        var statHL = statBar.AddComponent<HorizontalLayoutGroup>();
+        statHL.spacing = 5;
+        statHL.padding = new RectOffset(15, 15, 5, 5);
+        statHL.childAlignment = TextAnchor.MiddleCenter;
+        statHL.childControlWidth = true;
+        statHL.childControlHeight = true;
+        statHL.childForceExpandWidth = true;
+        statHL.childForceExpandHeight = true;
+
+        var statNames = new[] { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
+        var focusStatLabels = new TMP_Text[6];
+        for (int i = 0; i < 6; i++)
+        {
+            var statLabel = CreateTMPLabel($"Stat_{statNames[i]}", statBar.transform, $"{statNames[i]} 10", 18, Color.white, TextAlignmentOptions.Center);
+            statLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
+            focusStatLabels[i] = statLabel.GetComponent<TMP_Text>();
+        }
+
+        // --- Sub-Tab Bar (80px, below stat bar) ---
+        var subTabBar = CreatePanel("SubTabBar", partyPanel.transform);
+        var subTabBarRT = subTabBar.GetComponent<RectTransform>();
+        subTabBarRT.anchorMin = new Vector2(0, 1);
+        subTabBarRT.anchorMax = new Vector2(1, 1);
+        subTabBarRT.pivot = new Vector2(0.5f, 1);
+        subTabBarRT.anchoredPosition = new Vector2(0, -810); // 750 + 60 (stat bar)
+        subTabBarRT.sizeDelta = new Vector2(0, 80);
+        subTabBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.9f);
+
+        var subTabHL = subTabBar.AddComponent<HorizontalLayoutGroup>();
+        subTabHL.spacing = 10;
+        subTabHL.padding = new RectOffset(20, 20, 8, 8);
+        subTabHL.childAlignment = TextAnchor.MiddleCenter;
+        subTabHL.childControlWidth = true;
+        subTabHL.childControlHeight = true;
+        subTabHL.childForceExpandWidth = true;
+        subTabHL.childForceExpandHeight = true;
+
+        var subTabNames = new[] { "Roster", "Equipment", "Actions" };
+        for (int i = 0; i < 3; i++)
+        {
+            var tabBtnObj = new GameObject($"SubTab_{subTabNames[i]}", typeof(RectTransform), typeof(Image), typeof(Button));
+            tabBtnObj.transform.SetParent(subTabBar.transform, false);
+            tabBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.28f);
+            var tabLabel = CreateTMPLabel("Label", tabBtnObj.transform, subTabNames[i], 22, Color.white, TextAlignmentOptions.Center);
+            StretchFill(tabLabel);
+        }
+
+        // --- Content Area (fill remaining space below sub-tab bar) ---
+        var contentArea = CreatePanel("ContentArea", partyPanel.transform);
+        var contentRT = contentArea.GetComponent<RectTransform>();
+        contentRT.anchorMin = new Vector2(0, 0);
+        contentRT.anchorMax = new Vector2(1, 1);
+        contentRT.offsetMin = new Vector2(0, 0); // bottom of panel
+        contentRT.offsetMax = new Vector2(0, -890); // 810 + 80 (sub-tab bar)
+        contentArea.GetComponent<Image>().color = Color.clear;
+
+        // Roster Content (sub-tab 0)
+        var rosterContent = CreatePanel("RosterContent", contentArea.transform);
+        StretchFill(rosterContent);
+        rosterContent.GetComponent<Image>().color = Color.clear;
+
+        var rosterScrollGO = new GameObject("RosterScrollView", typeof(RectTransform), typeof(ScrollRect));
+        rosterScrollGO.transform.SetParent(rosterContent.transform, false);
+        StretchFill(rosterScrollGO.GetComponent<RectTransform>());
+
+        var rosterCardContainer = new GameObject("CardContainer", typeof(RectTransform));
+        rosterCardContainer.transform.SetParent(rosterScrollGO.transform, false);
+        var rosterCardRT = rosterCardContainer.GetComponent<RectTransform>();
+        rosterCardRT.anchorMin = new Vector2(0, 1);
+        rosterCardRT.anchorMax = new Vector2(1, 1);
+        rosterCardRT.pivot = new Vector2(0.5f, 1);
+        rosterCardRT.anchoredPosition = Vector2.zero;
+        rosterCardRT.sizeDelta = new Vector2(0, 800); // expandable
+        var rosterGrid = rosterCardContainer.AddComponent<GridLayoutGroup>();
+        rosterGrid.cellSize = new Vector2(160, 200);
+        rosterGrid.spacing = new Vector2(10, 10);
+        rosterGrid.padding = new RectOffset(10, 10, 10, 10);
+        rosterGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        rosterGrid.constraintCount = 5;
+        rosterGrid.childAlignment = TextAnchor.UpperLeft;
+
+        var rosterScrollRect = rosterScrollGO.GetComponent<ScrollRect>();
+        rosterScrollRect.content = rosterCardRT;
+        rosterScrollRect.horizontal = false;
+        rosterScrollRect.vertical = true;
+
+        // Equipment Content (sub-tab 1)
+        var equipContent = CreatePanel("EquipmentContent", contentArea.transform);
+        StretchFill(equipContent);
+        equipContent.GetComponent<Image>().color = Color.clear;
+
+        var slotsContainer = new GameObject("SlotsContainer", typeof(RectTransform));
+        slotsContainer.transform.SetParent(equipContent.transform, false);
+        var slotsContainerRT = slotsContainer.GetComponent<RectTransform>();
+        slotsContainerRT.anchorMin = new Vector2(0, 0);
+        slotsContainerRT.anchorMax = new Vector2(1, 1);
+        slotsContainerRT.offsetMin = new Vector2(10, 60); // leave room for auto-equip button
+        slotsContainerRT.offsetMax = new Vector2(-10, -10);
+        var slotsGrid = slotsContainer.AddComponent<GridLayoutGroup>();
+        slotsGrid.cellSize = new Vector2(90, 90);
+        slotsGrid.spacing = new Vector2(8, 8);
+        slotsGrid.padding = new RectOffset(5, 5, 5, 5);
+        slotsGrid.childAlignment = TextAnchor.UpperLeft;
+
+        var autoEquipBtnObj = new GameObject("AutoEquipButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        autoEquipBtnObj.transform.SetParent(equipContent.transform, false);
+        var autoEquipRT = autoEquipBtnObj.GetComponent<RectTransform>();
+        autoEquipRT.anchorMin = new Vector2(0.3f, 0);
+        autoEquipRT.anchorMax = new Vector2(0.7f, 0);
+        autoEquipRT.pivot = new Vector2(0.5f, 0);
+        autoEquipRT.anchoredPosition = new Vector2(0, 10);
+        autoEquipRT.sizeDelta = new Vector2(0, 40);
+        autoEquipBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.5f, 0.3f);
+        var autoEquipLabel = CreateTMPLabel("Label", autoEquipBtnObj.transform, "Auto Equip", 18, Color.white, TextAlignmentOptions.Center);
+        StretchFill(autoEquipLabel);
+
+        // Actions Content (sub-tab 2)
+        var actionsContent = CreatePanel("ActionsContent", contentArea.transform);
+        StretchFill(actionsContent);
+        actionsContent.GetComponent<Image>().color = Color.clear;
+
+        // Equipped container (top half)
+        var equippedContainer = new GameObject("EquippedContainer", typeof(RectTransform));
+        equippedContainer.transform.SetParent(actionsContent.transform, false);
+        var equippedContainerRT = equippedContainer.GetComponent<RectTransform>();
+        equippedContainerRT.anchorMin = new Vector2(0, 0.5f);
+        equippedContainerRT.anchorMax = new Vector2(1, 1);
+        equippedContainerRT.offsetMin = new Vector2(10, 5);
+        equippedContainerRT.offsetMax = new Vector2(-10, -10);
+        var equippedVL = equippedContainer.AddComponent<VerticalLayoutGroup>();
+        equippedVL.spacing = 5;
+        equippedVL.padding = new RectOffset(5, 5, 5, 5);
+        equippedVL.childControlWidth = true;
+        equippedVL.childControlHeight = false;
+        equippedVL.childForceExpandWidth = true;
+        equippedVL.childForceExpandHeight = false;
+
+        var equippedHeader = CreateTMPLabel("EquippedHeader", actionsContent.transform, "Equipped", 20, new Color(0.9f, 0.85f, 0.5f), TextAlignmentOptions.MidlineLeft);
+        var equippedHeaderRT = equippedHeader.GetComponent<RectTransform>();
+        equippedHeaderRT.anchorMin = new Vector2(0, 1);
+        equippedHeaderRT.anchorMax = new Vector2(1, 1);
+        equippedHeaderRT.pivot = new Vector2(0.5f, 1);
+        equippedHeaderRT.anchoredPosition = Vector2.zero;
+        equippedHeaderRT.sizeDelta = new Vector2(0, 30);
+        equippedHeaderRT.offsetMin = new Vector2(15, 0);
+
+        // Available container (bottom half)
+        var availableContainer = new GameObject("AvailableContainer", typeof(RectTransform));
+        availableContainer.transform.SetParent(actionsContent.transform, false);
+        var availableContainerRT = availableContainer.GetComponent<RectTransform>();
+        availableContainerRT.anchorMin = new Vector2(0, 0);
+        availableContainerRT.anchorMax = new Vector2(1, 0.5f);
+        availableContainerRT.offsetMin = new Vector2(10, 10);
+        availableContainerRT.offsetMax = new Vector2(-10, -5);
+        var availableVL = availableContainer.AddComponent<VerticalLayoutGroup>();
+        availableVL.spacing = 5;
+        availableVL.padding = new RectOffset(5, 5, 5, 5);
+        availableVL.childControlWidth = true;
+        availableVL.childControlHeight = false;
+        availableVL.childForceExpandWidth = true;
+        availableVL.childForceExpandHeight = false;
+
+        var availableHeader = CreateTMPLabel("AvailableHeader", actionsContent.transform, "Available", 20, new Color(0.6f, 0.8f, 1f), TextAlignmentOptions.MidlineLeft);
+        var availableHeaderRT = availableHeader.GetComponent<RectTransform>();
+        availableHeaderRT.anchorMin = new Vector2(0, 0.5f);
+        availableHeaderRT.anchorMax = new Vector2(1, 0.5f);
+        availableHeaderRT.pivot = new Vector2(0.5f, 1);
+        availableHeaderRT.anchoredPosition = Vector2.zero;
+        availableHeaderRT.sizeDelta = new Vector2(0, 30);
+        availableHeaderRT.offsetMin = new Vector2(15, 0);
+
+        // Initially hide sub-tab content except Roster (tab 0)
+        equipContent.SetActive(false);
+        actionsContent.SetActive(false);
+
+        // ============================================================
+        // === SHOP PLACEHOLDER (screen index 4) ===
+        // ============================================================
+        var shopPanel = CreatePlaceholderPanel("ShopPlaceholder", canvasRT, "Shop\n(Coming Soon)");
+
+        // ============================================================
         // === TOP BAR PANEL (anchored top, 100px, single row) ===
+        // Always visible — stays directly under Canvas
+        // ============================================================
         var topBar = CreatePanel("TopBarPanel", canvasRT);
         var topBarRT = topBar.GetComponent<RectTransform>();
         topBarRT.anchorMin = new Vector2(0, 1);
@@ -138,30 +544,10 @@ public static class ExploreSceneBuilder
         var questLabel = CreateTMPLabel("QuestLevelLabel", topBar.transform, "Quest Lv 34", 28, Color.white, TextAlignmentOptions.MidlineRight);
         questLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        // === VERB BAR PANEL (above bottom nav, 130px, single row) ===
-        var verbBar = CreatePanel("VerbBarPanel", canvasRT);
-        var verbBarRT = verbBar.GetComponent<RectTransform>();
-        verbBarRT.anchorMin = new Vector2(0, 0);
-        verbBarRT.anchorMax = new Vector2(1, 0);
-        verbBarRT.pivot = new Vector2(0.5f, 0);
-        verbBarRT.anchoredPosition = new Vector2(0, 120);
-        verbBarRT.sizeDelta = new Vector2(0, 130);
-        verbBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.85f);
-
-        var verbGrid = new GameObject("VerbGrid", typeof(RectTransform));
-        verbGrid.transform.SetParent(verbBar.transform, false);
-        var verbGridRT = verbGrid.GetComponent<RectTransform>();
-        StretchFill(verbGridRT);
-        verbGridRT.offsetMin = new Vector2(10, 10);
-        verbGridRT.offsetMax = new Vector2(-10, -10);
-        var gridLayout = verbGrid.AddComponent<GridLayoutGroup>();
-        gridLayout.cellSize = new Vector2(330, 100);
-        gridLayout.spacing = new Vector2(15, 0);
-        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 3;
-        gridLayout.childAlignment = TextAnchor.MiddleCenter;
-
+        // ============================================================
         // === BOTTOM NAV PANEL (anchored bottom, 120px) ===
+        // Always visible — stays directly under Canvas
+        // ============================================================
         var bottomNav = CreatePanel("BottomNavPanel", canvasRT);
         var bottomNavRT = bottomNav.GetComponent<RectTransform>();
         bottomNavRT.anchorMin = new Vector2(0, 0);
@@ -179,7 +565,16 @@ public static class ExploreSceneBuilder
         navHL.childForceExpandWidth = true;
         navHL.childForceExpandHeight = true;
 
+        // ============================================================
         // === ADD COMPONENTS ===
+        // ============================================================
+
+        // ScreenManager on Canvas
+        var screenManager = canvas.AddComponent<Starquill.UI.ScreenManager>();
+        SetPrivateField(screenManager, "screenPanels", new GameObject[] {
+            explorePanel, questsPanel, lootPanel, partyPanel, shopPanel
+        });
+
         // TopBarDisplay
         var topBarDisplay = topBar.AddComponent<Starquill.UI.TopBarDisplay>();
         SetPrivateField(topBarDisplay, "goldLabel", goldLabel.GetComponent<TMP_Text>());
@@ -194,8 +589,9 @@ public static class ExploreSceneBuilder
         // VerbCardAnimator on VerbBarPanel
         verbBar.AddComponent<Starquill.UI.VerbCardAnimator>();
 
-        // BottomNavDisplay
+        // BottomNavDisplay — wire screenManager
         var bottomNavDisplay = bottomNav.AddComponent<Starquill.UI.BottomNavDisplay>();
+        SetPrivateField(bottomNavDisplay, "screenManager", screenManager);
 
         // DamageNumberSpawner on CombatAreaPanel
         var damageSpawner = combatArea.AddComponent<Starquill.UI.DamageNumberSpawner>();
@@ -203,6 +599,42 @@ public static class ExploreSceneBuilder
         // GoldCounterAnimator on TopBarPanel
         var goldAnimator = topBar.AddComponent<Starquill.UI.GoldCounterAnimator>();
         SetPrivateField(goldAnimator, "label", goldLabel.GetComponent<TMP_Text>());
+
+        // PartyScreenController on PartyPanel
+        var partyScreenCtrl = partyPanel.AddComponent<Starquill.UI.PartyScreenController>();
+
+        // CharacterFocusDisplay on PartyPanel
+        var focusDisplay = partyPanel.AddComponent<Starquill.UI.CharacterFocusDisplay>();
+        SetPrivateField(focusDisplay, "nameLabel", partyNameLabel.GetComponent<TMP_Text>());
+        SetPrivateField(focusDisplay, "speciesLabel", partySpeciesLabel.GetComponent<TMP_Text>());
+        SetPrivateField(focusDisplay, "levelLabel", partyLevelLabel.GetComponent<TMP_Text>());
+        SetPrivateField(focusDisplay, "xpLabel", partyXpLabel.GetComponent<TMP_Text>());
+        SetPrivateField(focusDisplay, "levelUpButton", levelUpBtn);
+        SetPrivateField(focusDisplay, "levelUpGlow", levelUpGlow.GetComponent<Image>());
+        SetPrivateField(focusDisplay, "paperDollImage", paperDollRawImage);
+        SetPrivateField(focusDisplay, "statLabels", focusStatLabels);
+
+        // PartyPortraitStrip on PortraitStrip
+        var portraitStripComp = portraitStrip.AddComponent<Starquill.UI.PartyPortraitStrip>();
+        SetPrivateField(portraitStripComp, "portraits", portraitImages);
+        SetPrivateField(portraitStripComp, "highlightRings", highlightRings);
+        SetPrivateField(portraitStripComp, "nameLabels", portraitNameLabels);
+        SetPrivateField(portraitStripComp, "levelLabels", portraitLevelLabels);
+        SetPrivateField(portraitStripComp, "buttons", portraitButtons);
+
+        // RosterGridDisplay on RosterContent
+        var rosterGridDisplay = rosterContent.AddComponent<Starquill.UI.RosterGridDisplay>();
+        SetPrivateField(rosterGridDisplay, "cardContainer", rosterCardContainer.transform);
+
+        // EquipmentSlotsDisplay on EquipmentContent
+        var equipSlotsDisplay = equipContent.AddComponent<Starquill.UI.EquipmentSlotsDisplay>();
+        SetPrivateField(equipSlotsDisplay, "slotsContainer", slotsContainer.transform);
+        SetPrivateField(equipSlotsDisplay, "autoEquipButton", autoEquipBtnObj.GetComponent<Button>());
+
+        // ActionLoadoutDisplay on ActionsContent
+        var actionLoadoutDisplay = actionsContent.AddComponent<Starquill.UI.ActionLoadoutDisplay>();
+        SetPrivateField(actionLoadoutDisplay, "equippedContainer", equippedContainer.transform);
+        SetPrivateField(actionLoadoutDisplay, "availableContainer", availableContainer.transform);
 
         // ExploreSceneController on Canvas
         var controller = canvas.AddComponent<Starquill.UI.ExploreSceneController>();
@@ -223,6 +655,9 @@ public static class ExploreSceneBuilder
         SetPrivateField(controller, "damageNumbers", damageSpawner);
         SetPrivateField(controller, "goldCounter", goldAnimator);
 
+        // Initially show only ExplorePanel (index 0), hide others
+        screenManager.ShowScreen(0);
+
         // Ensure EventSystem has StandaloneInputModule for Canvas UI buttons
         var eventSystem = Object.FindFirstObjectByType<EventSystem>();
         if (eventSystem != null && eventSystem.GetComponent<StandaloneInputModule>() == null)
@@ -242,6 +677,22 @@ public static class ExploreSceneBuilder
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
+        return go;
+    }
+
+    static GameObject CreatePlaceholderPanel(string name, Transform parent, string labelText)
+    {
+        var go = CreatePanel(name, parent);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0, 0);
+        rt.anchorMax = new Vector2(1, 1);
+        rt.offsetMin = new Vector2(0, 120);
+        rt.offsetMax = new Vector2(0, -100);
+        go.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
+
+        var label = CreateTMPLabel("Label", go.transform, labelText, 36, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);
+        StretchFill(label);
+
         return go;
     }
 
