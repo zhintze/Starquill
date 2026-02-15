@@ -66,7 +66,6 @@ namespace Starquill.Tests.Characters
             };
 
             // Level up 30 times to get statistically meaningful distribution
-            var before = c.allocatedStats.Clone();
             for (int i = 0; i < 30; i++)
             {
                 c.xp = 999999;
