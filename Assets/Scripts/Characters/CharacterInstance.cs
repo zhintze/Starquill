@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Starquill.Core;
 using Starquill.Data;
+using Starquill.Equipment;
 
 namespace Starquill.Characters
 {
@@ -10,12 +11,12 @@ namespace Starquill.Characters
     {
         public string id;
         public string displayName;
-        public SpeciesDefinition species;
+        public string speciesId;
         public Stats baseStats;
         public int level = 1;
         public int xp;
         public int speciesKills;
-        public EquipmentDefinition[] equipment = new EquipmentDefinition[11];
+        public EquipmentInstance[] equipment = new EquipmentInstance[11];
         public List<VerbDefinition> equippedVerbs = new();
         public Stats allocatedStats = new();
 
@@ -26,7 +27,7 @@ namespace Starquill.Characters
             foreach (var equip in equipment)
             {
                 if (equip != null)
-                    total = total + equip.statMods;
+                    total = total + equip.GetTotalStatMods();
             }
             return total;
         }
@@ -39,25 +40,20 @@ namespace Starquill.Characters
             return 2;
         }
 
-        public int GetSpeciesAbilityRank()
+        public void EquipItem(EquipmentInstance item)
         {
-            if (species?.ability == null) return 0;
-            var thresholds = species.ability.rankThresholds;
-            for (int i = thresholds.Length - 1; i >= 0; i--)
-            {
-                if (speciesKills >= thresholds[i]) return i;
-            }
-            return 0;
-        }
-
-        public void EquipItem(EquipmentDefinition item)
-        {
-            equipment[(int)item.slot] = item;
+            equipment[(int)item.Slot] = item;
         }
 
         public void UnequipSlot(EquipmentSlot slot)
         {
             equipment[(int)slot] = null;
+        }
+
+        public void EquipLoadout(EquipmentInstance[] loadout)
+        {
+            for (int i = 0; i < loadout.Length && i < equipment.Length; i++)
+                equipment[i] = loadout[i];
         }
     }
 }
