@@ -84,6 +84,11 @@ namespace Starquill.UI
         public void SetRoster(CharacterRoster newRoster)
         {
             roster = newRoster;
+            if (roster == null)
+            {
+                SelectedRosterIndex = -1;
+                return;
+            }
 
             // Default selection: first active party member
             for (int i = 0; i < roster.ActivePartyIndices.Length; i++)
@@ -237,6 +242,11 @@ namespace Starquill.UI
                 actionLoadout.OnEquippedTapped -= HandleUnequipAction;
             }
             if (screenManager != null) screenManager.OnScreenChanged -= HandleScreenChanged;
+            if (subTabButtons != null)
+            {
+                foreach (var button in subTabButtons)
+                    if (button != null) button.onClick.RemoveAllListeners();
+            }
         }
     }
 }
