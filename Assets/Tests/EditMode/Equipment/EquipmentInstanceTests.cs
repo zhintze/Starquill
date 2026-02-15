@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Starquill.Core;
+using Starquill.Data;
 using Starquill.Equipment;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace Starquill.Tests.Equipment
                 rarity: Rarity.Rare,
                 baseColor: Color.red,
                 varianceColors: new Dictionary<int, Color> { { 48, Color.blue } },
-                statMods: new Data.Stats { STR = 3, CON = 2 },
+                statMods: new Stats { STR = 3, CON = 2 },
                 rolledAffixes: new List<RolledAffix>(),
                 layerCodes: new[] { 48 },
                 hiddenLayers: new int[0],
@@ -47,7 +48,7 @@ namespace Starquill.Tests.Equipment
             var instance = new EquipmentInstance(
                 "tr03", 1, EquipmentSlot.Torso, Rarity.Rare,
                 Color.white, null,
-                new Data.Stats { STR = 2 }, affixes,
+                new Stats { STR = 2 }, affixes,
                 new[] { 48 }, new int[0], new int[0],
                 false, null, "Test"
             );
