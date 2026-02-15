@@ -1,7 +1,7 @@
 {
     "name": "Starquill.Characters",
     "rootNamespace": "Starquill.Characters",
-    "references": ["Starquill.Core", "Starquill.Data", "Starquill.Equipment"],
+    "references": ["Starquill.Core", "Starquill.Data", "Starquill.Equipment", "Starquill.Display"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
