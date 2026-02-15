@@ -9,8 +9,14 @@ namespace Starquill.UI
         [SerializeField] private Button[] navButtons;
         [SerializeField] private Color activeColor = new Color(1f, 0.8f, 0.2f);
         [SerializeField] private Color inactiveColor = new Color(0.5f, 0.5f, 0.5f);
+        [SerializeField] private ScreenManager screenManager;
 
         private int activeTab;
+
+        public void SetScreenManager(ScreenManager manager)
+        {
+            screenManager = manager;
+        }
 
         public void SetActiveTab(int index)
         {
@@ -47,6 +53,9 @@ namespace Starquill.UI
                 var btn = btnObj.AddComponent<Button>();
                 navButtons[i] = btn;
 
+                int tabIndex = i;
+                btn.onClick.AddListener(() => OnNavButtonClicked(tabIndex));
+
                 var labelObj = new GameObject("Label");
                 labelObj.transform.SetParent(btnObj.transform, false);
                 var labelRT = labelObj.AddComponent<RectTransform>();
@@ -60,6 +69,13 @@ namespace Starquill.UI
                 tmp.alignment = TextAlignmentOptions.Center;
                 tmp.color = new Color(0.7f, 0.7f, 0.7f);
             }
+        }
+
+        private void OnNavButtonClicked(int index)
+        {
+            SetActiveTab(index);
+            if (screenManager != null)
+                screenManager.ShowScreen(index);
         }
     }
 }

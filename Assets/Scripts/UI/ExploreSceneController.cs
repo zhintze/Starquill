@@ -41,6 +41,7 @@ namespace Starquill.UI
         private GameManager gm;
         private Coroutine verbLockCoroutine;
         private RectTransform spawnerRT;
+        private bool isMuted;
 
         private void Start()
         {
@@ -118,8 +119,15 @@ namespace Starquill.UI
                 verbBar.OnCardTapped -= HandleVerbCardTapped;
         }
 
+        public void SetMuted(bool muted)
+        {
+            isMuted = muted;
+        }
+
         private void HandleCombatTick(CombatTickResult result)
         {
+            if (isMuted) return;
+
             if (topBar != null && gm != null)
                 topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
 
@@ -174,6 +182,8 @@ namespace Starquill.UI
 
         private void HandleVerbActivated(int slotIndex, CombatTickResult result)
         {
+            if (isMuted) return;
+
             if (damageNumbers != null && gm != null && enemyDisplay != null)
             {
                 var alive = gm.CurrentEnemies.Where(e => e.IsAlive || e.CurrentHP <= 0).ToList();
