@@ -97,6 +97,79 @@ namespace Starquill.Tests.Characters
             Assert.AreEqual("c3", party[3].id);
         }
 
+        [Test]
+        public void IsInParty_ReturnsTrue_WhenInParty()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            roster.SetPartyMember(0, 0);
+            Assert.IsTrue(roster.IsInParty(0));
+        }
+
+        [Test]
+        public void IsInParty_ReturnsFalse_WhenOnBench()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            Assert.IsFalse(roster.IsInParty(0));
+        }
+
+        [Test]
+        public void GetPartySlot_ReturnsSlot_WhenInParty()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            roster.SetPartyMember(2, 0);
+            Assert.AreEqual(2, roster.GetPartySlot(0));
+        }
+
+        [Test]
+        public void GetPartySlot_ReturnsNegative_WhenNotInParty()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            Assert.AreEqual(-1, roster.GetPartySlot(0));
+        }
+
+        [Test]
+        public void AddToParty_FillsFirstEmptySlot()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            roster.AddCharacter(CreateTestCharacter("c1"));
+            roster.SetPartyMember(0, 0);
+            Assert.IsTrue(roster.AddToParty(1));
+            Assert.AreEqual(1, roster.GetPartySlot(1));
+        }
+
+        [Test]
+        public void AddToParty_ReturnsFalse_WhenPartyFull()
+        {
+            for (int i = 0; i < 5; i++)
+                roster.AddCharacter(CreateTestCharacter($"c{i}"));
+            for (int i = 0; i < 4; i++)
+                roster.SetPartyMember(i, i);
+            Assert.IsFalse(roster.AddToParty(4));
+        }
+
+        [Test]
+        public void RemoveFromParty_ClearsSlot()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            roster.SetPartyMember(0, 0);
+            roster.RemoveFromParty(0);
+            Assert.IsFalse(roster.IsInParty(0));
+        }
+
+        [Test]
+        public void SwapPartyMember_SwapsBenchAndParty()
+        {
+            roster.AddCharacter(CreateTestCharacter("c0"));
+            roster.AddCharacter(CreateTestCharacter("c1"));
+            roster.SetPartyMember(0, 0);
+
+            roster.SwapPartyMember(0, 1); // swap party slot 0: c0 out, c1 in
+
+            var party = roster.GetActiveParty();
+            Assert.AreEqual("c1", party[0].id);
+            Assert.IsFalse(roster.IsInParty(0));
+        }
+
         private CharacterInstance CreateTestCharacter(string id)
         {
             return new CharacterInstance

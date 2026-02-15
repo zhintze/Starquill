@@ -52,5 +52,54 @@ namespace Starquill.Characters
             for (int i = 0; i < 4 && i < Characters.Count; i++)
                 ActivePartyIndices[i] = i;
         }
+
+        public bool IsInParty(int rosterIndex)
+        {
+            for (int i = 0; i < ActivePartyIndices.Length; i++)
+                if (ActivePartyIndices[i] == rosterIndex) return true;
+            return false;
+        }
+
+        public int GetPartySlot(int rosterIndex)
+        {
+            for (int i = 0; i < ActivePartyIndices.Length; i++)
+                if (ActivePartyIndices[i] == rosterIndex) return i;
+            return -1;
+        }
+
+        public bool AddToParty(int rosterIndex)
+        {
+            if (rosterIndex < 0 || rosterIndex >= Characters.Count) return false;
+            if (IsInParty(rosterIndex)) return false;
+
+            for (int i = 0; i < ActivePartyIndices.Length; i++)
+            {
+                if (ActivePartyIndices[i] == -1)
+                {
+                    ActivePartyIndices[i] = rosterIndex;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void RemoveFromParty(int rosterIndex)
+        {
+            for (int i = 0; i < ActivePartyIndices.Length; i++)
+            {
+                if (ActivePartyIndices[i] == rosterIndex)
+                {
+                    ActivePartyIndices[i] = -1;
+                    return;
+                }
+            }
+        }
+
+        public void SwapPartyMember(int partySlot, int newRosterIndex)
+        {
+            if (partySlot < 0 || partySlot >= 4) return;
+            if (newRosterIndex < 0 || newRosterIndex >= Characters.Count) return;
+            ActivePartyIndices[partySlot] = newRosterIndex;
+        }
     }
 }
