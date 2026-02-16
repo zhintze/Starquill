@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Starquill.Characters;
@@ -156,7 +155,27 @@ namespace Starquill.UI
 
         private void HandleEmptySlotTapped()
         {
-            // Placeholder: future drawer UI will open here
+            var character = SelectedCharacter;
+            if (character == null) return;
+
+            // Equip first available verb not already equipped
+            foreach (var verb in character.unlockedVerbs)
+            {
+                if (!character.equippedVerbs.Contains(verb))
+                {
+                    if (character.EquipVerb(verb))
+                    {
+                        RefreshAll();
+                        var gm = GameManager.Instance;
+                        if (gm != null)
+                        {
+                            gm.BuildPartyFromRoster();
+                            gm.RebuildVerbPool();
+                        }
+                    }
+                    return;
+                }
+            }
         }
 
         private void HandleUnequipAction(int slotIndex)
@@ -211,10 +230,8 @@ namespace Starquill.UI
                 case 2:
                     if (actionLoadout != null)
                     {
-                        CharacterInstance[] partyMembers = null;
-                        var gm = GameManager.Instance;
-                        if (gm?.Party != null) partyMembers = gm.Party.Members.ToArray();
-                        actionLoadout.Refresh(character, partyMembers);
+                        var party = roster?.GetActiveParty();
+                        actionLoadout.Refresh(character, party);
                     }
                     break;
             }
