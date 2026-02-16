@@ -2,7 +2,9 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Starquill.Characters;
+using Starquill.Core;
 using Starquill.Display;
+using Starquill.Equipment;
 using Starquill.Managers;
 
 namespace Starquill.UI
@@ -14,6 +16,7 @@ namespace Starquill.UI
         [SerializeField] private RosterGridDisplay rosterGrid;
         [SerializeField] private EquipmentSlotsDisplay equipmentSlots;
         [SerializeField] private ActionLoadoutDisplay actionLoadout;
+        [SerializeField] private EquipmentDrawer equipmentDrawer;
         [SerializeField] private ScreenManager screenManager;
         [SerializeField] private ExploreSceneController exploreController;
         [SerializeField] private GameObject rosterContent;
@@ -60,6 +63,12 @@ namespace Starquill.UI
             {
                 equipmentSlots.OnSlotTapped += HandleEquipmentSlotTapped;
                 equipmentSlots.OnOptimizeTapped += HandleOptimize;
+            }
+            if (equipmentDrawer != null)
+            {
+                equipmentDrawer.Initialize();
+                equipmentDrawer.OnEquipPressed += HandleDrawerEquip;
+                equipmentDrawer.OnBackPressed += HandleDrawerBack;
             }
 
             // Wire sub-tab buttons
@@ -139,9 +148,19 @@ namespace Starquill.UI
 
         private void HandleEquipmentSlotTapped(int slotIndex)
         {
-            // Highlight the selected slot; drawer will be wired in a later task
             if (equipmentSlots != null)
                 equipmentSlots.SelectSlot(slotIndex);
+
+            var gm = GameManager.Instance;
+            if (gm == null || equipmentDrawer == null) return;
+
+            var character = SelectedCharacter;
+            if (character == null) return;
+
+            var equipped = character.equipment[slotIndex];
+            var candidates = gm.LootInventory.GetItemsForSlot((EquipmentSlot)slotIndex);
+            equipmentDrawer.Open(slotIndex, equipped, candidates);
+            equipmentDrawer.UpdateSummary($"{candidates.Count} items for slot \u00B7 {gm.LootInventory.Count}/{gm.LootInventory.Capacity} inventory");
         }
 
         private void HandleOptimize()
@@ -149,6 +168,22 @@ namespace Starquill.UI
             var gm = GameManager.Instance;
             if (gm == null) return;
             gm.AutoEquipCharacter(SelectedRosterIndex);
+            RefreshAll();
+        }
+
+        private void HandleDrawerEquip(EquipmentInstance item)
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || item == null) return;
+            gm.EquipItemFromInventory(item, SelectedRosterIndex);
+            if (equipmentDrawer != null) equipmentDrawer.Close();
+            if (equipmentSlots != null) equipmentSlots.ClearSelection();
+            RefreshAll();
+        }
+
+        private void HandleDrawerBack()
+        {
+            if (equipmentSlots != null) equipmentSlots.ClearSelection();
             RefreshAll();
         }
 
@@ -218,6 +253,11 @@ namespace Starquill.UI
             {
                 equipmentSlots.OnSlotTapped -= HandleEquipmentSlotTapped;
                 equipmentSlots.OnOptimizeTapped -= HandleOptimize;
+            }
+            if (equipmentDrawer != null)
+            {
+                equipmentDrawer.OnEquipPressed -= HandleDrawerEquip;
+                equipmentDrawer.OnBackPressed -= HandleDrawerBack;
             }
             if (screenManager != null) screenManager.OnScreenChanged -= HandleScreenChanged;
             if (subTabButtons != null)
