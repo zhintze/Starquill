@@ -477,55 +477,116 @@ public static class ExploreSceneBuilder
         StretchFill(actionsContent);
         actionsContent.GetComponent<Image>().color = Color.clear;
 
-        // Equipped container (top half)
+        // Pool Summary Bar (~50px, top)
+        var poolSummaryBar = new GameObject("PoolSummaryBar", typeof(RectTransform), typeof(Image));
+        poolSummaryBar.transform.SetParent(actionsContent.transform, false);
+        var poolBarRT = poolSummaryBar.GetComponent<RectTransform>();
+        poolBarRT.anchorMin = new Vector2(0, 1);
+        poolBarRT.anchorMax = new Vector2(1, 1);
+        poolBarRT.pivot = new Vector2(0.5f, 1);
+        poolBarRT.sizeDelta = new Vector2(0, 50);
+        poolBarRT.anchoredPosition = Vector2.zero;
+        poolSummaryBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.16f, 0.8f);
+        var poolLayout = poolSummaryBar.AddComponent<HorizontalLayoutGroup>();
+        poolLayout.spacing = 4;
+        poolLayout.padding = new RectOffset(8, 8, 6, 6);
+        poolLayout.childControlWidth = true;
+        poolLayout.childControlHeight = true;
+        poolLayout.childForceExpandWidth = true;
+        poolLayout.childForceExpandHeight = true;
+
+        // Equipped Container (below pool bar, fills most of area)
         var equippedContainer = new GameObject("EquippedContainer", typeof(RectTransform));
         equippedContainer.transform.SetParent(actionsContent.transform, false);
         var equippedContainerRT = equippedContainer.GetComponent<RectTransform>();
-        equippedContainerRT.anchorMin = new Vector2(0, 0.5f);
+        equippedContainerRT.anchorMin = new Vector2(0, 0.2f);
         equippedContainerRT.anchorMax = new Vector2(1, 1);
         equippedContainerRT.offsetMin = new Vector2(10, 5);
-        equippedContainerRT.offsetMax = new Vector2(-10, -10);
+        equippedContainerRT.offsetMax = new Vector2(-10, -55);
         var equippedVL = equippedContainer.AddComponent<VerticalLayoutGroup>();
-        equippedVL.spacing = 5;
+        equippedVL.spacing = 8;
         equippedVL.padding = new RectOffset(5, 5, 5, 5);
         equippedVL.childControlWidth = true;
         equippedVL.childControlHeight = false;
         equippedVL.childForceExpandWidth = true;
         equippedVL.childForceExpandHeight = false;
 
-        var equippedHeader = CreateTMPLabel("EquippedHeader", actionsContent.transform, "Equipped", 20, new Color(0.9f, 0.85f, 0.5f), TextAlignmentOptions.MidlineLeft);
-        var equippedHeaderRT = equippedHeader.GetComponent<RectTransform>();
-        equippedHeaderRT.anchorMin = new Vector2(0, 1);
-        equippedHeaderRT.anchorMax = new Vector2(1, 1);
-        equippedHeaderRT.pivot = new Vector2(0.5f, 1);
-        equippedHeaderRT.anchoredPosition = Vector2.zero;
-        equippedHeaderRT.sizeDelta = new Vector2(0, 30);
-        equippedHeaderRT.offsetMin = new Vector2(15, 0);
+        // Lock Indicator (below equipped cards)
+        var lockIndicator = new GameObject("LockIndicator", typeof(RectTransform));
+        lockIndicator.transform.SetParent(actionsContent.transform, false);
+        var lockRT = lockIndicator.GetComponent<RectTransform>();
+        lockRT.anchorMin = new Vector2(0, 0.1f);
+        lockRT.anchorMax = new Vector2(1, 0.2f);
+        lockRT.offsetMin = new Vector2(15, 0);
+        lockRT.offsetMax = new Vector2(-15, 0);
 
-        // Available container (bottom half)
-        var availableContainer = new GameObject("AvailableContainer", typeof(RectTransform));
-        availableContainer.transform.SetParent(actionsContent.transform, false);
-        var availableContainerRT = availableContainer.GetComponent<RectTransform>();
-        availableContainerRT.anchorMin = new Vector2(0, 0);
-        availableContainerRT.anchorMax = new Vector2(1, 0.5f);
-        availableContainerRT.offsetMin = new Vector2(10, 10);
-        availableContainerRT.offsetMax = new Vector2(-10, -5);
-        var availableVL = availableContainer.AddComponent<VerticalLayoutGroup>();
-        availableVL.spacing = 5;
-        availableVL.padding = new RectOffset(5, 5, 5, 5);
-        availableVL.childControlWidth = true;
-        availableVL.childControlHeight = false;
-        availableVL.childForceExpandWidth = true;
-        availableVL.childForceExpandHeight = false;
+        var lockLabel = CreateTMPLabel("LockLabel", lockIndicator.transform, "2/5 slots", 14,
+            new Color(0.5f, 0.5f, 0.55f), TextAlignmentOptions.MidlineLeft);
+        var lockLabelRT = lockLabel.GetComponent<RectTransform>();
+        lockLabelRT.anchorMin = new Vector2(0, 0);
+        lockLabelRT.anchorMax = new Vector2(0.55f, 1);
+        lockLabelRT.offsetMin = Vector2.zero;
+        lockLabelRT.offsetMax = Vector2.zero;
 
-        var availableHeader = CreateTMPLabel("AvailableHeader", actionsContent.transform, "Available", 20, new Color(0.6f, 0.8f, 1f), TextAlignmentOptions.MidlineLeft);
-        var availableHeaderRT = availableHeader.GetComponent<RectTransform>();
-        availableHeaderRT.anchorMin = new Vector2(0, 0.5f);
-        availableHeaderRT.anchorMax = new Vector2(1, 0.5f);
-        availableHeaderRT.pivot = new Vector2(0.5f, 1);
-        availableHeaderRT.anchoredPosition = Vector2.zero;
-        availableHeaderRT.sizeDelta = new Vector2(0, 30);
-        availableHeaderRT.offsetMin = new Vector2(15, 0);
+        // Progress bar for lock indicator
+        var sliderObj = new GameObject("LockProgress", typeof(RectTransform), typeof(Slider));
+        sliderObj.transform.SetParent(lockIndicator.transform, false);
+        var sliderRT = sliderObj.GetComponent<RectTransform>();
+        sliderRT.anchorMin = new Vector2(0.56f, 0.25f);
+        sliderRT.anchorMax = new Vector2(1, 0.75f);
+        sliderRT.offsetMin = Vector2.zero;
+        sliderRT.offsetMax = Vector2.zero;
+
+        var slider = sliderObj.GetComponent<Slider>();
+        slider.interactable = false;
+        slider.minValue = 0;
+        slider.maxValue = 1;
+        slider.value = 0;
+
+        // Slider background
+        var sliderBg = new GameObject("Background", typeof(RectTransform), typeof(Image));
+        sliderBg.transform.SetParent(sliderObj.transform, false);
+        var sliderBgRT = sliderBg.GetComponent<RectTransform>();
+        sliderBgRT.anchorMin = Vector2.zero;
+        sliderBgRT.anchorMax = Vector2.one;
+        sliderBgRT.offsetMin = Vector2.zero;
+        sliderBgRT.offsetMax = Vector2.zero;
+        sliderBg.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.25f);
+
+        // Slider fill area
+        var fillArea = new GameObject("Fill Area", typeof(RectTransform));
+        fillArea.transform.SetParent(sliderObj.transform, false);
+        var fillAreaRT = fillArea.GetComponent<RectTransform>();
+        fillAreaRT.anchorMin = Vector2.zero;
+        fillAreaRT.anchorMax = Vector2.one;
+        fillAreaRT.offsetMin = Vector2.zero;
+        fillAreaRT.offsetMax = Vector2.zero;
+
+        var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        fill.transform.SetParent(fillArea.transform, false);
+        var fillRT = fill.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero;
+        fillRT.anchorMax = Vector2.one;
+        fillRT.offsetMin = Vector2.zero;
+        fillRT.offsetMax = Vector2.zero;
+        fill.GetComponent<Image>().color = new Color(0.5f, 0.7f, 0.3f);
+
+        slider.fillRect = fillRT;
+        slider.targetGraphic = sliderBg.GetComponent<Image>();
+
+        // Drawer Bar (~80px, bottom)
+        var drawerBar = new GameObject("DrawerBar", typeof(RectTransform), typeof(Image));
+        drawerBar.transform.SetParent(actionsContent.transform, false);
+        var drawerBarRT = drawerBar.GetComponent<RectTransform>();
+        drawerBarRT.anchorMin = new Vector2(0, 0);
+        drawerBarRT.anchorMax = new Vector2(1, 0.1f);
+        drawerBarRT.offsetMin = Vector2.zero;
+        drawerBarRT.offsetMax = Vector2.zero;
+        drawerBar.GetComponent<Image>().color = new Color(0.14f, 0.14f, 0.18f, 0.9f);
+
+        var drawerLabel = CreateTMPLabel("DrawerLabel", drawerBar.transform, "0 verbs available", 16,
+            new Color(0.6f, 0.6f, 0.65f), TextAlignmentOptions.Center);
+        StretchFill(drawerLabel);
 
         // Initially hide sub-tab content except Roster (tab 0)
         equipContent.SetActive(false);
@@ -661,7 +722,11 @@ public static class ExploreSceneBuilder
         // ActionLoadoutDisplay on ActionsContent
         var actionLoadoutDisplay = actionsContent.AddComponent<Starquill.UI.ActionLoadoutDisplay>();
         SetPrivateField(actionLoadoutDisplay, "equippedContainer", equippedContainer.transform);
-        SetPrivateField(actionLoadoutDisplay, "availableContainer", availableContainer.transform);
+        SetPrivateField(actionLoadoutDisplay, "poolSummaryContainer", poolSummaryBar.transform);
+        SetPrivateField(actionLoadoutDisplay, "drawerBarLabel", drawerLabel.GetComponent<TMPro.TMP_Text>());
+        SetPrivateField(actionLoadoutDisplay, "lockIndicatorLabel", lockLabel.GetComponent<TMPro.TMP_Text>());
+        SetPrivateField(actionLoadoutDisplay, "lockProgressBar", slider);
+        SetPrivateField(actionLoadoutDisplay, "lockIndicatorObj", lockIndicator);
 
         // Wire PartyScreenController SerializeField references (all components now exist)
         SetPrivateField(partyScreenCtrl, "focusDisplay", focusDisplay);
