@@ -127,7 +127,7 @@ namespace Starquill.UI
         private void RefreshDrawerBar(CharacterInstance character)
         {
             if (drawerBarLabel == null) return;
-            int available = character.unlockedVerbs.Count - character.equippedVerbs.Count;
+            int available = Mathf.Max(0, character.unlockedVerbs.Count - character.equippedVerbs.Count);
             drawerBarLabel.text = $"{available} verb{(available != 1 ? "s" : "")} available";
         }
 

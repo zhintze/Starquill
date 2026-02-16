@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Starquill.Characters;
+using Starquill.Display;
+using Starquill.Core;
+using Starquill.Equipment;
 
 namespace Starquill.UI
 {
@@ -12,7 +16,17 @@ namespace Starquill.UI
         [SerializeField] private Color partyBadgeColor = new Color(1f, 0.8f, 0.2f);
         [SerializeField] private Color selectedBorderColor = new Color(1f, 0.9f, 0.3f);
 
+        private DisplayDataRegistry registry;
+        private DisplayBuilder builder;
+        private readonly List<CharacterPortraitRenderer> renderers = new();
+
         public event Action<int> OnCharacterTapped;
+
+        public void Initialize(DisplayDataRegistry reg, DisplayBuilder bld)
+        {
+            registry = reg;
+            builder = bld;
+        }
 
         public void Refresh(CharacterRoster roster, int selectedIndex)
         {
@@ -64,7 +78,10 @@ namespace Starquill.UI
             portraitRT.anchorMax = new Vector2(0.9f, 0.95f);
             portraitRT.offsetMin = Vector2.zero;
             portraitRT.offsetMax = Vector2.zero;
-            portraitObj.GetComponent<RawImage>().color = new Color(0.3f, 0.3f, 0.35f);
+            var rawImg = portraitObj.GetComponent<RawImage>();
+            rawImg.color = Color.white;
+
+            RenderPortrait(rosterIndex, character, rawImg);
 
             if (inParty && partySlot >= 0)
             {
@@ -84,6 +101,48 @@ namespace Starquill.UI
             }
 
             return card;
+        }
+
+        private void RenderPortrait(int index, CharacterInstance character, RawImage target)
+        {
+            if (registry == null || builder == null) return;
+            if (!registry.Species.TryGetValue(character.speciesId, out var speciesData)) return;
+
+            while (renderers.Count <= index)
+            {
+                var obj = new GameObject($"RosterPortrait_{renderers.Count}");
+                obj.transform.SetParent(transform);
+                var r = obj.AddComponent<CharacterPortraitRenderer>();
+                r.Initialize(new ImageResolver(), 150);
+                renderers.Add(r);
+            }
+
+            renderers[index].SetHeadCrop(speciesData.HeadYOffset, speciesData.HeadZoom);
+
+            var instance = character.GetOrCreateAppearance(speciesData, registry);
+            var equipList = new List<EquipmentDisplayInfo>();
+            foreach (var eq in character.equipment)
+            {
+                if (eq == null) continue;
+                equipList.Add(new EquipmentDisplayInfo
+                {
+                    ItemType = eq.ItemType, ItemNum = eq.ItemNum,
+                    BaseColor = eq.BaseColor,
+                    VarianceColors = eq.VarianceColors as Dictionary<int, Color>
+                        ?? new Dictionary<int, Color>(eq.VarianceColors),
+                    IsOffhand = eq.Slot == EquipmentSlot.OffHand
+                });
+            }
+
+            renderers[index].RebuildFromData(instance, speciesData, equipList, builder);
+            target.texture = renderers[index].Texture;
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var r in renderers)
+                if (r != null) Destroy(r.gameObject);
+            renderers.Clear();
         }
     }
 }

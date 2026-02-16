@@ -116,13 +116,17 @@ namespace Starquill.Characters
                 primary = StarterVerbs;
 
             var (id1, name1, type1, dmg1, cd1, heal1, ha1) = primary[rng.Next(primary.Length)];
-            character.equippedVerbs.Add(CreateVerb(id1, name1, type1, dmg1, cd1, heal1, ha1));
+            var verb1 = CreateVerb(id1, name1, type1, dmg1, cd1, heal1, ha1);
+            character.unlockedVerbs.Add(verb1);
+            character.equippedVerbs.Add(verb1);
 
             var remaining = StarterVerbs.Where(v => v.id != id1).ToArray();
             if (remaining.Length > 0)
             {
                 var (id2, name2, type2, dmg2, cd2, heal2, ha2) = remaining[rng.Next(remaining.Length)];
-                character.equippedVerbs.Add(CreateVerb(id2, name2, type2, dmg2, cd2, heal2, ha2));
+                var verb2 = CreateVerb(id2, name2, type2, dmg2, cd2, heal2, ha2);
+                character.unlockedVerbs.Add(verb2);
+                character.equippedVerbs.Add(verb2);
             }
         }
 
