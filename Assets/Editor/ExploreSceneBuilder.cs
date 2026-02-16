@@ -447,18 +447,15 @@ public static class ExploreSceneBuilder
         StretchFill(equipContent);
         equipContent.GetComponent<Image>().color = Color.clear;
 
+        // SlotsContainer - spatial cluster (no layout group, slots use absolute positions)
         var slotsContainer = new GameObject("SlotsContainer", typeof(RectTransform));
         slotsContainer.transform.SetParent(equipContent.transform, false);
         var slotsContainerRT = slotsContainer.GetComponent<RectTransform>();
-        slotsContainerRT.anchorMin = new Vector2(0, 0);
+        slotsContainerRT.anchorMin = new Vector2(0, 0.12f);  // Leave room for button at bottom
         slotsContainerRT.anchorMax = new Vector2(1, 1);
-        slotsContainerRT.offsetMin = new Vector2(10, 60); // leave room for auto-equip button
-        slotsContainerRT.offsetMax = new Vector2(-10, -10);
-        var slotsGrid = slotsContainer.AddComponent<GridLayoutGroup>();
-        slotsGrid.cellSize = new Vector2(90, 90);
-        slotsGrid.spacing = new Vector2(8, 8);
-        slotsGrid.padding = new RectOffset(5, 5, 5, 5);
-        slotsGrid.childAlignment = TextAnchor.UpperLeft;
+        slotsContainerRT.offsetMin = Vector2.zero;
+        slotsContainerRT.offsetMax = Vector2.zero;
+        // NO layout group - slots use anchoredPosition relative to container center
 
         var autoEquipBtnObj = new GameObject("AutoEquipButton", typeof(RectTransform), typeof(Image), typeof(Button));
         autoEquipBtnObj.transform.SetParent(equipContent.transform, false);
@@ -469,7 +466,7 @@ public static class ExploreSceneBuilder
         autoEquipRT.anchoredPosition = new Vector2(0, 10);
         autoEquipRT.sizeDelta = new Vector2(0, 40);
         autoEquipBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.5f, 0.3f);
-        var autoEquipLabel = CreateTMPLabel("Label", autoEquipBtnObj.transform, "Auto Equip", 18, Color.white, TextAlignmentOptions.Center);
+        var autoEquipLabel = CreateTMPLabel("Label", autoEquipBtnObj.transform, "Optimize", 18, Color.white, TextAlignmentOptions.Center);
         StretchFill(autoEquipLabel);
 
         // Actions Content (sub-tab 2)
