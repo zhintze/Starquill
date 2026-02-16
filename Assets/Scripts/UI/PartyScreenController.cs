@@ -56,11 +56,8 @@ namespace Starquill.UI
             if (rosterGrid != null) rosterGrid.OnCharacterTapped += SelectCharacter;
             if (portraitStrip != null) portraitStrip.OnPortraitTapped += HandlePortraitTapped;
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed += HandleLevelUp;
-            if (actionLoadout != null)
-            {
-                actionLoadout.OnEquippedSlotTapped += HandleUnequipAction;
-                actionLoadout.OnEmptySlotTapped += HandleEmptySlotTapped;
-            }
+            // Drawer interaction not yet implemented — don't wire tap events
+            // TODO: Wire OnEquippedSlotTapped to open drawer, OnEmptySlotTapped to open drawer
 
             // Wire sub-tab buttons
             if (subTabButtons != null)
@@ -153,49 +150,6 @@ namespace Starquill.UI
             }
         }
 
-        private void HandleEmptySlotTapped()
-        {
-            var character = SelectedCharacter;
-            if (character == null) return;
-
-            // Equip first available verb not already equipped
-            foreach (var verb in character.unlockedVerbs)
-            {
-                if (!character.equippedVerbs.Contains(verb))
-                {
-                    if (character.EquipVerb(verb))
-                    {
-                        RefreshAll();
-                        var gm = GameManager.Instance;
-                        if (gm != null)
-                        {
-                            gm.BuildPartyFromRoster();
-                            gm.RebuildVerbPool();
-                        }
-                    }
-                    return;
-                }
-            }
-        }
-
-        private void HandleUnequipAction(int slotIndex)
-        {
-            var character = SelectedCharacter;
-            if (character == null) return;
-            if (slotIndex < 0 || slotIndex >= character.equippedVerbs.Count) return;
-
-            var verb = character.equippedVerbs[slotIndex];
-            character.UnequipVerb(verb);
-            RefreshAll();
-
-            var gm = GameManager.Instance;
-            if (gm != null)
-            {
-                gm.BuildPartyFromRoster();
-                gm.RebuildVerbPool();
-            }
-        }
-
         private void ApplySubTabVisibility()
         {
             if (rosterContent != null) rosterContent.SetActive(ActiveSubTab == 0);
@@ -242,11 +196,7 @@ namespace Starquill.UI
             if (rosterGrid != null) rosterGrid.OnCharacterTapped -= SelectCharacter;
             if (portraitStrip != null) portraitStrip.OnPortraitTapped -= HandlePortraitTapped;
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed -= HandleLevelUp;
-            if (actionLoadout != null)
-            {
-                actionLoadout.OnEquippedSlotTapped -= HandleUnequipAction;
-                actionLoadout.OnEmptySlotTapped -= HandleEmptySlotTapped;
-            }
+            // TODO: Unwire drawer events when implemented
             if (screenManager != null) screenManager.OnScreenChanged -= HandleScreenChanged;
             if (subTabButtons != null)
             {
