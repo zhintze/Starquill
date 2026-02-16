@@ -62,7 +62,10 @@ namespace Starquill.UI
                     if (character != null && registry != null && builder != null)
                         RenderPortrait(i, character, registry, builder);
                     else
+                    {
                         portraits[i].texture = null;
+                        portraits[i].color = new Color(0.2f, 0.2f, 0.25f);
+                    }
                 }
             }
         }
@@ -100,6 +103,7 @@ namespace Starquill.UI
 
             renderers[index].RebuildFromData(instance, speciesData, equipList, builder);
             portraits[index].texture = renderers[index].Texture;
+            portraits[index].color = Color.white;
         }
 
         private void OnDestroy()
