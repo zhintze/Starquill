@@ -174,9 +174,165 @@ public static class ExploreSceneBuilder
         var questsPanel = CreatePlaceholderPanel("QuestsPlaceholder", safeAreaRT, "Quests\n(Coming Soon)");
 
         // ============================================================
-        // === LOOT PLACEHOLDER (screen index 2) ===
+        // === LOOT PANEL (screen index 2) ===
         // ============================================================
-        var lootPanel = CreatePlaceholderPanel("LootPlaceholder", safeAreaRT, "Loot\n(Coming Soon)");
+        var lootPanel = CreatePanel("LootPanel", safeAreaRT);
+        var lootPanelRT = lootPanel.GetComponent<RectTransform>();
+        lootPanelRT.anchorMin = new Vector2(0, 0);
+        lootPanelRT.anchorMax = new Vector2(1, 1);
+        lootPanelRT.offsetMin = new Vector2(0, 120);
+        lootPanelRT.offsetMax = new Vector2(0, -100);
+        lootPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
+
+        // Loot Header Bar (60px top)
+        var lootHeader = CreatePanel("LootHeader", lootPanel.transform);
+        var lootHeaderRT = lootHeader.GetComponent<RectTransform>();
+        lootHeaderRT.anchorMin = new Vector2(0, 1);
+        lootHeaderRT.anchorMax = new Vector2(1, 1);
+        lootHeaderRT.pivot = new Vector2(0.5f, 1);
+        lootHeaderRT.anchoredPosition = Vector2.zero;
+        lootHeaderRT.sizeDelta = new Vector2(0, 60);
+        lootHeader.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.95f);
+
+        var lootHeaderHL = lootHeader.AddComponent<HorizontalLayoutGroup>();
+        lootHeaderHL.spacing = 10;
+        lootHeaderHL.padding = new RectOffset(20, 20, 8, 8);
+        lootHeaderHL.childAlignment = TextAnchor.MiddleCenter;
+        lootHeaderHL.childControlWidth = true;
+        lootHeaderHL.childControlHeight = true;
+        lootHeaderHL.childForceExpandWidth = false;
+        lootHeaderHL.childForceExpandHeight = true;
+
+        var inventoryCountLabel = CreateTMPLabel("InventoryCount", lootHeader.transform,
+            "Inventory: 0/50", 22, Color.white, TextAlignmentOptions.MidlineLeft);
+        inventoryCountLabel.AddComponent<LayoutElement>().flexibleWidth = 2;
+
+        var optimizeAllBtnObj = new GameObject("OptimizeAllButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        optimizeAllBtnObj.transform.SetParent(lootHeader.transform, false);
+        optimizeAllBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.5f, 0.3f);
+        var optAllLE = optimizeAllBtnObj.AddComponent<LayoutElement>();
+        optAllLE.preferredWidth = 160;
+        var optAllLabel = CreateTMPLabel("Label", optimizeAllBtnObj.transform, "Optimize All", 16, Color.white, TextAlignmentOptions.Center);
+        StretchFill(optAllLabel);
+
+        // Loot Item Grid (scrollable, below header)
+        var lootGridScroll = new GameObject("LootGridScroll", typeof(RectTransform), typeof(ScrollRect));
+        lootGridScroll.transform.SetParent(lootPanel.transform, false);
+        var lootGridScrollRT = lootGridScroll.GetComponent<RectTransform>();
+        lootGridScrollRT.anchorMin = new Vector2(0, 0);
+        lootGridScrollRT.anchorMax = new Vector2(1, 1);
+        lootGridScrollRT.offsetMin = new Vector2(0, 0);
+        lootGridScrollRT.offsetMax = new Vector2(0, -60);
+
+        var lootGridContainer = new GameObject("ItemGridContainer", typeof(RectTransform));
+        lootGridContainer.transform.SetParent(lootGridScroll.transform, false);
+        var lootGridContainerRT = lootGridContainer.GetComponent<RectTransform>();
+        lootGridContainerRT.anchorMin = new Vector2(0, 1);
+        lootGridContainerRT.anchorMax = new Vector2(1, 1);
+        lootGridContainerRT.pivot = new Vector2(0.5f, 1);
+        lootGridContainerRT.anchoredPosition = Vector2.zero;
+        lootGridContainerRT.sizeDelta = new Vector2(0, 1200);
+
+        var lootGrid = lootGridContainer.AddComponent<GridLayoutGroup>();
+        lootGrid.cellSize = new Vector2(100, 100);
+        lootGrid.spacing = new Vector2(8, 8);
+        lootGrid.padding = new RectOffset(10, 10, 10, 10);
+        lootGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        lootGrid.constraintCount = 9;
+        lootGrid.childAlignment = TextAnchor.UpperLeft;
+
+        var lootScrollRect = lootGridScroll.GetComponent<ScrollRect>();
+        lootScrollRect.content = lootGridContainerRT;
+        lootScrollRect.horizontal = false;
+        lootScrollRect.vertical = true;
+
+        // Item Detail Panel (overlay, starts hidden)
+        var itemDetailOverlay = CreatePanel("ItemDetailPanel", lootPanel.transform);
+        var itemDetailOverlayRT = itemDetailOverlay.GetComponent<RectTransform>();
+        itemDetailOverlayRT.anchorMin = new Vector2(0, 0);
+        itemDetailOverlayRT.anchorMax = new Vector2(1, 0.75f);
+        itemDetailOverlayRT.offsetMin = new Vector2(10, 10);
+        itemDetailOverlayRT.offsetMax = new Vector2(-10, -10);
+        itemDetailOverlay.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.16f, 0.98f);
+
+        var detailVL = itemDetailOverlay.AddComponent<VerticalLayoutGroup>();
+        detailVL.spacing = 8;
+        detailVL.padding = new RectOffset(16, 16, 16, 16);
+        detailVL.childControlWidth = true;
+        detailVL.childControlHeight = false;
+        detailVL.childForceExpandWidth = true;
+        detailVL.childForceExpandHeight = false;
+
+        // Detail: item name
+        var detailNameLabel = CreateTMPLabel("ItemName", itemDetailOverlay.transform,
+            "Item Name", 28, Color.white, TextAlignmentOptions.MidlineLeft);
+        detailNameLabel.AddComponent<LayoutElement>().preferredHeight = 40;
+        detailNameLabel.GetComponent<TMP_Text>().richText = true;
+
+        // Detail: item stats
+        var detailStatsLabel = CreateTMPLabel("ItemStats", itemDetailOverlay.transform,
+            "Stats", 16, new Color(0.8f, 0.8f, 0.85f), TextAlignmentOptions.TopLeft);
+        detailStatsLabel.AddComponent<LayoutElement>().preferredHeight = 120;
+        detailStatsLabel.GetComponent<TMP_Text>().richText = true;
+
+        // Detail: sell value
+        var detailSellLabel = CreateTMPLabel("SellValue", itemDetailOverlay.transform,
+            "Sell: 0 Gold", 18, new Color(1f, 0.84f, 0f), TextAlignmentOptions.MidlineLeft);
+        detailSellLabel.AddComponent<LayoutElement>().preferredHeight = 30;
+
+        // Detail: "Who wants this?" label
+        var whoWantsLabel = CreateTMPLabel("WhoWantsLabel", itemDetailOverlay.transform,
+            "Who wants this?", 18, new Color(0.6f, 0.6f, 0.65f), TextAlignmentOptions.MidlineLeft);
+        whoWantsLabel.AddComponent<LayoutElement>().preferredHeight = 25;
+
+        // Detail: character picker row
+        var charPickerScroll = new GameObject("CharPickerScroll", typeof(RectTransform), typeof(ScrollRect));
+        charPickerScroll.transform.SetParent(itemDetailOverlay.transform, false);
+        charPickerScroll.AddComponent<LayoutElement>().preferredHeight = 90;
+
+        var charPickerContainer = new GameObject("CharPickerContainer", typeof(RectTransform));
+        charPickerContainer.transform.SetParent(charPickerScroll.transform, false);
+        var charPickerContainerRT = charPickerContainer.GetComponent<RectTransform>();
+        charPickerContainerRT.anchorMin = new Vector2(0, 0);
+        charPickerContainerRT.anchorMax = new Vector2(0, 1);
+        charPickerContainerRT.pivot = new Vector2(0, 0.5f);
+        charPickerContainerRT.anchoredPosition = Vector2.zero;
+        charPickerContainerRT.sizeDelta = new Vector2(800, 0);
+
+        var charPickerHL = charPickerContainer.AddComponent<HorizontalLayoutGroup>();
+        charPickerHL.spacing = 8;
+        charPickerHL.childControlWidth = false;
+        charPickerHL.childControlHeight = true;
+        charPickerHL.childForceExpandWidth = false;
+        charPickerHL.childForceExpandHeight = true;
+
+        var charPickerScrollRect = charPickerScroll.GetComponent<ScrollRect>();
+        charPickerScrollRect.content = charPickerContainerRT;
+        charPickerScrollRect.horizontal = true;
+        charPickerScrollRect.vertical = false;
+
+        // Detail: button bar
+        var detailBtnBar = new GameObject("ButtonBar", typeof(RectTransform));
+        detailBtnBar.transform.SetParent(itemDetailOverlay.transform, false);
+        detailBtnBar.AddComponent<LayoutElement>().preferredHeight = 50;
+        var detailBtnHL = detailBtnBar.AddComponent<HorizontalLayoutGroup>();
+        detailBtnHL.spacing = 10;
+        detailBtnHL.childControlWidth = true;
+        detailBtnHL.childControlHeight = true;
+        detailBtnHL.childForceExpandWidth = true;
+        detailBtnHL.childForceExpandHeight = true;
+
+        var sellBtnObj = new GameObject("SellButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        sellBtnObj.transform.SetParent(detailBtnBar.transform, false);
+        sellBtnObj.GetComponent<Image>().color = new Color(0.6f, 0.2f, 0.2f);
+        var sellLabel = CreateTMPLabel("Label", sellBtnObj.transform, "Sell", 18, Color.white, TextAlignmentOptions.Center);
+        StretchFill(sellLabel);
+
+        var closeBtnObj = new GameObject("CloseButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        closeBtnObj.transform.SetParent(detailBtnBar.transform, false);
+        closeBtnObj.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.35f);
+        var closeLabel = CreateTMPLabel("Label", closeBtnObj.transform, "Close", 18, Color.white, TextAlignmentOptions.Center);
+        StretchFill(closeLabel);
 
         // ============================================================
         // === PARTY PANEL (screen index 3) ===
@@ -469,6 +625,88 @@ public static class ExploreSceneBuilder
         var autoEquipLabel = CreateTMPLabel("Label", autoEquipBtnObj.transform, "Optimize", 18, Color.white, TextAlignmentOptions.Center);
         StretchFill(autoEquipLabel);
 
+        // Equipment Drawer (bottom sheet overlay, starts hidden)
+        var equipDrawerPanel = CreatePanel("EquipDrawerPanel", equipContent.transform);
+        var equipDrawerPanelRT = equipDrawerPanel.GetComponent<RectTransform>();
+        equipDrawerPanelRT.anchorMin = new Vector2(0, 0);
+        equipDrawerPanelRT.anchorMax = new Vector2(1, 0.85f);
+        equipDrawerPanelRT.offsetMin = new Vector2(5, 5);
+        equipDrawerPanelRT.offsetMax = new Vector2(-5, 0);
+        equipDrawerPanel.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.14f, 0.98f);
+
+        var drawerVL = equipDrawerPanel.AddComponent<VerticalLayoutGroup>();
+        drawerVL.spacing = 6;
+        drawerVL.padding = new RectOffset(10, 10, 10, 10);
+        drawerVL.childControlWidth = true;
+        drawerVL.childControlHeight = false;
+        drawerVL.childForceExpandWidth = true;
+        drawerVL.childForceExpandHeight = false;
+
+        // Drawer header label
+        var drawerHeaderLabel = CreateTMPLabel("DrawerHeader", equipDrawerPanel.transform,
+            "Equipped Item", 20, Color.white, TextAlignmentOptions.MidlineLeft);
+        drawerHeaderLabel.AddComponent<LayoutElement>().preferredHeight = 50;
+        drawerHeaderLabel.GetComponent<TMP_Text>().richText = true;
+
+        // Drawer summary label
+        var drawerSummaryLabel = CreateTMPLabel("DrawerSummary", equipDrawerPanel.transform,
+            "0 items for slot", 14, new Color(0.6f, 0.6f, 0.65f), TextAlignmentOptions.MidlineLeft);
+        drawerSummaryLabel.AddComponent<LayoutElement>().preferredHeight = 20;
+
+        // Drawer item list (scrollable)
+        var drawerListScroll = new GameObject("DrawerListScroll", typeof(RectTransform), typeof(ScrollRect));
+        drawerListScroll.transform.SetParent(equipDrawerPanel.transform, false);
+        var drawerListScrollLE = drawerListScroll.AddComponent<LayoutElement>();
+        drawerListScrollLE.flexibleHeight = 1;
+        drawerListScrollLE.preferredHeight = 200;
+
+        var drawerListContainer = new GameObject("ItemListContainer", typeof(RectTransform));
+        drawerListContainer.transform.SetParent(drawerListScroll.transform, false);
+        var drawerListContainerRT = drawerListContainer.GetComponent<RectTransform>();
+        drawerListContainerRT.anchorMin = new Vector2(0, 1);
+        drawerListContainerRT.anchorMax = new Vector2(1, 1);
+        drawerListContainerRT.pivot = new Vector2(0.5f, 1);
+        drawerListContainerRT.anchoredPosition = Vector2.zero;
+        drawerListContainerRT.sizeDelta = new Vector2(0, 600);
+
+        var drawerListVL = drawerListContainer.AddComponent<VerticalLayoutGroup>();
+        drawerListVL.spacing = 4;
+        drawerListVL.childControlWidth = true;
+        drawerListVL.childControlHeight = false;
+        drawerListVL.childForceExpandWidth = true;
+        drawerListVL.childForceExpandHeight = false;
+
+        var csf = drawerListContainer.AddComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var drawerListScrollRect = drawerListScroll.GetComponent<ScrollRect>();
+        drawerListScrollRect.content = drawerListContainerRT;
+        drawerListScrollRect.horizontal = false;
+        drawerListScrollRect.vertical = true;
+
+        // Drawer button bar
+        var drawerBtnBar = new GameObject("DrawerBtnBar", typeof(RectTransform));
+        drawerBtnBar.transform.SetParent(equipDrawerPanel.transform, false);
+        drawerBtnBar.AddComponent<LayoutElement>().preferredHeight = 45;
+        var drawerBtnHL = drawerBtnBar.AddComponent<HorizontalLayoutGroup>();
+        drawerBtnHL.spacing = 10;
+        drawerBtnHL.childControlWidth = true;
+        drawerBtnHL.childControlHeight = true;
+        drawerBtnHL.childForceExpandWidth = true;
+        drawerBtnHL.childForceExpandHeight = true;
+
+        var equipBtnObj = new GameObject("EquipButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        equipBtnObj.transform.SetParent(drawerBtnBar.transform, false);
+        equipBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.6f, 0.3f);
+        var equipBtnLabel = CreateTMPLabel("Label", equipBtnObj.transform, "Equip", 18, Color.white, TextAlignmentOptions.Center);
+        StretchFill(equipBtnLabel);
+
+        var backBtnObj = new GameObject("BackButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        backBtnObj.transform.SetParent(drawerBtnBar.transform, false);
+        backBtnObj.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.35f);
+        var backBtnLabel = CreateTMPLabel("Label", backBtnObj.transform, "Back", 18, Color.white, TextAlignmentOptions.Center);
+        StretchFill(backBtnLabel);
+
         // Actions Content (sub-tab 2)
         var actionsContent = CreatePanel("ActionsContent", contentArea.transform);
         StretchFill(actionsContent);
@@ -716,6 +954,15 @@ public static class ExploreSceneBuilder
         SetPrivateField(equipSlotsDisplay, "slotsContainer", slotsContainer.transform);
         SetPrivateField(equipSlotsDisplay, "autoEquipButton", autoEquipBtnObj.GetComponent<Button>());
 
+        // EquipmentDrawer on EquipmentContent
+        var equipDrawer = equipContent.AddComponent<Starquill.UI.EquipmentDrawer>();
+        SetPrivateField(equipDrawer, "drawerPanel", equipDrawerPanel);
+        SetPrivateField(equipDrawer, "headerLabel", drawerHeaderLabel.GetComponent<TMP_Text>());
+        SetPrivateField(equipDrawer, "summaryLabel", drawerSummaryLabel.GetComponent<TMP_Text>());
+        SetPrivateField(equipDrawer, "itemListContainer", drawerListContainer.transform);
+        SetPrivateField(equipDrawer, "equipButton", equipBtnObj.GetComponent<Button>());
+        SetPrivateField(equipDrawer, "backButton", backBtnObj.GetComponent<Button>());
+
         // ActionLoadoutDisplay on ActionsContent
         var actionLoadoutDisplay = actionsContent.AddComponent<Starquill.UI.ActionLoadoutDisplay>();
         SetPrivateField(actionLoadoutDisplay, "equippedContainer", equippedContainer.transform);
@@ -730,6 +977,7 @@ public static class ExploreSceneBuilder
         SetPrivateField(partyScreenCtrl, "portraitStrip", portraitStripComp);
         SetPrivateField(partyScreenCtrl, "rosterGrid", rosterGridDisplay);
         SetPrivateField(partyScreenCtrl, "equipmentSlots", equipSlotsDisplay);
+        SetPrivateField(partyScreenCtrl, "equipmentDrawer", equipDrawer);
         SetPrivateField(partyScreenCtrl, "actionLoadout", actionLoadoutDisplay);
         SetPrivateField(partyScreenCtrl, "screenManager", screenManager);
         SetPrivateField(partyScreenCtrl, "rosterContent", rosterContent);
@@ -757,6 +1005,26 @@ public static class ExploreSceneBuilder
         SetPrivateField(controller, "enemyDisplay", enemyDisplayCtrl);
         SetPrivateField(controller, "damageNumbers", damageSpawner);
         SetPrivateField(controller, "goldCounter", goldAnimator);
+
+        // LootScreenController on LootPanel
+        var lootScreenCtrl = lootPanel.AddComponent<Starquill.UI.LootScreenController>();
+        SetPrivateField(lootScreenCtrl, "inventoryCountLabel", inventoryCountLabel.GetComponent<TMP_Text>());
+        SetPrivateField(lootScreenCtrl, "itemGridContainer", lootGridContainer.transform);
+        SetPrivateField(lootScreenCtrl, "optimizeAllButton", optimizeAllBtnObj.GetComponent<Button>());
+        SetPrivateField(lootScreenCtrl, "screenManager", screenManager);
+
+        // ItemDetailPanel on LootPanel
+        var itemDetail = lootPanel.AddComponent<Starquill.UI.ItemDetailPanel>();
+        SetPrivateField(itemDetail, "panel", itemDetailOverlay);
+        SetPrivateField(itemDetail, "itemNameLabel", detailNameLabel.GetComponent<TMP_Text>());
+        SetPrivateField(itemDetail, "itemStatsLabel", detailStatsLabel.GetComponent<TMP_Text>());
+        SetPrivateField(itemDetail, "sellValueLabel", detailSellLabel.GetComponent<TMP_Text>());
+        SetPrivateField(itemDetail, "sellButton", sellBtnObj.GetComponent<Button>());
+        SetPrivateField(itemDetail, "closeButton", closeBtnObj.GetComponent<Button>());
+        SetPrivateField(itemDetail, "characterPickerContainer", charPickerContainer.transform);
+
+        // Wire ItemDetailPanel to LootScreenController
+        SetPrivateField(lootScreenCtrl, "itemDetailPanel", itemDetail);
 
         // Wire ExploreSceneController reference on PartyScreenController (now that controller exists)
         SetPrivateField(partyScreenCtrl, "exploreController", controller);
