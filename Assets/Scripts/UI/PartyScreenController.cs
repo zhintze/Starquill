@@ -1,8 +1,8 @@
 using System;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Starquill.Characters;
-using Starquill.Data;
 using Starquill.Display;
 using Starquill.Managers;
 
@@ -50,6 +50,7 @@ namespace Starquill.UI
 
             if (focusDisplay != null) focusDisplay.Initialize(registry, builder);
             if (portraitStrip != null) portraitStrip.Initialize();
+            if (rosterGrid != null) rosterGrid.Initialize(registry, builder);
             if (equipmentSlots != null) equipmentSlots.Initialize();
 
             // Wire events
@@ -58,8 +59,8 @@ namespace Starquill.UI
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed += HandleLevelUp;
             if (actionLoadout != null)
             {
-                actionLoadout.OnAvailableTapped += HandleEquipAction;
-                actionLoadout.OnEquippedTapped += HandleUnequipAction;
+                actionLoadout.OnEquippedSlotTapped += HandleUnequipAction;
+                actionLoadout.OnEmptySlotTapped += HandleEmptySlotTapped;
             }
 
             // Wire sub-tab buttons
@@ -153,22 +154,9 @@ namespace Starquill.UI
             }
         }
 
-        private void HandleEquipAction(VerbDefinition verb)
+        private void HandleEmptySlotTapped()
         {
-            var character = SelectedCharacter;
-            if (character == null) return;
-
-            if (character.EquipVerb(verb))
-            {
-                RefreshAll();
-
-                var gm = GameManager.Instance;
-                if (gm != null)
-                {
-                    gm.BuildPartyFromRoster();
-                    gm.RebuildVerbPool();
-                }
-            }
+            // Placeholder: future drawer UI will open here
         }
 
         private void HandleUnequipAction(int slotIndex)
@@ -222,7 +210,12 @@ namespace Starquill.UI
                     break;
                 case 2:
                     if (actionLoadout != null)
-                        actionLoadout.Refresh(character);
+                    {
+                        CharacterInstance[] partyMembers = null;
+                        var gm = GameManager.Instance;
+                        if (gm?.Party != null) partyMembers = gm.Party.Members.ToArray();
+                        actionLoadout.Refresh(character, partyMembers);
+                    }
                     break;
             }
         }
@@ -234,8 +227,8 @@ namespace Starquill.UI
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed -= HandleLevelUp;
             if (actionLoadout != null)
             {
-                actionLoadout.OnAvailableTapped -= HandleEquipAction;
-                actionLoadout.OnEquippedTapped -= HandleUnequipAction;
+                actionLoadout.OnEquippedSlotTapped -= HandleUnequipAction;
+                actionLoadout.OnEmptySlotTapped -= HandleEmptySlotTapped;
             }
             if (screenManager != null) screenManager.OnScreenChanged -= HandleScreenChanged;
             if (subTabButtons != null)
