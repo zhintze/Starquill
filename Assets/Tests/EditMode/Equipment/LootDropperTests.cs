@@ -126,15 +126,14 @@ namespace Starquill.Tests.Equipment
         {
             config.baseDropRate = 1.0f;
             var dropper = new LootDropper(factory, config, pity);
-            // Register some kills to build up pity
-            for (int i = 0; i < 10; i++)
-                pity.RegisterKill(config);
-            Assert.Greater(pity.killsSinceUncommon, 0);
 
-            // Now get a drop — pity should reset
+            // Set pity just below threshold so TryDrop's internal RegisterKill triggers it
+            // This guarantees the drop is Uncommon+ (pity-forced), so RegisterDrop resets the counter
+            pity.killsSinceUncommon = config.pityUncommon - 1;
+
             var drop = dropper.TryDrop(1, new System.Random(42));
             Assert.IsNotNull(drop);
-            // After a drop, killsSinceUncommon should be 0 (RegisterDrop resets it)
+            Assert.GreaterOrEqual((int)drop.Rarity, (int)Rarity.Uncommon);
             Assert.AreEqual(0, pity.killsSinceUncommon);
         }
     }
