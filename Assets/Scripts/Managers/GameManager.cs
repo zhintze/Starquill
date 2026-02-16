@@ -242,6 +242,7 @@ namespace Starquill.Managers
 
         private void SaveState()
         {
+            if (saveManager == null || roster == null || lootInventory == null) return;
             saveManager.CurrentSave.gold = gold;
             saveManager.CurrentSave.currentQuestLevel = questLevel;
             saveManager.CurrentSave.roster.Clear();
