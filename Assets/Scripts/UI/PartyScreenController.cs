@@ -56,8 +56,11 @@ namespace Starquill.UI
             if (rosterGrid != null) rosterGrid.OnCharacterTapped += SelectCharacter;
             if (portraitStrip != null) portraitStrip.OnPortraitTapped += HandlePortraitTapped;
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed += HandleLevelUp;
-            // Drawer interaction not yet implemented — don't wire tap events
-            // TODO: Wire OnEquippedSlotTapped to open drawer, OnEmptySlotTapped to open drawer
+            if (equipmentSlots != null)
+            {
+                equipmentSlots.OnSlotTapped += HandleEquipmentSlotTapped;
+                equipmentSlots.OnOptimizeTapped += HandleOptimize;
+            }
 
             // Wire sub-tab buttons
             if (subTabButtons != null)
@@ -134,6 +137,21 @@ namespace Starquill.UI
                 SelectCharacter(rosterIndex);
         }
 
+        private void HandleEquipmentSlotTapped(int slotIndex)
+        {
+            // Highlight the selected slot; drawer will be wired in a later task
+            if (equipmentSlots != null)
+                equipmentSlots.SelectSlot(slotIndex);
+        }
+
+        private void HandleOptimize()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+            gm.AutoEquipCharacter(SelectedRosterIndex);
+            RefreshAll();
+        }
+
         private void HandleLevelUp()
         {
             var character = SelectedCharacter;
@@ -196,7 +214,11 @@ namespace Starquill.UI
             if (rosterGrid != null) rosterGrid.OnCharacterTapped -= SelectCharacter;
             if (portraitStrip != null) portraitStrip.OnPortraitTapped -= HandlePortraitTapped;
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed -= HandleLevelUp;
-            // TODO: Unwire drawer events when implemented
+            if (equipmentSlots != null)
+            {
+                equipmentSlots.OnSlotTapped -= HandleEquipmentSlotTapped;
+                equipmentSlots.OnOptimizeTapped -= HandleOptimize;
+            }
             if (screenManager != null) screenManager.OnScreenChanged -= HandleScreenChanged;
             if (subTabButtons != null)
             {

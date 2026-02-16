@@ -321,6 +321,19 @@ namespace Starquill.Managers
             OnRosterChanged?.Invoke();
         }
 
+        public int AutoEquipCharacter(int characterIndex)
+        {
+            if (roster == null || characterIndex < 0 || characterIndex >= roster.Characters.Count) return 0;
+            var character = roster.Characters[characterIndex];
+            var result = AutoEquipper.AutoEquip(character, lootInventory);
+            if (result.ItemsEquipped > 0)
+            {
+                BuildPartyFromRoster();
+                OnRosterChanged?.Invoke();
+            }
+            return result.ItemsEquipped;
+        }
+
         private void OnApplicationPause(bool paused)
         {
             if (paused) SaveState();
