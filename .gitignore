@@ -38,6 +38,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude Code MCP config
+.mcp.json
+
 # Dependencies
 node_modules/
 
