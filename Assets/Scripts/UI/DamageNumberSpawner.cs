@@ -31,6 +31,7 @@ namespace Starquill.UI
 
         public void SpawnDamage(Vector2 position, float damage, Color color, bool isVerbHit = false)
         {
+            if (!gameObject.activeInHierarchy) return;
             var tmp = pool[nextIndex];
             nextIndex = (nextIndex + 1) % poolSize;
 
@@ -47,6 +48,7 @@ namespace Starquill.UI
 
         public void SpawnGold(Vector2 position, double amount)
         {
+            if (!gameObject.activeInHierarchy) return;
             var tmp = pool[nextIndex];
             nextIndex = (nextIndex + 1) % poolSize;
 

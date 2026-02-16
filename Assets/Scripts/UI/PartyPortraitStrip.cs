@@ -83,7 +83,7 @@ namespace Starquill.UI
 
             renderers[index].SetHeadCrop(speciesData.HeadYOffset, speciesData.HeadZoom);
 
-            var instance = SpeciesInstanceData.CreateFrom(speciesData, registry);
+            var instance = character.GetOrCreateAppearance(speciesData, registry);
             var equipList = new List<EquipmentDisplayInfo>();
             foreach (var eq in character.equipment)
             {

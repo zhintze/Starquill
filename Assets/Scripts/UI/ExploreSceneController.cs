@@ -39,6 +39,7 @@ namespace Starquill.UI
         private readonly List<CharacterDisplay> characterDisplays = new();
         private readonly List<Texture2D> placeholderTextures = new();
         private GameManager gm;
+        private ScreenManager screenManager;
         private Coroutine verbLockCoroutine;
         private RectTransform spawnerRT;
         private bool isMuted;
@@ -49,6 +50,18 @@ namespace Starquill.UI
 
             if (damageNumbers != null)
                 spawnerRT = (RectTransform)damageNumbers.transform;
+
+            // Bottom nav buttons are always needed for screen switching
+            if (bottomNav != null)
+            {
+                bottomNav.CreatePlaceholderButtons();
+                bottomNav.SetActiveTab(0);
+            }
+
+            // Self-mute when not on explore tab (ScreenManager is on this Canvas)
+            screenManager = GetComponent<ScreenManager>();
+            if (screenManager != null)
+                screenManager.OnScreenChanged += HandleScreenChanged;
 
             gm = GameManager.Instance;
             if (gm != null)
@@ -122,6 +135,11 @@ namespace Starquill.UI
         public void SetMuted(bool muted)
         {
             isMuted = muted;
+        }
+
+        private void HandleScreenChanged(int screenIndex)
+        {
+            isMuted = screenIndex != 0;
         }
 
         private void HandleCombatTick(CombatTickResult result)
@@ -292,7 +310,11 @@ namespace Starquill.UI
                 if (!registry.Species.TryGetValue(speciesKey, out var speciesData))
                     speciesData = registry.Species[speciesKeys[i % speciesKeys.Count]];
 
-                var instance = SpeciesInstanceData.CreateFrom(speciesData, registry);
+                SpeciesInstanceData instance;
+                if (activeParty != null && activeParty[i] != null)
+                    instance = activeParty[i].GetOrCreateAppearance(speciesData, registry);
+                else
+                    instance = SpeciesInstanceData.CreateFrom(speciesData, registry);
 
                 var equipDisplayList = new List<EquipmentDisplayInfo>();
                 if (equipment != null)
@@ -339,11 +361,6 @@ namespace Starquill.UI
             if (verbBar != null)
                 verbBar.PopulateWithPlaceholders();
 
-            if (bottomNav != null)
-            {
-                bottomNav.CreatePlaceholderButtons();
-                bottomNav.SetActiveTab(0);
-            }
         }
 
         private Texture2D CreatePlaceholderTexture(int width, int height, Color baseColor, int stripeSpacing)
@@ -374,6 +391,9 @@ namespace Starquill.UI
 
         private void OnDestroy()
         {
+            if (screenManager != null)
+                screenManager.OnScreenChanged -= HandleScreenChanged;
+
             foreach (var display in characterDisplays)
                 if (display != null) Destroy(display.gameObject);
             characterDisplays.Clear();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Starquill.Core;
 using Starquill.Data;
+using Starquill.Display;
 using Starquill.Equipment;
 
 namespace Starquill.Characters
@@ -23,6 +24,17 @@ namespace Starquill.Characters
 
         // Fractional stat accumulation for weighted distribution
         private float[] statAccumulator = new float[6];
+
+        // Cached visual appearance — deterministic from character ID
+        [NonSerialized] private SpeciesInstanceData cachedAppearance;
+
+        public SpeciesInstanceData GetOrCreateAppearance(SpeciesDisplayData speciesData, DisplayDataRegistry registry)
+        {
+            if (cachedAppearance != null) return cachedAppearance;
+            var rng = new System.Random(id.GetHashCode());
+            cachedAppearance = SpeciesInstanceData.CreateFrom(speciesData, registry, rng);
+            return cachedAppearance;
+        }
 
         public int XpToNextLevel()
         {

@@ -123,10 +123,6 @@ namespace Starquill.UI
 
         private void HandleScreenChanged(int screenIndex)
         {
-            // Mute explore when not on explore tab
-            if (exploreController != null)
-                exploreController.SetMuted(screenIndex != 0);
-
             // Refresh when Party tab shown
             if (screenIndex == 3)
                 RefreshAll();

@@ -32,10 +32,34 @@ public static class ExploreSceneBuilder
         }
 
         // ============================================================
+        // === FULL-SCREEN BACKGROUND (fills behind notch/home indicator) ===
+        // Prevents black gaps when SafeAreaPanel shrinks for safe area
+        // ============================================================
+        var bgFill = CreatePanel("BackgroundFill", canvasRT);
+        var bgFillRT = bgFill.GetComponent<RectTransform>();
+        bgFillRT.anchorMin = Vector2.zero;
+        bgFillRT.anchorMax = Vector2.one;
+        bgFillRT.offsetMin = Vector2.zero;
+        bgFillRT.offsetMax = Vector2.zero;
+        bgFill.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 1f); // matches TopBar/BottomNav
+
+        // ============================================================
+        // === SAFE AREA PANEL (constrains interactive content) ===
+        // ============================================================
+        var safeAreaGO = new GameObject("SafeAreaPanel", typeof(RectTransform));
+        safeAreaGO.transform.SetParent(canvasRT, false);
+        var safeAreaRT = safeAreaGO.GetComponent<RectTransform>();
+        safeAreaRT.anchorMin = Vector2.zero;
+        safeAreaRT.anchorMax = Vector2.one;
+        safeAreaRT.offsetMin = Vector2.zero;
+        safeAreaRT.offsetMax = Vector2.zero;
+        safeAreaGO.AddComponent<Starquill.UI.SafeAreaAdapter>();
+
+        // ============================================================
         // === EXPLORE PANEL (screen index 0) ===
         // Fills space between TopBar (top 100px) and BottomNav (bottom 120px)
         // ============================================================
-        var explorePanel = CreatePanel("ExplorePanel", canvasRT);
+        var explorePanel = CreatePanel("ExplorePanel", safeAreaRT);
         var explorePanelRT = explorePanel.GetComponent<RectTransform>();
         explorePanelRT.anchorMin = new Vector2(0, 0);
         explorePanelRT.anchorMax = new Vector2(1, 1);
@@ -147,17 +171,17 @@ public static class ExploreSceneBuilder
         // ============================================================
         // === QUESTS PLACEHOLDER (screen index 1) ===
         // ============================================================
-        var questsPanel = CreatePlaceholderPanel("QuestsPlaceholder", canvasRT, "Quests\n(Coming Soon)");
+        var questsPanel = CreatePlaceholderPanel("QuestsPlaceholder", safeAreaRT, "Quests\n(Coming Soon)");
 
         // ============================================================
         // === LOOT PLACEHOLDER (screen index 2) ===
         // ============================================================
-        var lootPanel = CreatePlaceholderPanel("LootPlaceholder", canvasRT, "Loot\n(Coming Soon)");
+        var lootPanel = CreatePlaceholderPanel("LootPlaceholder", safeAreaRT, "Loot\n(Coming Soon)");
 
         // ============================================================
         // === PARTY PANEL (screen index 3) ===
         // ============================================================
-        var partyPanel = CreatePanel("PartyPanel", canvasRT);
+        var partyPanel = CreatePanel("PartyPanel", safeAreaRT);
         var partyPanelRT = partyPanel.GetComponent<RectTransform>();
         partyPanelRT.anchorMin = new Vector2(0, 0);
         partyPanelRT.anchorMax = new Vector2(1, 1);
@@ -510,13 +534,13 @@ public static class ExploreSceneBuilder
         // ============================================================
         // === SHOP PLACEHOLDER (screen index 4) ===
         // ============================================================
-        var shopPanel = CreatePlaceholderPanel("ShopPlaceholder", canvasRT, "Shop\n(Coming Soon)");
+        var shopPanel = CreatePlaceholderPanel("ShopPlaceholder", safeAreaRT, "Shop\n(Coming Soon)");
 
         // ============================================================
         // === TOP BAR PANEL (anchored top, 100px, single row) ===
         // Always visible — stays directly under Canvas
         // ============================================================
-        var topBar = CreatePanel("TopBarPanel", canvasRT);
+        var topBar = CreatePanel("TopBarPanel", safeAreaRT);
         var topBarRT = topBar.GetComponent<RectTransform>();
         topBarRT.anchorMin = new Vector2(0, 1);
         topBarRT.anchorMax = new Vector2(1, 1);
@@ -550,7 +574,7 @@ public static class ExploreSceneBuilder
         // === BOTTOM NAV PANEL (anchored bottom, 120px) ===
         // Always visible — stays directly under Canvas
         // ============================================================
-        var bottomNav = CreatePanel("BottomNavPanel", canvasRT);
+        var bottomNav = CreatePanel("BottomNavPanel", safeAreaRT);
         var bottomNavRT = bottomNav.GetComponent<RectTransform>();
         bottomNavRT.anchorMin = new Vector2(0, 0);
         bottomNavRT.anchorMax = new Vector2(1, 0);

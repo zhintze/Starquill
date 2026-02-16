@@ -106,7 +106,7 @@ namespace Starquill.UI
             if (paperDollImage == null || registry == null || builder == null) return;
 
             if (!registry.Species.TryGetValue(character.speciesId, out var speciesData)) return;
-            var instance = SpeciesInstanceData.CreateFrom(speciesData, registry);
+            var instance = character.GetOrCreateAppearance(speciesData, registry);
 
             var equipList = new List<EquipmentDisplayInfo>();
             foreach (var eq in character.equipment)
