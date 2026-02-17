@@ -212,6 +212,16 @@ namespace Starquill.Managers
             foreach (var c in characters)
                 roster.AddCharacter(c);
             roster.InitializeDefaultParty();
+
+            // Seed inventory with starter items for new players
+            var prefixes = new[] { "hd", "tr", "ar", "lg", "fe", "mc" };
+            for (int i = 0; i < 5; i++)
+            {
+                var seedRng = new System.Random(UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+                var rarity = i < 3 ? Rarity.Uncommon : Rarity.Rare;
+                var item = equipmentFactory.CreateRandom(prefixes[i % prefixes.Length], rarity, seedRng);
+                if (item != null) lootInventory.AddItem(item);
+            }
         }
 
         private void LoadRosterFromSave(SaveData save)

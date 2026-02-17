@@ -135,5 +135,30 @@ namespace Starquill.Tests.Equipment
             var name = EquipmentFactory.GenerateDisplayName(Rarity.Rare, "shirt");
             Assert.IsTrue(name.Contains("Rare"), $"Name '{name}' should contain 'Rare'");
         }
+
+        [Test]
+        public void CreateStarterLoadout_FillsAllCoreSlots()
+        {
+            var loadout = factory.CreateStarterLoadout(new System.Random(42));
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Head], "Head");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Torso], "Torso");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Arms], "Arms");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Legs], "Legs");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Feet], "Feet");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.MainHand], "MainHand");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Misc1], "Misc1");
+            Assert.IsNotNull(loadout[(int)EquipmentSlot.Misc2], "Misc2");
+        }
+
+        [Test]
+        public void CreateStarterLoadout_AllCommonRarity()
+        {
+            var loadout = factory.CreateStarterLoadout(new System.Random(42));
+            for (int i = 0; i < loadout.Length; i++)
+            {
+                if (loadout[i] != null)
+                    Assert.AreEqual(Rarity.Common, loadout[i].Rarity, $"Slot {i} should be Common");
+            }
+        }
     }
 }

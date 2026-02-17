@@ -44,7 +44,9 @@ namespace Starquill.Characters
                 baseStats = GenerateBaseStats(rng)
             };
 
-            var loadout = equipFactory.CreateRandomLoadout(questLevel, rng);
+            var loadout = questLevel <= 1
+                ? equipFactory.CreateStarterLoadout(rng)
+                : equipFactory.CreateRandomLoadout(questLevel, rng);
             character.EquipLoadout(loadout);
 
             AssignVerbs(character, rng);

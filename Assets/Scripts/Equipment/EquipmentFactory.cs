@@ -161,6 +161,42 @@ namespace Starquill.Equipment
             return loadout;
         }
 
+        public EquipmentInstance[] CreateStarterLoadout(System.Random rng)
+        {
+            var loadout = new EquipmentInstance[11];
+
+            // All armor slots
+            loadout[(int)EquipmentSlot.Head] = CreateRandom("hd", Rarity.Common, rng);
+            loadout[(int)EquipmentSlot.Torso] = CreateRandom("tr", Rarity.Common, rng);
+            loadout[(int)EquipmentSlot.Arms] = CreateRandom("ar", Rarity.Common, rng);
+            loadout[(int)EquipmentSlot.Legs] = CreateRandom("lg", Rarity.Common, rng);
+            loadout[(int)EquipmentSlot.Feet] = CreateRandom("fe", Rarity.Common, rng);
+
+            // Weapon + offhand
+            var weapon = CreateRandomWeapon(Rarity.Common, rng, "one_handed");
+            if (weapon != null)
+            {
+                loadout[(int)EquipmentSlot.MainHand] = weapon;
+                var offhand = CreateRandomWeapon(Rarity.Common, rng, "one_handed");
+                if (offhand != null)
+                {
+                    loadout[(int)EquipmentSlot.OffHand] = new EquipmentInstance(
+                        offhand.ItemType, offhand.ItemNum, EquipmentSlot.OffHand, offhand.Rarity,
+                        offhand.BaseColor, new Dictionary<int, Color>(offhand.VarianceColors),
+                        offhand.StatMods, new List<RolledAffix>(offhand.RolledAffixes),
+                        offhand.LayerCodes, offhand.HiddenLayers, offhand.LayerColorVariance,
+                        offhand.Modular, offhand.HandType, offhand.DisplayName
+                    );
+                }
+            }
+
+            // Two misc items
+            loadout[(int)EquipmentSlot.Misc1] = CreateRandom("mc", Rarity.Common, rng);
+            loadout[(int)EquipmentSlot.Misc2] = CreateRandom("mc", Rarity.Common, rng);
+
+            return loadout;
+        }
+
         public static Rarity RollRarity(int questLevel, System.Random rng)
         {
             float uncommonWeight = 15f + questLevel * 0.5f;
