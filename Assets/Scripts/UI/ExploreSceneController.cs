@@ -329,7 +329,8 @@ namespace Starquill.UI
                             BaseColor = eq.BaseColor,
                             VarianceColors = eq.VarianceColors as Dictionary<int, Color>
                                 ?? new Dictionary<int, Color>(eq.VarianceColors),
-                            IsOffhand = eq.Slot == EquipmentSlot.OffHand
+                            IsOffhand = eq.Slot == EquipmentSlot.OffHand,
+                            LayerVariants = eq.LayerVariants
                         };
                         equipDisplayList.Add(info);
                     }

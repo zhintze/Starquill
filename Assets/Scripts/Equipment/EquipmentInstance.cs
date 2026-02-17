@@ -22,13 +22,15 @@ namespace Starquill.Equipment
         public bool Modular { get; }
         public string HandType { get; }
         public string DisplayName { get; }
+        public int[] LayerVariants { get; }
 
         public EquipmentInstance(
             string itemType, int itemNum, EquipmentSlot slot, Rarity rarity,
             Color baseColor, Dictionary<int, Color> varianceColors,
             Stats statMods, List<RolledAffix> rolledAffixes,
             int[] layerCodes, int[] hiddenLayers, int[] layerColorVariance,
-            bool modular, string handType, string displayName)
+            bool modular, string handType, string displayName,
+            int[] layerVariants = null)
         {
             ItemType = itemType;
             ItemNum = itemNum;
@@ -44,6 +46,7 @@ namespace Starquill.Equipment
             Modular = modular;
             HandType = handType;
             DisplayName = displayName ?? "";
+            LayerVariants = layerVariants;
         }
 
         public Stats GetTotalStatMods()

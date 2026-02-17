@@ -18,6 +18,7 @@ namespace Starquill.Equipment
         public float[] varianceColorValuesFlat;
         public int[] statMods = new int[6];
         public SerializedAffix[] affixes;
+        public int[] layerVariants;
 
         public static SerializedEquipment FromInstance(EquipmentInstance e)
         {
@@ -31,7 +32,8 @@ namespace Starquill.Equipment
                 statMods = new[] {
                     e.StatMods.STR, e.StatMods.DEX, e.StatMods.CON,
                     e.StatMods.INT, e.StatMods.WIS, e.StatMods.CHA
-                }
+                },
+                layerVariants = e.LayerVariants
             };
 
             var vcDict = e.VarianceColors;

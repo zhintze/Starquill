@@ -72,9 +72,10 @@ namespace Starquill.Equipment
             var baseColor = colors.GetRandomColor("main", rng);
 
             int itemNum;
+            int[] layerVariants = null;
             if (entry.Modular && entry.AmountPerLayer.Length > 0)
             {
-                var layerVariants = new int[entry.AmountPerLayer.Length];
+                layerVariants = new int[entry.AmountPerLayer.Length];
                 for (int i = 0; i < entry.AmountPerLayer.Length; i++)
                     layerVariants[i] = rng.Next(1, entry.AmountPerLayer[i] + 1);
                 itemNum = layerVariants[0];
@@ -101,7 +102,7 @@ namespace Starquill.Equipment
                 entry.ItemType, itemNum, slot, rarity,
                 baseColor, varianceColors, statMods, affixes,
                 entry.LayerCodes, entry.HiddenLayers, entry.LayerColorVariance,
-                entry.Modular, entry.HandType, displayName
+                entry.Modular, entry.HandType, displayName, layerVariants
             );
         }
 
@@ -139,7 +140,8 @@ namespace Starquill.Equipment
                                 offhand.BaseColor, new Dictionary<int, Color>(offhand.VarianceColors),
                                 offhand.StatMods, new List<RolledAffix>(offhand.RolledAffixes),
                                 offhand.LayerCodes, offhand.HiddenLayers, offhand.LayerColorVariance,
-                                offhand.Modular, offhand.HandType, offhand.DisplayName
+                                offhand.Modular, offhand.HandType, offhand.DisplayName,
+                                offhand.LayerVariants
                             );
                         }
                     }
@@ -335,7 +337,8 @@ namespace Starquill.Equipment
                 data.itemType, data.itemNum, (EquipmentSlot)data.slot, (Rarity)data.rarity,
                 baseColor, varianceColors, statMods, affixes,
                 layerCodes, hiddenLayers, layerColorVariance,
-                modular, handType, GenerateDisplayName((Rarity)data.rarity, description)
+                modular, handType, GenerateDisplayName((Rarity)data.rarity, description),
+                data.layerVariants
             );
         }
     }

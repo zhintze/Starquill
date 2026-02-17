@@ -54,6 +54,7 @@ namespace Starquill.Display
         {
             LoadSpecies();
             LoadEquipment();
+            LoadWeapons();
             LoadModularParts();
             LoadLayerMappings();
             Colors.LoadFromResources();
@@ -71,6 +72,13 @@ namespace Starquill.Display
             var asset = Resources.Load<TextAsset>("Data/equipment");
             if (asset == null) { Debug.LogWarning("DisplayDataRegistry: equipment.json not found"); return; }
             ParseEquipmentJson(asset.text);
+        }
+
+        private void LoadWeapons()
+        {
+            var asset = Resources.Load<TextAsset>("Data/weapons");
+            if (asset == null) { Debug.LogWarning("DisplayDataRegistry: weapons.json not found"); return; }
+            ParseWeaponsJson(asset.text);
         }
 
         private void LoadModularParts()
@@ -171,6 +179,25 @@ namespace Starquill.Display
                 data.ItemType = obj.GetString("item_type", "");
                 data.Description = obj.GetString("description", "");
                 data.Amount = obj.GetInt("amount", 1);
+                data.LayerCodes = obj.GetIntArray("layer_codes");
+                data.LayerColorVariance = obj.GetIntArray("layer_color_variance");
+                data.HiddenLayers = obj.GetIntArray("hidden_layers");
+                data.Modular = obj.GetBool("modular", false);
+
+                if (!string.IsNullOrEmpty(data.ItemType))
+                    Equipment[data.ItemType] = data;
+            }
+        }
+
+        private void ParseWeaponsJson(string json)
+        {
+            var list = SimpleJson.ParseArray(json);
+            foreach (var obj in list)
+            {
+                var data = new EquipmentDisplayData();
+                data.ItemType = obj.GetString("item_type", "");
+                data.Description = obj.GetString("description", "");
+                data.Amount = 1; // Weapons use per-layer amounts, not a single amount
                 data.LayerCodes = obj.GetIntArray("layer_codes");
                 data.LayerColorVariance = obj.GetIntArray("layer_color_variance");
                 data.HiddenLayers = obj.GetIntArray("hidden_layers");

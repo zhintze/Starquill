@@ -153,7 +153,7 @@ namespace Starquill.Display
 
                 if (item.IsOffhand && isWeapon)
                 {
-                    bool isShield = item.ItemType == "w17";
+                    bool isShield = item.ItemType == "w08" || item.ItemType == "w09";
                     piece.IsOffhandWeapon = true;
                     if (isShield)
                         piece.Offset = new Vector2(42, 0);
