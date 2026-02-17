@@ -125,6 +125,9 @@ namespace Starquill.Managers
 
         private void Update()
         {
+            // After domain reload, non-serialized fields are null
+            if (verbPool == null) return;
+
             if (verbLockTimer > 0f) verbLockTimer -= Time.deltaTime;
 
             tickTimer += Time.deltaTime;

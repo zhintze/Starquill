@@ -82,7 +82,7 @@ namespace Starquill.Display
 
         public static string BuildEquipmentSpritePath(string itemType, int itemNum, int layer)
         {
-            return $"Images/equipment/{itemType}-{itemNum:D4}-{layer}";
+            return $"Images/equipment/{itemType}-{itemNum:D4}-{layer:D3}";
         }
 
         public static string BuildWeaponSpritePath(string itemType, int layer, int variant)
