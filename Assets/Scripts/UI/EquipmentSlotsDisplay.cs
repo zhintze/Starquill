@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Starquill.Characters;
+using Starquill.Core;
 using Starquill.Display;
 using Starquill.Equipment;
+using Starquill.Managers;
 
 namespace Starquill.UI
 {
@@ -15,6 +18,7 @@ namespace Starquill.UI
 
         private int selectedSlotIndex = -1;
         private CharacterInstance currentCharacter;
+        private LootInventory inventory;
 
         public event Action<int> OnSlotTapped;
         public event Action OnOptimizeTapped;
@@ -42,6 +46,9 @@ namespace Starquill.UI
                 autoEquipButton.onClick.AddListener(() => OnOptimizeTapped?.Invoke());
                 autoEquipButton.interactable = true;
             }
+
+            var gm = GameManager.Instance;
+            if (gm != null) inventory = gm.LootInventory;
         }
 
         public void SelectSlot(int slotIndex)
@@ -184,6 +191,24 @@ namespace Starquill.UI
                 infoTmp.fontSize = 13;
                 infoTmp.color = ItemDisplayData.GetRarityColor(item.Rarity);
                 infoTmp.alignment = TextAlignmentOptions.TopLeft;
+            }
+
+            // Upgrade pip (green dot if better item in inventory)
+            if (inventory != null && item != null)
+            {
+                var candidates = inventory.GetItemsForSlot((EquipmentSlot)slotIndex);
+                var best = ItemComparer.FindBestForSlot((EquipmentSlot)slotIndex, candidates, item);
+                if (best != null)
+                {
+                    var pip = new GameObject("UpgradePip", typeof(RectTransform), typeof(Image));
+                    pip.transform.SetParent(card.transform, false);
+                    var pipRT = pip.GetComponent<RectTransform>();
+                    pipRT.anchorMin = new Vector2(0.55f, 0.08f);
+                    pipRT.anchorMax = new Vector2(0.55f, 0.08f);
+                    pipRT.pivot = new Vector2(0.5f, 0.5f);
+                    pipRT.sizeDelta = new Vector2(12, 12);
+                    pip.GetComponent<Image>().color = new Color(0.2f, 0.9f, 0.3f);
+                }
             }
 
             // === Equipment sprite (right 30%) ===
