@@ -603,9 +603,14 @@ public static class ExploreSceneBuilder
         StretchFill(equipContent);
         equipContent.GetComponent<Image>().color = Color.clear;
 
+        // EquipmentListArea — wraps scroll + optimize button, hidden when drawer is open
+        var equipListArea = new GameObject("EquipmentListArea", typeof(RectTransform));
+        equipListArea.transform.SetParent(equipContent.transform, false);
+        StretchFill(equipListArea);
+
         // Equipment card list - ScrollRect with VerticalLayoutGroup
         var equipScrollObj = new GameObject("EquipScrollRect", typeof(RectTransform), typeof(ScrollRect));
-        equipScrollObj.transform.SetParent(equipContent.transform, false);
+        equipScrollObj.transform.SetParent(equipListArea.transform, false);
         var equipScrollRT = equipScrollObj.GetComponent<RectTransform>();
         equipScrollRT.anchorMin = new Vector2(0, 0.08f);  // Leave room for Optimize button
         equipScrollRT.anchorMax = new Vector2(1, 1);
@@ -646,7 +651,7 @@ public static class ExploreSceneBuilder
         equipScrollRect.content = equipCardContainerRT;
 
         var autoEquipBtnObj = new GameObject("AutoEquipButton", typeof(RectTransform), typeof(Image), typeof(Button));
-        autoEquipBtnObj.transform.SetParent(equipContent.transform, false);
+        autoEquipBtnObj.transform.SetParent(equipListArea.transform, false);
         var autoEquipRT = autoEquipBtnObj.GetComponent<RectTransform>();
         autoEquipRT.anchorMin = new Vector2(0.3f, 0);
         autoEquipRT.anchorMax = new Vector2(0.7f, 0);
@@ -657,43 +662,138 @@ public static class ExploreSceneBuilder
         var autoEquipLabel = CreateTMPLabel("Label", autoEquipBtnObj.transform, "Optimize", 18, Color.white, TextAlignmentOptions.Center);
         StretchFill(autoEquipLabel);
 
-        // Equipment Drawer (bottom sheet overlay, starts hidden)
+        // Equipment Drawer (full overlay with selected slot card, starts hidden)
         var equipDrawerPanel = CreatePanel("EquipDrawerPanel", equipContent.transform);
         var equipDrawerPanelRT = equipDrawerPanel.GetComponent<RectTransform>();
         equipDrawerPanelRT.anchorMin = new Vector2(0, 0);
-        equipDrawerPanelRT.anchorMax = new Vector2(1, 0.85f);
+        equipDrawerPanelRT.anchorMax = new Vector2(1, 1);
         equipDrawerPanelRT.offsetMin = new Vector2(5, 5);
-        equipDrawerPanelRT.offsetMax = new Vector2(-5, 0);
+        equipDrawerPanelRT.offsetMax = new Vector2(-5, 85); // extend 85px above to cover sub-tab buttons
         equipDrawerPanel.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.14f, 0.98f);
+
+        // Canvas override for z-order (renders above masked scroll content)
+        var drawerCanvas = equipDrawerPanel.AddComponent<Canvas>();
+        drawerCanvas.overrideSorting = true;
+        drawerCanvas.sortingOrder = 10;
+        equipDrawerPanel.AddComponent<GraphicRaycaster>();
 
         var drawerVL = equipDrawerPanel.AddComponent<VerticalLayoutGroup>();
         drawerVL.spacing = 6;
         drawerVL.padding = new RectOffset(10, 10, 10, 10);
         drawerVL.childControlWidth = true;
-        drawerVL.childControlHeight = false;
+        drawerVL.childControlHeight = true;
         drawerVL.childForceExpandWidth = true;
         drawerVL.childForceExpandHeight = false;
 
-        // Drawer header label
-        var drawerHeaderLabel = CreateTMPLabel("DrawerHeader", equipDrawerPanel.transform,
-            "Equipped Item", 20, Color.white, TextAlignmentOptions.MidlineLeft);
-        drawerHeaderLabel.AddComponent<LayoutElement>().preferredHeight = 50;
-        drawerHeaderLabel.GetComponent<TMP_Text>().richText = true;
+        // === Selected Slot Card (280px, same size as equipment cards) ===
+        var selectedSlotCard = new GameObject("SelectedSlotCard", typeof(RectTransform), typeof(Image));
+        selectedSlotCard.transform.SetParent(equipDrawerPanel.transform, false);
+        selectedSlotCard.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.25f);
+        var selectedSlotLE = selectedSlotCard.AddComponent<LayoutElement>();
+        selectedSlotLE.preferredHeight = 280;
+        selectedSlotLE.flexibleWidth = 1;
+
+        // Rarity stripe
+        var slotStripe = new GameObject("Stripe", typeof(RectTransform), typeof(Image));
+        slotStripe.transform.SetParent(selectedSlotCard.transform, false);
+        var slotStripeRT = slotStripe.GetComponent<RectTransform>();
+        slotStripeRT.anchorMin = new Vector2(0, 0);
+        slotStripeRT.anchorMax = new Vector2(0, 1);
+        slotStripeRT.pivot = new Vector2(0, 0.5f);
+        slotStripeRT.sizeDelta = new Vector2(6, 0);
+        slotStripeRT.anchoredPosition = Vector2.zero;
+        slotStripe.GetComponent<Image>().color = new Color(0.25f, 0.25f, 0.3f);
+
+        // Slot label (top-left, 0-45%)
+        var slotLabelObj = new GameObject("SlotLabel", typeof(RectTransform));
+        slotLabelObj.transform.SetParent(selectedSlotCard.transform, false);
+        var slotLabelRT = slotLabelObj.GetComponent<RectTransform>();
+        slotLabelRT.anchorMin = new Vector2(0, 0.7f);
+        slotLabelRT.anchorMax = new Vector2(0.45f, 1f);
+        slotLabelRT.offsetMin = new Vector2(16, 0);
+        slotLabelRT.offsetMax = new Vector2(0, -8);
+        var slotLabelTmp = slotLabelObj.AddComponent<TextMeshProUGUI>();
+        slotLabelTmp.text = "Slot";
+        slotLabelTmp.fontSize = 14;
+        slotLabelTmp.color = new Color(0.5f, 0.5f, 0.55f);
+        slotLabelTmp.alignment = TextAlignmentOptions.BottomLeft;
+
+        // Item name (middle-left, 0-45%)
+        var slotNameObj = new GameObject("ItemName", typeof(RectTransform));
+        slotNameObj.transform.SetParent(selectedSlotCard.transform, false);
+        var slotNameRT = slotNameObj.GetComponent<RectTransform>();
+        slotNameRT.anchorMin = new Vector2(0, 0.35f);
+        slotNameRT.anchorMax = new Vector2(0.45f, 0.7f);
+        slotNameRT.offsetMin = new Vector2(16, 0);
+        slotNameRT.offsetMax = new Vector2(0, 0);
+        var slotNameTmp = slotNameObj.AddComponent<TextMeshProUGUI>();
+        slotNameTmp.text = "Empty";
+        slotNameTmp.fontSize = 18;
+        slotNameTmp.fontStyle = FontStyles.Italic;
+        slotNameTmp.color = new Color(0.4f, 0.4f, 0.45f);
+        slotNameTmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+        // Item info / rarity (bottom-left, 0-45%)
+        var slotInfoObj = new GameObject("ItemInfo", typeof(RectTransform));
+        slotInfoObj.transform.SetParent(selectedSlotCard.transform, false);
+        var slotInfoRT = slotInfoObj.GetComponent<RectTransform>();
+        slotInfoRT.anchorMin = new Vector2(0, 0);
+        slotInfoRT.anchorMax = new Vector2(0.45f, 0.35f);
+        slotInfoRT.offsetMin = new Vector2(16, 8);
+        slotInfoRT.offsetMax = new Vector2(0, 0);
+        var slotInfoTmp = slotInfoObj.AddComponent<TextMeshProUGUI>();
+        slotInfoTmp.text = "";
+        slotInfoTmp.fontSize = 13;
+        slotInfoTmp.color = new Color(0.5f, 0.5f, 0.55f);
+        slotInfoTmp.alignment = TextAlignmentOptions.TopLeft;
+
+        // Equipment sprite (middle column, 45-70%)
+        var slotSpriteObj = new GameObject("EquipSprite", typeof(RectTransform), typeof(Image));
+        slotSpriteObj.transform.SetParent(selectedSlotCard.transform, false);
+        var slotSpriteRT = slotSpriteObj.GetComponent<RectTransform>();
+        slotSpriteRT.anchorMin = new Vector2(0.45f, 0.05f);
+        slotSpriteRT.anchorMax = new Vector2(0.70f, 0.95f);
+        slotSpriteRT.offsetMin = Vector2.zero;
+        slotSpriteRT.offsetMax = Vector2.zero;
+        var slotSpriteImg = slotSpriteObj.GetComponent<Image>();
+        slotSpriteImg.preserveAspect = true;
+        slotSpriteImg.color = Color.clear;
+
+        // Stats (right column, 70-100%)
+        var slotStatsObj = new GameObject("Stats", typeof(RectTransform));
+        slotStatsObj.transform.SetParent(selectedSlotCard.transform, false);
+        var slotStatsRT = slotStatsObj.GetComponent<RectTransform>();
+        slotStatsRT.anchorMin = new Vector2(0.70f, 0);
+        slotStatsRT.anchorMax = new Vector2(1, 1);
+        slotStatsRT.offsetMin = new Vector2(4, 8);
+        slotStatsRT.offsetMax = new Vector2(-8, -8);
+        var slotStatsTmp = slotStatsObj.AddComponent<TextMeshProUGUI>();
+        slotStatsTmp.text = "";
+        slotStatsTmp.fontSize = 16;
+        slotStatsTmp.alignment = TextAlignmentOptions.Center;
+        slotStatsTmp.color = new Color(0.7f, 0.7f, 0.75f);
+        slotStatsTmp.richText = true;
 
         // Drawer summary label
         var drawerSummaryLabel = CreateTMPLabel("DrawerSummary", equipDrawerPanel.transform,
             "0 items for slot", 14, new Color(0.6f, 0.6f, 0.65f), TextAlignmentOptions.MidlineLeft);
         drawerSummaryLabel.AddComponent<LayoutElement>().preferredHeight = 20;
 
-        // Drawer item list (scrollable)
+        // Drawer item list (scrollable with proper viewport)
         var drawerListScroll = new GameObject("DrawerListScroll", typeof(RectTransform), typeof(ScrollRect));
         drawerListScroll.transform.SetParent(equipDrawerPanel.transform, false);
         var drawerListScrollLE = drawerListScroll.AddComponent<LayoutElement>();
         drawerListScrollLE.flexibleHeight = 1;
         drawerListScrollLE.preferredHeight = 200;
 
+        var drawerViewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        drawerViewport.transform.SetParent(drawerListScroll.transform, false);
+        StretchFill(drawerViewport);
+        drawerViewport.GetComponent<Image>().color = new Color(1, 1, 1, 0.01f);
+        drawerViewport.GetComponent<Mask>().showMaskGraphic = false;
+
         var drawerListContainer = new GameObject("ItemListContainer", typeof(RectTransform));
-        drawerListContainer.transform.SetParent(drawerListScroll.transform, false);
+        drawerListContainer.transform.SetParent(drawerViewport.transform, false);
         var drawerListContainerRT = drawerListContainer.GetComponent<RectTransform>();
         drawerListContainerRT.anchorMin = new Vector2(0, 1);
         drawerListContainerRT.anchorMax = new Vector2(1, 1);
@@ -713,8 +813,11 @@ public static class ExploreSceneBuilder
 
         var drawerListScrollRect = drawerListScroll.GetComponent<ScrollRect>();
         drawerListScrollRect.content = drawerListContainerRT;
+        drawerListScrollRect.viewport = drawerViewport.GetComponent<RectTransform>();
         drawerListScrollRect.horizontal = false;
         drawerListScrollRect.vertical = true;
+        drawerListScrollRect.scrollSensitivity = 30;
+        drawerListScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
         // Drawer button bar
         var drawerBtnBar = new GameObject("DrawerBtnBar", typeof(RectTransform));
@@ -989,11 +1092,16 @@ public static class ExploreSceneBuilder
         // EquipmentDrawer on EquipmentContent
         var equipDrawer = equipContent.AddComponent<Starquill.UI.EquipmentDrawer>();
         SetPrivateField(equipDrawer, "drawerPanel", equipDrawerPanel);
-        SetPrivateField(equipDrawer, "headerLabel", drawerHeaderLabel.GetComponent<TMP_Text>());
         SetPrivateField(equipDrawer, "summaryLabel", drawerSummaryLabel.GetComponent<TMP_Text>());
         SetPrivateField(equipDrawer, "itemListContainer", drawerListContainer.transform);
         SetPrivateField(equipDrawer, "equipButton", equipBtnObj.GetComponent<Button>());
         SetPrivateField(equipDrawer, "backButton", backBtnObj.GetComponent<Button>());
+        SetPrivateField(equipDrawer, "selectedSlotStripe", slotStripe.GetComponent<Image>());
+        SetPrivateField(equipDrawer, "selectedSlotLabel", slotLabelTmp as TMP_Text);
+        SetPrivateField(equipDrawer, "selectedSlotNameText", slotNameTmp as TMP_Text);
+        SetPrivateField(equipDrawer, "selectedSlotInfoText", slotInfoTmp as TMP_Text);
+        SetPrivateField(equipDrawer, "selectedSlotSprite", slotSpriteImg);
+        SetPrivateField(equipDrawer, "selectedSlotStats", slotStatsTmp as TMP_Text);
 
         // ActionLoadoutDisplay on ActionsContent
         var actionLoadoutDisplay = actionsContent.AddComponent<Starquill.UI.ActionLoadoutDisplay>();
@@ -1014,6 +1122,7 @@ public static class ExploreSceneBuilder
         SetPrivateField(partyScreenCtrl, "screenManager", screenManager);
         SetPrivateField(partyScreenCtrl, "rosterContent", rosterContent);
         SetPrivateField(partyScreenCtrl, "equipmentContent", equipContent);
+        SetPrivateField(partyScreenCtrl, "equipmentListArea", equipListArea);
         SetPrivateField(partyScreenCtrl, "actionsContent", actionsContent);
         SetPrivateField(partyScreenCtrl, "portraitStripObj", portraitStrip);
         SetPrivateField(partyScreenCtrl, "characterInfoObj", charInfo);

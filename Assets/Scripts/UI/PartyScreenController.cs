@@ -22,6 +22,7 @@ namespace Starquill.UI
         [SerializeField] private GameObject rosterContent;
         [SerializeField] private GameObject equipmentContent;
         [SerializeField] private GameObject actionsContent;
+        [SerializeField] private GameObject equipmentListArea;
         [SerializeField] private GameObject portraitStripObj;
         [SerializeField] private GameObject characterInfoObj;
         [SerializeField] private Button[] subTabButtons;
@@ -157,6 +158,8 @@ namespace Starquill.UI
             var character = SelectedCharacter;
             if (character == null) return;
 
+            if (equipmentListArea != null) equipmentListArea.SetActive(false);
+
             var equipped = character.equipment[slotIndex];
             var candidates = gm.LootInventory.GetItemsForSlot((EquipmentSlot)slotIndex);
             equipmentDrawer.Open(slotIndex, equipped, candidates);
@@ -177,12 +180,14 @@ namespace Starquill.UI
             if (gm == null || item == null) return;
             gm.EquipItemFromInventory(item, SelectedRosterIndex);
             if (equipmentDrawer != null) equipmentDrawer.Close();
+            if (equipmentListArea != null) equipmentListArea.SetActive(true);
             if (equipmentSlots != null) equipmentSlots.ClearSelection();
             RefreshAll();
         }
 
         private void HandleDrawerBack()
         {
+            if (equipmentListArea != null) equipmentListArea.SetActive(true);
             if (equipmentSlots != null) equipmentSlots.ClearSelection();
             RefreshAll();
         }

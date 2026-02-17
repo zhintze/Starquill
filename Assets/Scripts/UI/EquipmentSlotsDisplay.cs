@@ -120,9 +120,9 @@ namespace Starquill.UI
         {
             var card = new GameObject($"Card_{slotIndex}", typeof(RectTransform), typeof(Image), typeof(Button));
             var rt = card.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, 140);
+            rt.sizeDelta = new Vector2(0, 280);
             var le = card.AddComponent<LayoutElement>();
-            le.preferredHeight = 140;
+            le.preferredHeight = 280;
             le.flexibleWidth = 1;
 
             // Background
@@ -131,7 +131,7 @@ namespace Starquill.UI
                 ? new Color(0.2f, 0.2f, 0.25f)
                 : new Color(0.12f, 0.12f, 0.15f);
 
-            // Left rarity stripe (6px wide, full height)
+            // Rarity stripe (6px wide, full height)
             Color stripeColor = item != null
                 ? (isSelected ? new Color(1f, 0.84f, 0f) : ItemDisplayData.GetRarityColor(item.Rarity))
                 : new Color(0.25f, 0.25f, 0.3f);
@@ -145,28 +145,34 @@ namespace Starquill.UI
             stripeRT.anchoredPosition = Vector2.zero;
             stripe.GetComponent<Image>().color = stripeColor;
 
-            // === Text area (left 60%) ===
+            // === Left column (0-45%): slot type, item name, rarity ===
 
-            // Slot label (top-left, gray)
+            // Slot label (top-left)
             var slotLabel = new GameObject("SlotLabel", typeof(RectTransform));
             slotLabel.transform.SetParent(card.transform, false);
             var slotLabelRT = slotLabel.GetComponent<RectTransform>();
             slotLabelRT.anchorMin = new Vector2(0, 0.7f);
-            slotLabelRT.anchorMax = new Vector2(0.6f, 1f);
+            slotLabelRT.anchorMax = new Vector2(0.45f, 1f);
             slotLabelRT.offsetMin = new Vector2(16, 0);
             slotLabelRT.offsetMax = new Vector2(0, -8);
             var slotTmp = slotLabel.AddComponent<TextMeshProUGUI>();
-            slotTmp.text = SlotLabels[slotIndex];
+            bool hasUpgrade = false;
+            if (inventory != null && item != null)
+            {
+                var candidates = inventory.GetItemsForSlot((EquipmentSlot)slotIndex);
+                hasUpgrade = ItemComparer.FindBestForSlot((EquipmentSlot)slotIndex, candidates, item) != null;
+            }
+            slotTmp.text = hasUpgrade ? $"\u25B2 {SlotLabels[slotIndex]}" : SlotLabels[slotIndex];
             slotTmp.fontSize = 14;
-            slotTmp.color = new Color(0.5f, 0.5f, 0.55f);
+            slotTmp.color = hasUpgrade ? new Color(0.3f, 0.9f, 0.3f) : new Color(0.5f, 0.5f, 0.55f);
             slotTmp.alignment = TextAlignmentOptions.BottomLeft;
 
-            // Item name (middle-left, white bold)
+            // Item name (middle-left)
             var nameLabel = new GameObject("Name", typeof(RectTransform));
             nameLabel.transform.SetParent(card.transform, false);
             var nameRT = nameLabel.GetComponent<RectTransform>();
             nameRT.anchorMin = new Vector2(0, 0.35f);
-            nameRT.anchorMax = new Vector2(0.6f, 0.7f);
+            nameRT.anchorMax = new Vector2(0.45f, 0.7f);
             nameRT.offsetMin = new Vector2(16, 0);
             nameRT.offsetMax = new Vector2(0, 0);
             var nameTmp = nameLabel.AddComponent<TextMeshProUGUI>();
@@ -176,57 +182,33 @@ namespace Starquill.UI
             nameTmp.color = item != null ? Color.white : new Color(0.4f, 0.4f, 0.45f);
             nameTmp.alignment = TextAlignmentOptions.MidlineLeft;
 
-            // Rarity + level info (bottom-left)
-            if (item != null)
-            {
-                var infoLabel = new GameObject("Info", typeof(RectTransform));
-                infoLabel.transform.SetParent(card.transform, false);
-                var infoRT = infoLabel.GetComponent<RectTransform>();
-                infoRT.anchorMin = new Vector2(0, 0);
-                infoRT.anchorMax = new Vector2(0.6f, 0.35f);
-                infoRT.offsetMin = new Vector2(16, 8);
-                infoRT.offsetMax = new Vector2(0, 0);
-                var infoTmp = infoLabel.AddComponent<TextMeshProUGUI>();
-                infoTmp.text = $"{item.Rarity}";
-                infoTmp.fontSize = 13;
-                infoTmp.color = ItemDisplayData.GetRarityColor(item.Rarity);
-                infoTmp.alignment = TextAlignmentOptions.TopLeft;
-            }
+            // Rarity (bottom-left)
+            var infoLabel = new GameObject("Info", typeof(RectTransform));
+            infoLabel.transform.SetParent(card.transform, false);
+            var infoRT = infoLabel.GetComponent<RectTransform>();
+            infoRT.anchorMin = new Vector2(0, 0);
+            infoRT.anchorMax = new Vector2(0.45f, 0.35f);
+            infoRT.offsetMin = new Vector2(16, 8);
+            infoRT.offsetMax = new Vector2(0, 0);
+            var infoTmp = infoLabel.AddComponent<TextMeshProUGUI>();
+            infoTmp.text = item != null ? $"{item.Rarity}" : "";
+            infoTmp.fontSize = 13;
+            infoTmp.color = item != null ? ItemDisplayData.GetRarityColor(item.Rarity) : new Color(0.5f, 0.5f, 0.55f);
+            infoTmp.alignment = TextAlignmentOptions.TopLeft;
 
-            // Upgrade pip (green dot if better item in inventory)
-            if (inventory != null && item != null)
-            {
-                var candidates = inventory.GetItemsForSlot((EquipmentSlot)slotIndex);
-                var best = ItemComparer.FindBestForSlot((EquipmentSlot)slotIndex, candidates, item);
-                if (best != null)
-                {
-                    var pip = new GameObject("UpgradePip", typeof(RectTransform), typeof(Image));
-                    pip.transform.SetParent(card.transform, false);
-                    var pipRT = pip.GetComponent<RectTransform>();
-                    pipRT.anchorMin = new Vector2(0.55f, 0.08f);
-                    pipRT.anchorMax = new Vector2(0.55f, 0.08f);
-                    pipRT.pivot = new Vector2(0.5f, 0.5f);
-                    pipRT.sizeDelta = new Vector2(12, 12);
-                    pip.GetComponent<Image>().color = new Color(0.2f, 0.9f, 0.3f);
-                }
-            }
+            // === Middle column (45-70%): Equipment display sprite ===
+            var spriteObj = new GameObject("Sprite", typeof(RectTransform), typeof(Image));
+            spriteObj.transform.SetParent(card.transform, false);
+            var spriteRT = spriteObj.GetComponent<RectTransform>();
+            spriteRT.anchorMin = new Vector2(0.45f, 0.05f);
+            spriteRT.anchorMax = new Vector2(0.70f, 0.95f);
+            spriteRT.offsetMin = Vector2.zero;
+            spriteRT.offsetMax = Vector2.zero;
+            var spriteImg = spriteObj.GetComponent<Image>();
+            spriteImg.preserveAspect = true;
 
-            // === Equipment sprite (right 30%) ===
             if (item != null && item.LayerCodes != null && item.LayerCodes.Length > 0)
             {
-                var spriteObj = new GameObject("Sprite", typeof(RectTransform), typeof(Image));
-                spriteObj.transform.SetParent(card.transform, false);
-                var spriteRT = spriteObj.GetComponent<RectTransform>();
-                spriteRT.anchorMin = new Vector2(0.65f, 0.05f);
-                spriteRT.anchorMax = new Vector2(0.95f, 0.95f);
-                spriteRT.offsetMin = Vector2.zero;
-                spriteRT.offsetMax = Vector2.zero;
-
-                var spriteImg = spriteObj.GetComponent<Image>();
-                spriteImg.preserveAspect = true;
-
-                // Load the primary layer sprite
-                // Weapons (slot 5 or 6) use different path format
                 string spritePath;
                 if (slotIndex == 5 || slotIndex == 6)
                     spritePath = ImageToken.BuildWeaponSpritePath(item.ItemType, item.LayerCodes[0], item.ItemNum);
@@ -241,10 +223,37 @@ namespace Starquill.UI
                 }
                 else
                 {
-                    // Fallback: colored placeholder
                     spriteImg.color = new Color(item.BaseColor.r, item.BaseColor.g, item.BaseColor.b, 0.3f);
                 }
             }
+            else
+            {
+                spriteImg.color = Color.clear;
+            }
+
+            // === Right column (70-100%): Stats ===
+            var statsObj = new GameObject("Stats", typeof(RectTransform));
+            statsObj.transform.SetParent(card.transform, false);
+            var statsRT = statsObj.GetComponent<RectTransform>();
+            statsRT.anchorMin = new Vector2(0.70f, 0);
+            statsRT.anchorMax = new Vector2(1, 1);
+            statsRT.offsetMin = new Vector2(4, 8);
+            statsRT.offsetMax = new Vector2(-8, -8);
+            var statsTmp = statsObj.AddComponent<TextMeshProUGUI>();
+
+            if (item != null)
+            {
+                var displayData = ItemDisplayData.FromItem(item, 1);
+                statsTmp.text = $"<size=12>{displayData.StatSummary}</size>";
+            }
+            else
+            {
+                statsTmp.text = "";
+            }
+            statsTmp.fontSize = 16;
+            statsTmp.alignment = TextAlignmentOptions.Center;
+            statsTmp.color = new Color(0.7f, 0.7f, 0.75f);
+            statsTmp.richText = true;
 
             // Button handler
             var btn = card.GetComponent<Button>();

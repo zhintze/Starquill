@@ -333,12 +333,22 @@ namespace Starquill.Equipment
                 }
             }
 
+            // For modular weapons loaded from old saves without layerVariants,
+            // default each layer to variant 1 (always exists)
+            var lv = data.layerVariants;
+            if (lv == null && modular && weaponEntry != null && weaponEntry.AmountPerLayer.Length > 0)
+            {
+                lv = new int[weaponEntry.AmountPerLayer.Length];
+                for (int i = 0; i < lv.Length; i++)
+                    lv[i] = 1;
+            }
+
             return new EquipmentInstance(
                 data.itemType, data.itemNum, (EquipmentSlot)data.slot, (Rarity)data.rarity,
                 baseColor, varianceColors, statMods, affixes,
                 layerCodes, hiddenLayers, layerColorVariance,
                 modular, handType, GenerateDisplayName((Rarity)data.rarity, description),
-                data.layerVariants
+                lv
             );
         }
     }
