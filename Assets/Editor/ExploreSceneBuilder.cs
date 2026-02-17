@@ -638,6 +638,8 @@ public static class ExploreSceneBuilder
         equipVL.spacing = 4;
         equipVL.padding = new RectOffset(8, 8, 8, 8);
         equipVL.childAlignment = TextAnchor.UpperCenter;
+        equipVL.childControlWidth = true;
+        equipVL.childControlHeight = false;
         equipVL.childForceExpandWidth = true;
         equipVL.childForceExpandHeight = false;
         equipCardContainer.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
