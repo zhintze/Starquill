@@ -603,15 +603,45 @@ public static class ExploreSceneBuilder
         StretchFill(equipContent);
         equipContent.GetComponent<Image>().color = Color.clear;
 
-        // SlotsContainer - spatial cluster (no layout group, slots use absolute positions)
-        var slotsContainer = new GameObject("SlotsContainer", typeof(RectTransform));
-        slotsContainer.transform.SetParent(equipContent.transform, false);
-        var slotsContainerRT = slotsContainer.GetComponent<RectTransform>();
-        slotsContainerRT.anchorMin = new Vector2(0, 0.12f);  // Leave room for button at bottom
-        slotsContainerRT.anchorMax = new Vector2(1, 1);
-        slotsContainerRT.offsetMin = Vector2.zero;
-        slotsContainerRT.offsetMax = Vector2.zero;
-        // NO layout group - slots use anchoredPosition relative to container center
+        // Equipment card list - ScrollRect with VerticalLayoutGroup
+        var equipScrollObj = new GameObject("EquipScrollRect", typeof(RectTransform), typeof(ScrollRect));
+        equipScrollObj.transform.SetParent(equipContent.transform, false);
+        var equipScrollRT = equipScrollObj.GetComponent<RectTransform>();
+        equipScrollRT.anchorMin = new Vector2(0, 0.08f);  // Leave room for Optimize button
+        equipScrollRT.anchorMax = new Vector2(1, 1);
+        equipScrollRT.offsetMin = Vector2.zero;
+        equipScrollRT.offsetMax = Vector2.zero;
+        var equipScrollRect = equipScrollObj.GetComponent<ScrollRect>();
+        equipScrollRect.horizontal = false;
+        equipScrollRect.vertical = true;
+        equipScrollRect.scrollSensitivity = 30;
+        equipScrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+        // Viewport (mask)
+        var equipViewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        equipViewport.transform.SetParent(equipScrollObj.transform, false);
+        StretchFill(equipViewport);
+        equipViewport.GetComponent<Image>().color = new Color(1, 1, 1, 0.01f);
+        equipViewport.GetComponent<Mask>().showMaskGraphic = false;
+        equipScrollRect.viewport = equipViewport.GetComponent<RectTransform>();
+
+        // Content container with VerticalLayoutGroup
+        var equipCardContainer = new GameObject("CardContainer", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+        equipCardContainer.transform.SetParent(equipViewport.transform, false);
+        var equipCardContainerRT = equipCardContainer.GetComponent<RectTransform>();
+        equipCardContainerRT.anchorMin = new Vector2(0, 1);
+        equipCardContainerRT.anchorMax = new Vector2(1, 1);
+        equipCardContainerRT.pivot = new Vector2(0.5f, 1);
+        equipCardContainerRT.offsetMin = new Vector2(0, 0);
+        equipCardContainerRT.offsetMax = new Vector2(0, 0);
+        var equipVL = equipCardContainer.GetComponent<VerticalLayoutGroup>();
+        equipVL.spacing = 4;
+        equipVL.padding = new RectOffset(8, 8, 8, 8);
+        equipVL.childAlignment = TextAnchor.UpperCenter;
+        equipVL.childForceExpandWidth = true;
+        equipVL.childForceExpandHeight = false;
+        equipCardContainer.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        equipScrollRect.content = equipCardContainerRT;
 
         var autoEquipBtnObj = new GameObject("AutoEquipButton", typeof(RectTransform), typeof(Image), typeof(Button));
         autoEquipBtnObj.transform.SetParent(equipContent.transform, false);
@@ -951,7 +981,7 @@ public static class ExploreSceneBuilder
 
         // EquipmentSlotsDisplay on EquipmentContent
         var equipSlotsDisplay = equipContent.AddComponent<Starquill.UI.EquipmentSlotsDisplay>();
-        SetPrivateField(equipSlotsDisplay, "slotsContainer", slotsContainer.transform);
+        SetPrivateField(equipSlotsDisplay, "cardContainer", equipCardContainer.transform);
         SetPrivateField(equipSlotsDisplay, "autoEquipButton", autoEquipBtnObj.GetComponent<Button>());
 
         // EquipmentDrawer on EquipmentContent
