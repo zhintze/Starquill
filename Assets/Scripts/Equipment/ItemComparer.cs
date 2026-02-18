@@ -1,33 +1,24 @@
-using System;
 using System.Collections.Generic;
 using Starquill.Core;
-using Starquill.Data;
 
 namespace Starquill.Equipment
 {
     public struct StatDiff
     {
+        public StatType PrimaryStat;
+        public int PrimaryDelta;
+        public StatType SecondaryStat;
+        public int SecondaryDelta;
         public float TotalDelta;
         public bool IsUpgrade;
     }
 
     public static class ItemComparer
     {
-        private const float PercentageAffixWeight = 5f;
-
         public static float ScoreItem(EquipmentInstance item)
         {
             if (item == null) return 0f;
-
-            float score = item.StatMods.Total;
-            foreach (var affix in item.RolledAffixes)
-            {
-                if (affix.IsPercentage)
-                    score += affix.Value * PercentageAffixWeight;
-                else
-                    score += affix.Value;
-            }
-            return score;
+            return item.PrimaryValue + item.SecondaryValue;
         }
 
         public static StatDiff Compare(EquipmentInstance newItem, EquipmentInstance current)
@@ -35,7 +26,16 @@ namespace Starquill.Equipment
             float newScore = ScoreItem(newItem);
             float currentScore = ScoreItem(current);
             float delta = newScore - currentScore;
-            return new StatDiff { TotalDelta = delta, IsUpgrade = delta > 0 };
+
+            return new StatDiff
+            {
+                PrimaryStat = newItem != null ? newItem.PrimaryStat : default,
+                PrimaryDelta = (newItem?.PrimaryValue ?? 0) - (current?.PrimaryValue ?? 0),
+                SecondaryStat = newItem != null ? newItem.SecondaryStat : default,
+                SecondaryDelta = (newItem?.SecondaryValue ?? 0) - (current?.SecondaryValue ?? 0),
+                TotalDelta = delta,
+                IsUpgrade = delta > 0
+            };
         }
 
         public static EquipmentInstance FindBestForSlot(EquipmentSlot slot,

@@ -45,6 +45,13 @@ namespace Starquill.Data
         [Header("Loot")]
         public float baseDropRate = 0.15f;
 
+        [Header("Ability Leveling")]
+        public float abilityBaseXPRate = 1f;
+        public float abilityBaseXPThreshold = 100f;
+        public float abilityXPGrowthRate = 1.8f;
+        public float abilityBaseLevelUpCost = 100f;
+        public float abilityCostGrowthRate = 2.0f;
+
         [Header("Prestige (Stub)")]
         public float prestigeMultiplierBase = 1.0f;
 

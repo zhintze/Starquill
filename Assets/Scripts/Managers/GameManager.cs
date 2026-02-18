@@ -74,13 +74,13 @@ namespace Starquill.Managers
             equipmentCatalog = new EquipmentCatalog();
             equipmentCatalog.LoadFromResources();
 
-            var affixTable = new AffixTable();
-            affixTable.LoadFromResources();
+            var abilityTable = new AbilityTable();
+            abilityTable.LoadFromResources();
 
             var registry = DisplayDataRegistry.Instance;
             if (registry.Species.Count == 0) registry.LoadAll();
 
-            equipmentFactory = new EquipmentFactory(equipmentCatalog, affixTable, registry.Colors);
+            equipmentFactory = new EquipmentFactory(equipmentCatalog, abilityTable, registry.Colors);
 
             var nameGen = new NameGenerator();
             nameGen.LoadFromResources();
@@ -156,6 +156,8 @@ namespace Starquill.Managers
             }
 
             ProcessLootDrops(result.EnemiesKilled);
+
+            TickAbilityXP();
 
             OnCombatTick?.Invoke(result);
 
@@ -345,6 +347,45 @@ namespace Starquill.Managers
                 OnRosterChanged?.Invoke();
             }
             return result.ItemsEquipped;
+        }
+
+        private void TickAbilityXP()
+        {
+            float xp = economyConfig.abilityBaseXPRate * questLevel;
+            foreach (var character in roster.Characters)
+            {
+                foreach (var equip in character.equipment)
+                {
+                    if (equip?.Ability != null)
+                    {
+                        equip.Ability.AddXP(xp,
+                            economyConfig.abilityBaseXPThreshold,
+                            economyConfig.abilityXPGrowthRate);
+                    }
+                }
+            }
+        }
+
+        private static readonly float[] RarityGoldMultipliers = { 0.5f, 1.0f, 1.5f, 2.5f, 4.0f };
+
+        public bool LevelUpAbility(EquipmentInstance item)
+        {
+            if (item?.Ability == null || item.Ability.Level >= item.Ability.MaxLevel) return false;
+
+            float rarityMult = (int)item.Rarity < RarityGoldMultipliers.Length
+                ? RarityGoldMultipliers[(int)item.Rarity] : 1.0f;
+            float cost = item.Ability.GoldCostToLevel(
+                economyConfig.abilityBaseLevelUpCost,
+                economyConfig.abilityCostGrowthRate,
+                rarityMult);
+
+            if (gold < cost) return false;
+
+            gold -= cost;
+            item.Ability.Level++;
+            item.Ability.CurrentXP = 0f;
+            OnGoldChanged?.Invoke(gold);
+            return true;
         }
 
         private void OnApplicationPause(bool paused)

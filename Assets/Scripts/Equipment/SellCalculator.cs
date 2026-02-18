@@ -14,8 +14,8 @@ namespace Starquill.Equipment
 
             double value = baseValue * questLevel;
 
-            if (item.RolledAffixes.Count > 0)
-                value *= 1.0 + item.RolledAffixes.Count * 0.1;
+            if (item.Ability != null)
+                value *= 1.0 + item.Ability.Level * 0.15;
 
             return value;
         }

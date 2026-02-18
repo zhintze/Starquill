@@ -10,16 +10,27 @@ namespace Starquill.Tests.Equipment
     [TestFixture]
     public class SellCalculatorTests
     {
-        private EquipmentInstance MakeItem(Rarity rarity, int affixCount = 0)
+        private EquipmentInstance MakeItem(Rarity rarity, int abilityLevel = 0)
         {
-            var affixes = new List<RolledAffix>();
-            for (int i = 0; i < affixCount; i++)
-                affixes.Add(new RolledAffix("test", StatType.STR, 5f, false));
+            AwakenedAbility ability = null;
+            if (abilityLevel > 0)
+            {
+                ability = new AwakenedAbility
+                {
+                    AbilityId = "test",
+                    BoostedStat = StatType.STR,
+                    BasePotency = 3f,
+                    PotencyPerLevel = 2f,
+                    Level = abilityLevel,
+                    MaxLevel = 7,
+                    CurrentXP = 0f
+                };
+            }
 
             return new EquipmentInstance(
                 "hd01", 1, EquipmentSlot.Head, rarity,
                 Color.white, new Dictionary<int, Color>(),
-                new Stats(), affixes,
+                StatType.STR, 5, StatType.DEX, 2, ability,
                 new int[0], new int[0], new int[0],
                 false, null, "Test");
         }
@@ -46,11 +57,13 @@ namespace Starquill.Tests.Equipment
         }
 
         [Test]
-        public void Affixes_Add10PercentEach()
+        public void AbilityLevel_MultipliesValue()
         {
-            var noAffix = SellCalculator.GetSellValue(MakeItem(Rarity.Rare, 0), 1);
-            var twoAffix = SellCalculator.GetSellValue(MakeItem(Rarity.Rare, 2), 1);
-            Assert.AreEqual(noAffix * 1.2, twoAffix, 0.01);
+            var noAbility = SellCalculator.GetSellValue(MakeItem(Rarity.Rare, 0), 1);
+            var level2 = SellCalculator.GetSellValue(MakeItem(Rarity.Rare, 2), 1);
+            // level2: 75 * 1 * (1 + 2*0.15) = 75 * 1.3 = 97.5
+            Assert.AreEqual(75.0, noAbility, 0.01);
+            Assert.AreEqual(97.5, level2, 0.01);
         }
 
         [Test]
