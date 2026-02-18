@@ -117,6 +117,7 @@ namespace Starquill.Tests.Save
             Assert.AreEqual(2, loaded.inventory[0].rarity);
             Assert.AreEqual("STR", loaded.inventory[0].primaryStatType);
             Assert.AreEqual(8, loaded.inventory[0].primaryValue);
+            Assert.AreEqual("iron_mind", loaded.inventory[0].ability.abilityId);
         }
     }
 }
