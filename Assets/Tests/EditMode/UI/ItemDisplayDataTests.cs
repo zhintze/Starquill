@@ -12,12 +12,19 @@ namespace Starquill.Tests.EditMode.UI
         private EquipmentInstance MakeItem(string name, EquipmentSlot slot, Rarity rarity,
             int str = 0, int dex = 0, int intStat = 0)
         {
-            var stats = new Stats();
-            if (str > 0) stats.SetStat(StatType.STR, str);
-            if (dex > 0) stats.SetStat(StatType.DEX, dex);
-            if (intStat > 0) stats.SetStat(StatType.INT, intStat);
+            // Pick highest value as primary, next as secondary
+            StatType primaryStat = StatType.STR;
+            int primaryVal = str;
+            StatType secondaryStat = StatType.DEX;
+            int secondaryVal = dex;
+
+            if (dex > primaryVal) { primaryStat = StatType.DEX; primaryVal = dex; secondaryStat = StatType.STR; secondaryVal = str; }
+            if (intStat > primaryVal) { secondaryStat = primaryStat; secondaryVal = primaryVal; primaryStat = StatType.INT; primaryVal = intStat; }
+            else if (intStat > secondaryVal) { secondaryStat = StatType.INT; secondaryVal = intStat; }
+
             return new EquipmentInstance("hd", 1, slot, rarity,
-                Color.white, null, stats, null,
+                Color.white, null,
+                primaryStat, primaryVal, secondaryStat, secondaryVal, null,
                 null, null, null, false, null, name);
         }
 

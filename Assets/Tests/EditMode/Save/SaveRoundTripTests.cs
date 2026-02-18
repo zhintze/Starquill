@@ -14,16 +14,22 @@ namespace Starquill.Tests.Save
         [Test]
         public void SerializedEquipment_RoundTrips()
         {
+            var ability = new AwakenedAbility
+            {
+                AbilityId = "ironhide",
+                BoostedStat = StatType.CON,
+                BasePotency = 3f,
+                PotencyPerLevel = 2f,
+                Level = 2,
+                MaxLevel = 4,
+                CurrentXP = 50f
+            };
+
             var original = new EquipmentInstance(
                 "tr03", 5, EquipmentSlot.Torso, Rarity.Rare,
                 new Color(0.5f, 0.3f, 0.1f, 1f),
                 new Dictionary<int, Color> { { 48, new Color(0.2f, 0.4f, 0.6f, 1f) } },
-                new Stats { STR = 3, CON = 2 },
-                new List<RolledAffix>
-                {
-                    new RolledAffix("mighty", StatType.STR, 4f, false),
-                    new RolledAffix("sturdy", StatType.CON, 3f, false)
-                },
+                StatType.CON, 9, StatType.STR, 4, ability,
                 new[] { 48 }, new int[0], new int[0],
                 false, null, "Rare Sleeveless Shirt"
             );
@@ -32,7 +38,13 @@ namespace Starquill.Tests.Save
             Assert.AreEqual("tr03", serialized.itemType);
             Assert.AreEqual(5, serialized.itemNum);
             Assert.AreEqual((int)Rarity.Rare, serialized.rarity);
-            Assert.AreEqual(2, serialized.affixes.Length);
+            Assert.AreEqual("CON", serialized.primaryStatType);
+            Assert.AreEqual(9, serialized.primaryValue);
+            Assert.AreEqual("STR", serialized.secondaryStatType);
+            Assert.AreEqual(4, serialized.secondaryValue);
+            Assert.IsNotNull(serialized.ability);
+            Assert.AreEqual("ironhide", serialized.ability.abilityId);
+            Assert.AreEqual(2, serialized.ability.level);
         }
 
         [Test]
@@ -84,7 +96,16 @@ namespace Starquill.Tests.Save
                 slot = 0,
                 rarity = 2,
                 baseColor = new float[] { 1, 0, 0, 1 },
-                statMods = new int[] { 5, 0, 0, 0, 0, 0 }
+                primaryStatType = "STR",
+                primaryValue = 8,
+                secondaryStatType = "DEX",
+                secondaryValue = 3,
+                ability = new SerializedAbility
+                {
+                    abilityId = "iron_mind",
+                    level = 1,
+                    currentXP = 0f
+                }
             };
             save.inventory.Add(equip);
 
@@ -94,6 +115,8 @@ namespace Starquill.Tests.Save
             Assert.AreEqual(1, loaded.inventory.Count);
             Assert.AreEqual("hd01", loaded.inventory[0].itemType);
             Assert.AreEqual(2, loaded.inventory[0].rarity);
+            Assert.AreEqual("STR", loaded.inventory[0].primaryStatType);
+            Assert.AreEqual(8, loaded.inventory[0].primaryValue);
         }
     }
 }

@@ -22,11 +22,11 @@ namespace Starquill.Tests.Characters
             var catalog = new EquipmentCatalog();
             catalog.LoadFromResources();
 
-            var affixTable = new AffixTable();
-            var affixAsset = Resources.Load<TextAsset>("Data/affixes");
-            if (affixAsset != null) affixTable.LoadFromJson(affixAsset.text);
+            var abilityTable = new AbilityTable();
+            var abilityAsset = Resources.Load<TextAsset>("Data/abilities");
+            if (abilityAsset != null) abilityTable.LoadFromJson(abilityAsset.text);
 
-            var equipFactory = new EquipmentFactory(catalog, affixTable, registry.Colors);
+            var equipFactory = new EquipmentFactory(catalog, abilityTable, registry.Colors);
 
             var nameGen = new NameGenerator();
             nameGen.LoadFromResources();

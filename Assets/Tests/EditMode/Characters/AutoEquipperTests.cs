@@ -15,11 +15,10 @@ namespace Starquill.Tests.Characters
         private EquipmentInstance MakeItem(EquipmentSlot slot, int str = 0,
             Rarity rarity = Rarity.Common)
         {
-            var stats = new Stats { STR = str };
             return new EquipmentInstance(
                 "hd01", 1, slot, rarity,
                 Color.white, new Dictionary<int, Color>(),
-                stats, new List<RolledAffix>(),
+                StatType.STR, str, StatType.DEX, 0, null,
                 new int[0], new int[0], new int[0],
                 false, null, "Test");
         }

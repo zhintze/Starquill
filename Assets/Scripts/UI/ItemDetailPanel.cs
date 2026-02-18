@@ -45,14 +45,10 @@ namespace Starquill.UI
             if (itemStatsLabel != null)
             {
                 string stats = $"{data.RarityName} {data.SlotName}\nScore: {data.Score:F0}\n{data.StatSummary}";
-                if (item.RolledAffixes.Count > 0)
+                if (item.Ability != null)
                 {
-                    stats += "\n\nAffixes:";
-                    foreach (var affix in item.RolledAffixes)
-                    {
-                        string pct = affix.IsPercentage ? "%" : "";
-                        stats += $"\n  {affix.StatType} +{affix.Value:F0}{pct}";
-                    }
+                    stats += $"\n\nAbility: {item.Ability.AbilityId} (Lv {item.Ability.Level}/{item.Ability.MaxLevel})";
+                    stats += $"\n  {item.Ability.BoostedStat} +{item.Ability.CurrentPotency:F0}";
                 }
                 itemStatsLabel.text = stats;
             }

@@ -18,7 +18,7 @@ namespace Starquill.Tests.Equipment
             return new EquipmentInstance(
                 "hd01", 1, slot, rarity,
                 Color.white, new Dictionary<int, Color>(),
-                new Stats(), new List<RolledAffix>(),
+                StatType.STR, 1, StatType.DEX, 1, null,
                 new int[0], new int[0], new int[0],
                 false, null, "Test Item");
         }

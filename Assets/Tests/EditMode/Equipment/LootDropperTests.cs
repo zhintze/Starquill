@@ -39,11 +39,11 @@ namespace Starquill.Tests.Equipment
                  ""modular"":false,""hand_type"":""one_handed""}
             ]");
 
-            var affixTable = new AffixTable();
+            var abilityTable = new AbilityTable();
             var colors = new ColorManager();
             colors.LoadFromJson(@"{""main"":[[""#FF0000"",""#00FF00"",""#0000FF""]]}");
 
-            factory = new EquipmentFactory(catalog, affixTable, colors);
+            factory = new EquipmentFactory(catalog, abilityTable, colors);
             config = ScriptableObject.CreateInstance<EconomyConfig>();
             config.baseDropRate = 0.15f;
             pity = new PityTracker();
