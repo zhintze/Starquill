@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Starquill.Core;
-using Starquill.Data;
 using UnityEngine;
 
 namespace Starquill.Equipment
@@ -16,8 +15,11 @@ namespace Starquill.Equipment
         public float[] baseColor = new float[4];
         public int[] varianceColorKeys;
         public float[] varianceColorValuesFlat;
-        public int[] statMods = new int[6];
-        public SerializedAffix[] affixes;
+        public string primaryStatType;
+        public int primaryValue;
+        public string secondaryStatType;
+        public int secondaryValue;
+        public SerializedAbility ability;
         public int[] layerVariants;
 
         public static SerializedEquipment FromInstance(EquipmentInstance e)
@@ -29,10 +31,10 @@ namespace Starquill.Equipment
                 slot = (int)e.Slot,
                 rarity = (int)e.Rarity,
                 baseColor = new[] { e.BaseColor.r, e.BaseColor.g, e.BaseColor.b, e.BaseColor.a },
-                statMods = new[] {
-                    e.StatMods.STR, e.StatMods.DEX, e.StatMods.CON,
-                    e.StatMods.INT, e.StatMods.WIS, e.StatMods.CHA
-                },
+                primaryStatType = e.PrimaryStat.ToString(),
+                primaryValue = e.PrimaryValue,
+                secondaryStatType = e.SecondaryStat.ToString(),
+                secondaryValue = e.SecondaryValue,
                 layerVariants = e.LayerVariants
             };
 
@@ -53,20 +55,14 @@ namespace Starquill.Equipment
                 }
             }
 
-            if (e.RolledAffixes != null && e.RolledAffixes.Count > 0)
+            if (e.Ability != null)
             {
-                se.affixes = new SerializedAffix[e.RolledAffixes.Count];
-                for (int i = 0; i < e.RolledAffixes.Count; i++)
+                se.ability = new SerializedAbility
                 {
-                    var a = e.RolledAffixes[i];
-                    se.affixes[i] = new SerializedAffix
-                    {
-                        affixId = a.AffixId,
-                        statType = a.StatType.ToString(),
-                        value = a.Value,
-                        isPercentage = a.IsPercentage
-                    };
-                }
+                    abilityId = e.Ability.AbilityId,
+                    level = e.Ability.Level,
+                    currentXP = e.Ability.CurrentXP
+                };
             }
 
             return se;
@@ -74,11 +70,10 @@ namespace Starquill.Equipment
     }
 
     [Serializable]
-    public class SerializedAffix
+    public class SerializedAbility
     {
-        public string affixId;
-        public string statType;
-        public float value;
-        public bool isPercentage;
+        public string abilityId;
+        public int level;
+        public float currentXP;
     }
 }

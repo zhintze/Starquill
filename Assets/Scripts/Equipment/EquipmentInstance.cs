@@ -14,8 +14,11 @@ namespace Starquill.Equipment
         public Rarity Rarity { get; }
         public Color BaseColor { get; }
         public IReadOnlyDictionary<int, Color> VarianceColors { get; }
-        public Stats StatMods { get; }
-        public IReadOnlyList<RolledAffix> RolledAffixes { get; }
+        public StatType PrimaryStat { get; }
+        public int PrimaryValue { get; }
+        public StatType SecondaryStat { get; }
+        public int SecondaryValue { get; }
+        public AwakenedAbility Ability { get; }
         public int[] LayerCodes { get; }
         public int[] HiddenLayers { get; }
         public int[] LayerColorVariance { get; }
@@ -27,7 +30,9 @@ namespace Starquill.Equipment
         public EquipmentInstance(
             string itemType, int itemNum, EquipmentSlot slot, Rarity rarity,
             Color baseColor, Dictionary<int, Color> varianceColors,
-            Stats statMods, List<RolledAffix> rolledAffixes,
+            StatType primaryStat, int primaryValue,
+            StatType secondaryStat, int secondaryValue,
+            AwakenedAbility ability,
             int[] layerCodes, int[] hiddenLayers, int[] layerColorVariance,
             bool modular, string handType, string displayName,
             int[] layerVariants = null)
@@ -38,8 +43,11 @@ namespace Starquill.Equipment
             Rarity = rarity;
             BaseColor = baseColor;
             VarianceColors = varianceColors ?? new Dictionary<int, Color>();
-            StatMods = statMods ?? new Stats();
-            RolledAffixes = rolledAffixes ?? new List<RolledAffix>();
+            PrimaryStat = primaryStat;
+            PrimaryValue = primaryValue;
+            SecondaryStat = secondaryStat;
+            SecondaryValue = secondaryValue;
+            Ability = ability;
             LayerCodes = layerCodes ?? Array.Empty<int>();
             HiddenLayers = hiddenLayers ?? Array.Empty<int>();
             LayerColorVariance = layerColorVariance ?? Array.Empty<int>();
@@ -51,16 +59,16 @@ namespace Starquill.Equipment
 
         public Stats GetTotalStatMods()
         {
-            var total = StatMods.Clone();
-            foreach (var affix in RolledAffixes)
+            var stats = new Stats();
+            stats.SetStat(PrimaryStat, PrimaryValue);
+            stats.SetStat(SecondaryStat,
+                stats.GetStat(SecondaryStat) + SecondaryValue);
+            if (Ability != null)
             {
-                if (!affix.IsPercentage)
-                {
-                    int current = total.GetStat(affix.StatType);
-                    total.SetStat(affix.StatType, current + (int)affix.Value);
-                }
+                int current = stats.GetStat(Ability.BoostedStat);
+                stats.SetStat(Ability.BoostedStat, current + (int)Ability.CurrentPotency);
             }
-            return total;
+            return stats;
         }
     }
 }
