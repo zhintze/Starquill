@@ -10,13 +10,37 @@ namespace Starquill.Equipment
     public class EquipmentFactory
     {
         private readonly EquipmentCatalog catalog;
-        private readonly AffixTable affixTable;
+        private readonly AbilityTable abilityTable;
         private readonly ColorManager colors;
 
-        public EquipmentFactory(EquipmentCatalog catalog, AffixTable affixTable, ColorManager colors)
+        private static readonly Dictionary<string, StatType[]> PrimaryStatPools = new()
+        {
+            { "hd", new[] { StatType.CON, StatType.WIS } },
+            { "tr", new[] { StatType.CON, StatType.STR } },
+            { "ar", new[] { StatType.STR, StatType.DEX } },
+            { "lg", new[] { StatType.CON, StatType.STR } },
+            { "fe", new[] { StatType.DEX, StatType.CON } },
+            { "w", new[] { StatType.STR, StatType.DEX, StatType.INT } },
+            { "w08", new[] { StatType.CON, StatType.STR } },
+            { "mc", new[] { StatType.STR, StatType.DEX, StatType.CON, StatType.INT, StatType.WIS, StatType.CHA } },
+        };
+
+        private static readonly Dictionary<string, StatType[]> SecondaryStatPools = new()
+        {
+            { "hd", new[] { StatType.INT, StatType.CHA } },
+            { "tr", new[] { StatType.WIS, StatType.DEX } },
+            { "ar", new[] { StatType.CON, StatType.INT } },
+            { "lg", new[] { StatType.DEX, StatType.WIS } },
+            { "fe", new[] { StatType.STR, StatType.WIS } },
+            { "w", new[] { StatType.CON, StatType.WIS, StatType.CHA } },
+            { "w08", new[] { StatType.WIS, StatType.CHA } },
+            { "mc", new[] { StatType.STR, StatType.DEX, StatType.CON, StatType.INT, StatType.WIS, StatType.CHA } },
+        };
+
+        public EquipmentFactory(EquipmentCatalog catalog, AbilityTable abilityTable, ColorManager colors)
         {
             this.catalog = catalog;
-            this.affixTable = affixTable;
+            this.abilityTable = abilityTable;
             this.colors = colors;
         }
 
@@ -37,13 +61,19 @@ namespace Starquill.Equipment
                     varianceColors[layer] = colors.GetRandomColor("main", rng);
             }
 
-            var statMods = GenerateBaseStats(rarity, rng);
-            var affixes = affixTable.RollAffixes(rarity, slot, rng);
+            var (primaryStat, primaryVal, secondaryStat, secondaryVal) =
+                GenerateStatPair(prefix, rarity, rng);
+
+            var abilityEntry = abilityTable.RollAbility(entry.ItemType, rng);
+            var ability = abilityEntry != null
+                ? AwakenedAbility.Create(abilityEntry, rarity) : null;
+
             var displayName = GenerateDisplayName(rarity, entry.Description);
 
             return new EquipmentInstance(
                 entry.ItemType, itemNum, slot, rarity,
-                baseColor, varianceColors, statMods, affixes,
+                baseColor, varianceColors,
+                primaryStat, primaryVal, secondaryStat, secondaryVal, ability,
                 entry.LayerCodes, entry.HiddenLayers, entry.LayerColorVariance,
                 entry.Modular, null, displayName
             );
@@ -94,13 +124,20 @@ namespace Starquill.Equipment
             }
 
             var slot = EquipmentSlot.MainHand;
-            var statMods = GenerateBaseStats(rarity, rng);
-            var affixes = affixTable.RollAffixes(rarity, slot, rng);
+            string poolKey = IsShield(entry.ItemType) ? entry.ItemType : "w";
+            var (primaryStat, primaryVal, secondaryStat, secondaryVal) =
+                GenerateStatPair(poolKey, rarity, rng);
+
+            var abilityEntry = abilityTable.RollAbility(entry.ItemType, rng);
+            var ability = abilityEntry != null
+                ? AwakenedAbility.Create(abilityEntry, rarity) : null;
+
             var displayName = GenerateDisplayName(rarity, entry.Description);
 
             return new EquipmentInstance(
                 entry.ItemType, itemNum, slot, rarity,
-                baseColor, varianceColors, statMods, affixes,
+                baseColor, varianceColors,
+                primaryStat, primaryVal, secondaryStat, secondaryVal, ability,
                 entry.LayerCodes, entry.HiddenLayers, entry.LayerColorVariance,
                 entry.Modular, entry.HandType, displayName, layerVariants
             );
@@ -110,11 +147,9 @@ namespace Starquill.Equipment
         {
             var loadout = new EquipmentInstance[11];
 
-            // Priority slots (always filled)
             loadout[(int)EquipmentSlot.Torso] = CreateRandom("tr", RollRarity(questLevel, rng), rng);
             loadout[(int)EquipmentSlot.Legs] = CreateRandom("lg", RollRarity(questLevel, rng), rng);
 
-            // Chance-based slots
             if (rng.NextDouble() < 0.90)
                 loadout[(int)EquipmentSlot.Head] = CreateRandom("hd", RollRarity(questLevel, rng), rng);
             if (rng.NextDouble() < 0.80)
@@ -122,7 +157,6 @@ namespace Starquill.Equipment
             if (rng.NextDouble() < 0.70)
                 loadout[(int)EquipmentSlot.Feet] = CreateRandom("fe", RollRarity(questLevel, rng), rng);
 
-            // Weapon (60%)
             if (rng.NextDouble() < 0.60)
             {
                 var weapon = CreateRandomWeapon(RollRarity(questLevel, rng), rng);
@@ -138,7 +172,8 @@ namespace Starquill.Equipment
                             loadout[(int)EquipmentSlot.OffHand] = new EquipmentInstance(
                                 offhand.ItemType, offhand.ItemNum, EquipmentSlot.OffHand, offhand.Rarity,
                                 offhand.BaseColor, new Dictionary<int, Color>(offhand.VarianceColors),
-                                offhand.StatMods, new List<RolledAffix>(offhand.RolledAffixes),
+                                offhand.PrimaryStat, offhand.PrimaryValue,
+                                offhand.SecondaryStat, offhand.SecondaryValue, offhand.Ability,
                                 offhand.LayerCodes, offhand.HiddenLayers, offhand.LayerColorVariance,
                                 offhand.Modular, offhand.HandType, offhand.DisplayName,
                                 offhand.LayerVariants
@@ -152,7 +187,6 @@ namespace Starquill.Equipment
                 }
             }
 
-            // Misc slots (30% each)
             var miscSlots = new[] { EquipmentSlot.Misc1, EquipmentSlot.Misc2, EquipmentSlot.Misc3, EquipmentSlot.Misc4 };
             foreach (var slot in miscSlots)
             {
@@ -167,14 +201,12 @@ namespace Starquill.Equipment
         {
             var loadout = new EquipmentInstance[11];
 
-            // All armor slots
             loadout[(int)EquipmentSlot.Head] = CreateRandom("hd", Rarity.Common, rng);
             loadout[(int)EquipmentSlot.Torso] = CreateRandom("tr", Rarity.Common, rng);
             loadout[(int)EquipmentSlot.Arms] = CreateRandom("ar", Rarity.Common, rng);
             loadout[(int)EquipmentSlot.Legs] = CreateRandom("lg", Rarity.Common, rng);
             loadout[(int)EquipmentSlot.Feet] = CreateRandom("fe", Rarity.Common, rng);
 
-            // Weapon + offhand
             var weapon = CreateRandomWeapon(Rarity.Common, rng, "one_handed");
             if (weapon != null)
             {
@@ -185,18 +217,71 @@ namespace Starquill.Equipment
                     loadout[(int)EquipmentSlot.OffHand] = new EquipmentInstance(
                         offhand.ItemType, offhand.ItemNum, EquipmentSlot.OffHand, offhand.Rarity,
                         offhand.BaseColor, new Dictionary<int, Color>(offhand.VarianceColors),
-                        offhand.StatMods, new List<RolledAffix>(offhand.RolledAffixes),
+                        offhand.PrimaryStat, offhand.PrimaryValue,
+                        offhand.SecondaryStat, offhand.SecondaryValue, offhand.Ability,
                         offhand.LayerCodes, offhand.HiddenLayers, offhand.LayerColorVariance,
                         offhand.Modular, offhand.HandType, offhand.DisplayName
                     );
                 }
             }
 
-            // Two misc items
             loadout[(int)EquipmentSlot.Misc1] = CreateRandom("mc", Rarity.Common, rng);
             loadout[(int)EquipmentSlot.Misc2] = CreateRandom("mc", Rarity.Common, rng);
 
             return loadout;
+        }
+
+        public static (StatType primary, int primaryVal, StatType secondary, int secondaryVal)
+            GenerateStatPair(string itemTypePrefix, Rarity rarity, System.Random rng)
+        {
+            string poolKey = GetPoolKey(itemTypePrefix);
+
+            var primaryPool = PrimaryStatPools.ContainsKey(poolKey)
+                ? PrimaryStatPools[poolKey] : PrimaryStatPools["mc"];
+            var secondaryPool = SecondaryStatPools.ContainsKey(poolKey)
+                ? SecondaryStatPools[poolKey] : SecondaryStatPools["mc"];
+
+            var allStats = (StatType[])Enum.GetValues(typeof(StatType));
+            StatType primary = rng.NextDouble() < 0.80
+                ? primaryPool[rng.Next(primaryPool.Length)]
+                : allStats[rng.Next(allStats.Length)];
+
+            StatType secondary;
+            int attempts = 0;
+            do
+            {
+                secondary = rng.NextDouble() < 0.80
+                    ? secondaryPool[rng.Next(secondaryPool.Length)]
+                    : allStats[rng.Next(allStats.Length)];
+                attempts++;
+            } while (secondary == primary && attempts < 20);
+
+            if (secondary == primary)
+            {
+                for (int i = 0; i < allStats.Length; i++)
+                    if (allStats[i] != primary) { secondary = allStats[i]; break; }
+            }
+
+            var (minBudget, maxBudget) = rarity switch
+            {
+                Rarity.Common => (4, 6),
+                Rarity.Uncommon => (7, 10),
+                Rarity.Rare => (11, 14),
+                Rarity.Epic => (15, 18),
+                Rarity.Legendary => (19, 22),
+                _ => (4, 6)
+            };
+
+            int budget = rng.Next(minBudget, maxBudget + 1);
+
+            float primaryRatio = 0.65f + (float)(rng.NextDouble() * 0.10);
+            int primaryVal = Math.Max(1, (int)Math.Round(budget * primaryRatio));
+            int secondaryVal = Math.Max(1, budget - primaryVal);
+
+            if (primaryVal <= secondaryVal)
+                primaryVal = secondaryVal + 1;
+
+            return (primary, primaryVal, secondary, secondaryVal);
         }
 
         public static Rarity RollRarity(int questLevel, System.Random rng)
@@ -219,33 +304,6 @@ namespace Starquill.Equipment
             roll -= rareWeight;
             if (roll < epicWeight) return Rarity.Epic;
             return Rarity.Legendary;
-        }
-
-        public static Stats GenerateBaseStats(Rarity rarity, System.Random rng)
-        {
-            var (minBudget, maxBudget, statCount) = rarity switch
-            {
-                Rarity.Common => (0, 2, 1),
-                Rarity.Uncommon => (2, 4, rng.Next(1, 3)),
-                Rarity.Rare => (4, 8, 2),
-                Rarity.Epic => (8, 14, rng.Next(2, 4)),
-                Rarity.Legendary => (14, 20, 3),
-                _ => (0, 0, 0)
-            };
-
-            int budget = rng.Next(minBudget, maxBudget + 1);
-            var stats = new Stats();
-            var types = (StatType[])Enum.GetValues(typeof(StatType));
-
-            for (int i = 0; i < statCount && budget > 0; i++)
-            {
-                var type = types[rng.Next(types.Length)];
-                int amount = (i == statCount - 1) ? budget : rng.Next(1, budget);
-                stats.SetStat(type, stats.GetStat(type) + amount);
-                budget -= amount;
-            }
-
-            return stats;
         }
 
         public static string GenerateDisplayName(Rarity rarity, string baseDescription)
@@ -317,24 +375,22 @@ namespace Starquill.Equipment
                 }
             }
 
-            var statMods = new Stats
-            {
-                STR = data.statMods[0], DEX = data.statMods[1], CON = data.statMods[2],
-                INT = data.statMods[3], WIS = data.statMods[4], CHA = data.statMods[5]
-            };
+            Enum.TryParse<StatType>(data.primaryStatType, out var primaryStat);
+            Enum.TryParse<StatType>(data.secondaryStatType, out var secondaryStat);
 
-            var affixes = new List<RolledAffix>();
-            if (data.affixes != null)
+            AwakenedAbility ability = null;
+            if (data.ability != null)
             {
-                foreach (var sa in data.affixes)
+                var abilityEntry = abilityTable.AllAbilities.Find(a => a.Id == data.ability.abilityId);
+                if (abilityEntry != null)
                 {
-                    Enum.TryParse<StatType>(sa.statType, out var st);
-                    affixes.Add(new RolledAffix(sa.affixId, st, sa.value, sa.isPercentage));
+                    var rarity = (Rarity)data.rarity;
+                    ability = AwakenedAbility.Create(abilityEntry, rarity);
+                    ability.Level = data.ability.level;
+                    ability.CurrentXP = data.ability.currentXP;
                 }
             }
 
-            // For modular weapons loaded from old saves without layerVariants,
-            // default each layer to variant 1 (always exists)
             var lv = data.layerVariants;
             if (lv == null && modular && weaponEntry != null && weaponEntry.AmountPerLayer.Length > 0)
             {
@@ -345,11 +401,29 @@ namespace Starquill.Equipment
 
             return new EquipmentInstance(
                 data.itemType, data.itemNum, (EquipmentSlot)data.slot, (Rarity)data.rarity,
-                baseColor, varianceColors, statMods, affixes,
+                baseColor, varianceColors,
+                primaryStat, data.primaryValue, secondaryStat, data.secondaryValue, ability,
                 layerCodes, hiddenLayers, layerColorVariance,
                 modular, handType, GenerateDisplayName((Rarity)data.rarity, description),
                 lv
             );
+        }
+
+        private static bool IsShield(string itemType)
+        {
+            return itemType == "w08" || itemType == "w09";
+        }
+
+        private static string GetPoolKey(string itemTypePrefix)
+        {
+            if (itemTypePrefix == "w08" || itemTypePrefix == "w09") return "w08";
+            if (itemTypePrefix.StartsWith("w")) return "w";
+            if (itemTypePrefix.Length >= 2)
+            {
+                string prefix = itemTypePrefix.Substring(0, 2);
+                if (PrimaryStatPools.ContainsKey(prefix)) return prefix;
+            }
+            return "mc";
         }
     }
 }

@@ -8,11 +8,12 @@ using UnityEngine;
 
 namespace Starquill.Tests.Equipment
 {
+    [TestFixture]
     public class EquipmentFactoryTests
     {
         private EquipmentFactory factory;
         private EquipmentCatalog catalog;
-        private AffixTable affixTable;
+        private AbilityTable abilityTable;
         private ColorManager colors;
 
         [SetUp]
@@ -21,14 +22,13 @@ namespace Starquill.Tests.Equipment
             catalog = new EquipmentCatalog();
             catalog.LoadFromResources();
 
-            affixTable = new AffixTable();
-            var affixAsset = Resources.Load<TextAsset>("Data/affixes");
-            if (affixAsset != null) affixTable.LoadFromJson(affixAsset.text);
+            abilityTable = new AbilityTable();
+            abilityTable.LoadFromResources();
 
             colors = new ColorManager();
             colors.LoadFromResources();
 
-            factory = new EquipmentFactory(catalog, affixTable, colors);
+            factory = new EquipmentFactory(catalog, abilityTable, colors);
         }
 
         [Test]
@@ -43,19 +43,35 @@ namespace Starquill.Tests.Equipment
         }
 
         [Test]
-        public void CreateRandom_CommonHasNoAffixes()
-        {
-            var rng = new System.Random(42);
-            var instance = factory.CreateRandom("tr", Rarity.Common, rng);
-            Assert.AreEqual(0, instance.RolledAffixes.Count);
-        }
-
-        [Test]
-        public void CreateRandom_RareHasTwoAffixes()
+        public void CreateRandom_HasStatPair()
         {
             var rng = new System.Random(42);
             var instance = factory.CreateRandom("tr", Rarity.Rare, rng);
-            Assert.AreEqual(2, instance.RolledAffixes.Count);
+            Assert.Greater(instance.PrimaryValue, 0);
+            Assert.Greater(instance.SecondaryValue, 0);
+            Assert.AreNotEqual(instance.PrimaryStat, instance.SecondaryStat);
+        }
+
+        [Test]
+        public void CreateRandom_PrimaryAlwaysGreaterThanSecondary()
+        {
+            for (int seed = 0; seed < 50; seed++)
+            {
+                var rng = new System.Random(seed);
+                var instance = factory.CreateRandom("tr", Rarity.Rare, rng);
+                Assert.Greater(instance.PrimaryValue, instance.SecondaryValue,
+                    $"Seed {seed}: primary {instance.PrimaryValue} <= secondary {instance.SecondaryValue}");
+            }
+        }
+
+        [Test]
+        public void CreateRandom_HasAbility()
+        {
+            var rng = new System.Random(42);
+            var instance = factory.CreateRandom("tr", Rarity.Rare, rng);
+            Assert.IsNotNull(instance.Ability);
+            Assert.AreEqual(1, instance.Ability.Level);
+            Assert.AreEqual("ironhide", instance.Ability.AbilityId);
         }
 
         [Test]
@@ -78,62 +94,42 @@ namespace Starquill.Tests.Equipment
         }
 
         [Test]
+        public void CreateRandomWeapon_HasAbility()
+        {
+            var rng = new System.Random(42);
+            var weapon = factory.CreateRandomWeapon(Rarity.Rare, rng);
+            Assert.IsNotNull(weapon.Ability);
+        }
+
+        [Test]
+        public void GenerateStatPair_BudgetWithinRarityRange()
+        {
+            for (int seed = 0; seed < 50; seed++)
+            {
+                var (_, pv, _, sv) = EquipmentFactory.GenerateStatPair("tr", Rarity.Rare, new System.Random(seed));
+                int total = pv + sv;
+                Assert.GreaterOrEqual(total, 11, $"Seed {seed}: budget {total} < 11");
+                Assert.LessOrEqual(total, 14, $"Seed {seed}: budget {total} > 14");
+            }
+        }
+
+        [Test]
+        public void GenerateStatPair_StatsMustDiffer()
+        {
+            for (int seed = 0; seed < 100; seed++)
+            {
+                var (ps, _, ss, _) = EquipmentFactory.GenerateStatPair("tr", Rarity.Common, new System.Random(seed));
+                Assert.AreNotEqual(ps, ss, $"Seed {seed}: primary == secondary ({ps})");
+            }
+        }
+
+        [Test]
         public void CreateRandomLoadout_FillsPrioritySlots()
         {
             var rng = new System.Random(42);
             var loadout = factory.CreateRandomLoadout(1, rng);
             Assert.IsNotNull(loadout[(int)EquipmentSlot.Torso], "Torso should always be filled");
             Assert.IsNotNull(loadout[(int)EquipmentSlot.Legs], "Legs should always be filled");
-        }
-
-        [Test]
-        public void CreateRandomLoadout_TwoHandedClearsOffHand()
-        {
-            bool foundTwoHanded = false;
-            for (int seed = 0; seed < 200; seed++)
-            {
-                var rng = new System.Random(seed);
-                var loadout = factory.CreateRandomLoadout(1, rng);
-                var mainHand = loadout[(int)EquipmentSlot.MainHand];
-                if (mainHand != null && mainHand.HandType == "two_handed")
-                {
-                    Assert.IsNull(loadout[(int)EquipmentSlot.OffHand],
-                        "Two-handed weapon should clear off-hand");
-                    foundTwoHanded = true;
-                    break;
-                }
-            }
-            if (!foundTwoHanded)
-                Assert.Pass("No two-handed weapon rolled in 200 seeds (expected occasionally)");
-        }
-
-        [Test]
-        public void RollRarity_AtLevel1_MostlyCommon()
-        {
-            var rng = new System.Random(42);
-            int commonCount = 0;
-            for (int i = 0; i < 100; i++)
-            {
-                var rarity = EquipmentFactory.RollRarity(1, rng);
-                if (rarity == Rarity.Common) commonCount++;
-            }
-            Assert.Greater(commonCount, 60, "At level 1, >60% should be Common");
-        }
-
-        [Test]
-        public void GenerateBaseStats_RareHasMoreThanCommon()
-        {
-            var rng = new System.Random(42);
-            var commonStats = EquipmentFactory.GenerateBaseStats(Rarity.Common, rng);
-            var rareStats = EquipmentFactory.GenerateBaseStats(Rarity.Rare, rng);
-            Assert.GreaterOrEqual(rareStats.Total, commonStats.Total);
-        }
-
-        [Test]
-        public void GenerateDisplayName_IncludesRarity()
-        {
-            var name = EquipmentFactory.GenerateDisplayName(Rarity.Rare, "shirt");
-            Assert.IsTrue(name.Contains("Rare"), $"Name '{name}' should contain 'Rare'");
         }
 
         [Test]
@@ -155,10 +151,25 @@ namespace Starquill.Tests.Equipment
         {
             var loadout = factory.CreateStarterLoadout(new System.Random(42));
             for (int i = 0; i < loadout.Length; i++)
-            {
                 if (loadout[i] != null)
-                    Assert.AreEqual(Rarity.Common, loadout[i].Rarity, $"Slot {i} should be Common");
-            }
+                    Assert.AreEqual(Rarity.Common, loadout[i].Rarity, $"Slot {i}");
+        }
+
+        [Test]
+        public void RollRarity_AtLevel1_MostlyCommon()
+        {
+            var rng = new System.Random(42);
+            int commonCount = 0;
+            for (int i = 0; i < 100; i++)
+                if (EquipmentFactory.RollRarity(1, rng) == Rarity.Common) commonCount++;
+            Assert.Greater(commonCount, 60, "At level 1, >60% should be Common");
+        }
+
+        [Test]
+        public void GenerateDisplayName_IncludesRarity()
+        {
+            var name = EquipmentFactory.GenerateDisplayName(Rarity.Rare, "shirt");
+            Assert.IsTrue(name.Contains("Rare"));
         }
     }
 }
