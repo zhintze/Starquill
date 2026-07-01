@@ -7,8 +7,9 @@ using Starquill.Equipment;
 
 namespace Starquill.UI
 {
-    /// Shared code-built card for any item list (loot screen, equipment drawer).
-    /// Layout: rarity stripe | name + slot | sprite | stat pair | ability row | score/sell/delta footer.
+    /// The app-wide item card (mid-density, UiTheme.CardHeight).
+    /// Anatomy: rarity-framed sprite | name / stat pair / ability / meta | delta chip.
+    /// Used by the loot list, drawer candidate list, and party slot list.
     public static class ItemCardBuilder
     {
         public struct CardOptions
@@ -17,98 +18,119 @@ namespace Starquill.UI
             public bool ShowBestTag;
             public bool ShowSprite;
             public int SlotIndexForSprite;
-            public float Height;
             public Action OnTapped;
         }
-
-        private static readonly Color CardBackground = new Color(0.12f, 0.12f, 0.15f);
-        private static readonly Color DimText = new Color(0.5f, 0.5f, 0.55f);
-        private static readonly Color BestGold = new Color(1f, 0.84f, 0f);
-        private static readonly Color UpgradeGreen = new Color(0.3f, 0.9f, 0.3f);
-        private static readonly Color DowngradeRed = new Color(0.9f, 0.3f, 0.3f);
-        private static readonly Color NeutralGray = new Color(0.6f, 0.6f, 0.6f);
 
         public static GameObject Build(ItemDisplayData data, EquipmentInstance item,
             CardOptions options, Transform parent)
         {
-            float height = options.Height > 0f ? options.Height : 280f;
-
             var card = new GameObject($"Item_{data.DisplayName}",
                 typeof(RectTransform), typeof(Image), typeof(Button));
             if (parent != null) card.transform.SetParent(parent, false);
 
             var rt = card.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, height);
+            rt.sizeDelta = new Vector2(0, UiTheme.CardHeight);
             var le = card.AddComponent<LayoutElement>();
-            le.preferredHeight = height;
+            le.preferredHeight = UiTheme.CardHeight;
+            le.minHeight = UiTheme.CardHeight;
             le.flexibleWidth = 1;
-            card.GetComponent<Image>().color = CardBackground;
+            card.GetComponent<Image>().color = UiTheme.Card;
 
-            // Rarity stripe (gold when best)
-            var stripe = MakeChild(card, "Stripe", new Vector2(0, 0), new Vector2(0, 1));
-            var stripeRT = stripe.GetComponent<RectTransform>();
-            stripeRT.pivot = new Vector2(0, 0.5f);
-            stripeRT.sizeDelta = new Vector2(6, 0);
-            stripeRT.anchoredPosition = Vector2.zero;
-            stripe.AddComponent<Image>().color = options.ShowBestTag ? BestGold : data.RarityColor;
+            float pad = UiTheme.CardPadding;
 
-            float textLeft = options.ShowSprite ? 0.30f : 0.05f;
-
-            // Sprite column
+            // Left: rarity-framed sprite
             if (options.ShowSprite)
             {
-                var spriteObj = MakeChild(card, "Sprite", new Vector2(0.02f, 0.10f), new Vector2(0.28f, 0.90f));
-                var spriteImg = spriteObj.AddComponent<Image>();
-                spriteImg.preserveAspect = true;
-                LoadEquipmentSprite(spriteImg, item, options.SlotIndexForSprite);
+                var frameImg = UiFactory.Frame(card.transform, data.RarityColor);
+                var frameRT = frameImg.transform.parent.GetComponent<RectTransform>();
+                frameRT.anchorMin = new Vector2(0, 0.5f);
+                frameRT.anchorMax = new Vector2(0, 0.5f);
+                frameRT.pivot = new Vector2(0, 0.5f);
+                frameRT.anchoredPosition = new Vector2(pad, 0);
+                LoadEquipmentSprite(frameImg, item, options.SlotIndexForSprite);
             }
 
-            // Row 1: name (rarity color) + slot top-right
-            var nameObj = MakeChild(card, "Name", new Vector2(textLeft, 0.72f), new Vector2(0.78f, 1f), 12, -6);
-            var nameTmp = AddText(nameObj, data.DisplayName, 18, data.RarityColor,
-                TextAlignmentOptions.BottomLeft, FontStyles.Bold);
+            // Middle column bounds (pixels from left / right)
+            float textLeft = options.ShowSprite ? pad + UiTheme.CardIcon + pad : pad;
+            float textRight = UiTheme.DeltaChipWidth + 2f * pad;
+
+            // Line 1: name (rarity color) + optional BEST tag
+            var nameTmp = MidLine(card, "Name", textLeft, textRight, 0.72f, 1f);
+            nameTmp.text = data.DisplayName;
+            UiFactory.ApplyStyle(nameTmp, UiFactory.TextStyle.Heading);
+            nameTmp.color = data.RarityColor;
             nameTmp.textWrappingMode = TextWrappingModes.NoWrap;
             nameTmp.overflowMode = TextOverflowModes.Ellipsis;
+            nameTmp.alignment = TextAlignmentOptions.BottomLeft;
 
-            var slotObj = MakeChild(card, "Slot", new Vector2(0.78f, 0.72f), new Vector2(1f, 1f), 0, -6, -12);
-            string slotText = options.ShowBestTag ? $"<color=#{Hex(BestGold)}>★ Best</color> {data.SlotName}" : data.SlotName;
-            AddText(slotObj, slotText, 13, DimText, TextAlignmentOptions.BottomRight);
-
-            // Row 2: stat pair - primary large, secondary smaller/dimmer
-            var pairObj = MakeChild(card, "StatPair", new Vector2(textLeft, 0.44f), new Vector2(1f, 0.72f), 12, 0, -12);
-            string pair = $"<size=24>{ItemDisplayData.StatLabelColored(data.PrimaryStat, data.PrimaryValue)}</size>"
-                + $"    <size=16>{ItemDisplayData.StatLabelColored(data.SecondaryStat, data.SecondaryValue)}</size>";
-            AddText(pairObj, pair, 24, Color.white, TextAlignmentOptions.MidlineLeft);
-
-            // Row 3: ability (omitted when absent)
-            var abilityObj = MakeChild(card, "Ability", new Vector2(textLeft, 0.22f), new Vector2(1f, 0.44f), 12, 0, -12);
-            if (data.HasAbility)
+            // Line 2: stat pair (primary stat-colored, secondary softer)
+            var pairTmp = MidLine(card, "StatPair", textLeft, textRight, 0.46f, 0.72f);
+            var cmp = ComparisonData.Build(item, null);
+            if (cmp.IsLegacyItem)
             {
-                string pips = BuildPips(data.AbilityLevel, data.AbilityMaxLevel);
-                string potency = $"{data.AbilityStat} +{data.AbilityPotency:0.#}";
-                AddText(abilityObj,
-                    $"<color=#{Hex(BestGold)}>✦</color> {data.AbilityName}  <size=12>{pips}</size>  <color=#{Hex(DimText)}>{potency}</color>",
-                    15, new Color(0.85f, 0.85f, 0.9f), TextAlignmentOptions.MidlineLeft);
+                pairTmp.text = "Legacy item";
+                UiFactory.ApplyStyle(pairTmp, UiFactory.TextStyle.BodySecondary);
+            }
+            else
+            {
+                pairTmp.text = ItemDisplayData.StatLabelColored(data.PrimaryStat, data.PrimaryValue)
+                    + "    " + UiFactory.ColorTag(
+                        ItemDisplayData.StatLabel(data.SecondaryStat, data.SecondaryValue),
+                        UiTheme.TextSecondary);
+                UiFactory.ApplyStyle(pairTmp, UiFactory.TextStyle.Body);
             }
 
-            // Footer: score, sell, delta badge
-            var footerObj = MakeChild(card, "Footer", new Vector2(textLeft, 0f), new Vector2(0.72f, 0.22f), 12, 6);
-            AddText(footerObj,
-                $"<color=#{Hex(DimText)}>⚖ {data.Score:F0}   💰 {NumberFormatter.FormatCompact(data.SellValue)}g</color>",
-                13, DimText, TextAlignmentOptions.MidlineLeft);
+            // Line 3: ability (text left + Image pips right of text block); omitted when absent
+            if (data.HasAbility)
+            {
+                var abilityTmp = MidLine(card, "Ability", textLeft, textRight, 0.24f, 0.46f);
+                abilityTmp.text = data.AbilityName + "  " + UiFactory.ColorTag(
+                    $"{data.AbilityStat} +{data.AbilityPotency:0.#}", UiTheme.TextDim);
+                UiFactory.ApplyStyle(abilityTmp, UiFactory.TextStyle.Caption);
+                abilityTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                abilityTmp.overflowMode = TextOverflowModes.Ellipsis;
 
-            if (options.CompareAgainst != null || item != null)
+                var pips = UiFactory.PipRow(card.transform, data.AbilityLevel, data.AbilityMaxLevel);
+                var pipsRT = pips.GetComponent<RectTransform>();
+                pipsRT.anchorMin = new Vector2(1, 0.24f);
+                pipsRT.anchorMax = new Vector2(1, 0.46f);
+                pipsRT.pivot = new Vector2(1, 0.5f);
+                pipsRT.anchoredPosition = new Vector2(-textRight, 0);
+                pipsRT.sizeDelta = new Vector2(data.AbilityMaxLevel * 28f, 0);
+            }
+
+            // Line 4: meta (slot · rarity · sell)
+            var metaTmp = MidLine(card, "Meta", textLeft, textRight, 0f, 0.24f);
+            metaTmp.text = $"{data.SlotName} · {data.RarityName} · {NumberFormatter.FormatCompact(data.SellValue)}g";
+            UiFactory.ApplyStyle(metaTmp, UiFactory.TextStyle.CaptionDim);
+            metaTmp.alignment = TextAlignmentOptions.TopLeft;
+
+            // Right: delta chip (+ BEST caption above when flagged)
+            if (item != null)
             {
                 var delta = ItemComparer.Compare(item, options.CompareAgainst);
-                if (options.CompareAgainst != null || delta.TotalDelta != 0f)
+                Color chipColor = delta.IsUpgrade ? UiTheme.DeltaUp
+                    : (delta.TotalDelta < 0 ? UiTheme.DeltaDown : UiTheme.DeltaNeutral);
+                string sign = delta.TotalDelta > 0 ? "+" : "";
+                var chip = UiFactory.Chip(card.transform, $"{sign}{delta.TotalDelta:F0}", chipColor);
+                var chipRT = chip.GetComponent<RectTransform>();
+                chipRT.anchorMin = new Vector2(1, 0.5f);
+                chipRT.anchorMax = new Vector2(1, 0.5f);
+                chipRT.pivot = new Vector2(1, 0.5f);
+                chipRT.anchoredPosition = new Vector2(-pad, 0);
+
+                if (options.ShowBestTag)
                 {
-                    var badgeObj = MakeChild(card, "Delta", new Vector2(0.72f, 0f), new Vector2(1f, 0.22f), 0, 6, -12);
-                    string arrow = delta.IsUpgrade ? "▲" : (delta.TotalDelta < 0 ? "▼" : "–");
-                    Color deltaColor = delta.IsUpgrade ? UpgradeGreen
-                        : (delta.TotalDelta < 0 ? DowngradeRed : NeutralGray);
-                    string sign = delta.TotalDelta >= 0 ? "+" : "";
-                    AddText(badgeObj, $"{arrow} {sign}{delta.TotalDelta:F0}", 18, deltaColor,
-                        TextAlignmentOptions.MidlineRight, FontStyles.Bold);
+                    var bestTmp = UiFactory.Text(card.transform, "BEST",
+                        UiFactory.TextStyle.Caption, TextAlignmentOptions.Center);
+                    bestTmp.color = UiTheme.BestGold;
+                    bestTmp.fontStyle = FontStyles.Bold;
+                    var bestRT = bestTmp.rectTransform;
+                    bestRT.anchorMin = new Vector2(1, 0.5f);
+                    bestRT.anchorMax = new Vector2(1, 0.5f);
+                    bestRT.pivot = new Vector2(1, 0f);
+                    bestRT.anchoredPosition = new Vector2(-pad, UiTheme.DeltaChipHeight * 0.5f + UiTheme.Space1);
+                    bestRT.sizeDelta = new Vector2(UiTheme.DeltaChipWidth, UiTheme.FontCaption + 6f);
                 }
             }
 
@@ -121,11 +143,29 @@ namespace Starquill.UI
             return card;
         }
 
+        private static TMP_Text MidLine(GameObject card, string name,
+            float leftPx, float rightPx, float yMin, float yMax)
+        {
+            var obj = new GameObject(name, typeof(RectTransform));
+            obj.transform.SetParent(card.transform, false);
+            var rt = obj.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0, yMin);
+            rt.anchorMax = new Vector2(1, yMax);
+            rt.offsetMin = new Vector2(leftPx, 0);
+            rt.offsetMax = new Vector2(-rightPx, 0);
+            var tmp = obj.AddComponent<TextMeshProUGUI>();
+            tmp.richText = true;
+            tmp.alignment = TextAlignmentOptions.MidlineLeft;
+            return tmp;
+        }
+
+        // Interim text pips for legacy call sites (ItemDetailPanel, drawer selected slot);
+        // both are removed in the redesign's later tasks. Uses basic-latin glyphs only.
         public static string BuildPips(int level, int maxLevel)
         {
             var sb = new System.Text.StringBuilder();
             for (int i = 0; i < maxLevel; i++)
-                sb.Append(i < level ? "●" : "○");
+                sb.Append(i < level ? "•" : "·");
             return sb.ToString();
         }
 
@@ -156,34 +196,5 @@ namespace Starquill.UI
                 target.color = new Color(item.BaseColor.r, item.BaseColor.g, item.BaseColor.b, 0.3f);
             }
         }
-
-        private static GameObject MakeChild(GameObject parent, string name,
-            Vector2 anchorMin, Vector2 anchorMax,
-            float left = 0, float bottom = 0, float right = 0, float top = 0)
-        {
-            var obj = new GameObject(name, typeof(RectTransform));
-            obj.transform.SetParent(parent.transform, false);
-            var rt = obj.GetComponent<RectTransform>();
-            rt.anchorMin = anchorMin;
-            rt.anchorMax = anchorMax;
-            rt.offsetMin = new Vector2(left, bottom);
-            rt.offsetMax = new Vector2(right, top);
-            return obj;
-        }
-
-        private static TextMeshProUGUI AddText(GameObject obj, string text, float size,
-            Color color, TextAlignmentOptions alignment, FontStyles style = FontStyles.Normal)
-        {
-            var tmp = obj.AddComponent<TextMeshProUGUI>();
-            tmp.text = text;
-            tmp.fontSize = size;
-            tmp.color = color;
-            tmp.alignment = alignment;
-            tmp.fontStyle = style;
-            tmp.richText = true;
-            return tmp;
-        }
-
-        private static string Hex(Color c) => ColorUtility.ToHtmlStringRGB(c);
     }
 }
