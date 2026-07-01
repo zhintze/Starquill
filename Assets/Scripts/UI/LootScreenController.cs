@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Starquill.Characters;
-using Starquill.Core;
 using Starquill.Equipment;
 using Starquill.Managers;
 
@@ -17,7 +14,10 @@ namespace Starquill.UI
         [SerializeField] private Transform itemGridContainer;
         [SerializeField] private Button optimizeAllButton;
         [SerializeField] private ScreenManager screenManager;
-        [SerializeField] private ItemDetailPanel itemDetailPanel;
+        [SerializeField] private Transform sortTabsContainer;
+
+        private enum SortMode { Score, Newest, Rarity }
+        private SortMode sortMode = SortMode.Score;
 
         public void Initialize()
         {
@@ -25,12 +25,14 @@ namespace Starquill.UI
                 optimizeAllButton.onClick.AddListener(HandleOptimizeAll);
             if (screenManager != null)
                 screenManager.OnScreenChanged += HandleScreenChanged;
-            if (itemDetailPanel != null)
+            if (sortTabsContainer != null)
             {
-                itemDetailPanel.Initialize();
-                itemDetailPanel.OnSold += Refresh;
-                itemDetailPanel.OnEquipped += Refresh;
-                itemDetailPanel.OnClosed += Refresh;
+                UiFactory.SegmentedTabs(sortTabsContainer,
+                    new[] { "Score", "Newest", "Rarity" }, idx =>
+                    {
+                        sortMode = (SortMode)idx;
+                        Refresh();
+                    });
             }
         }
 
@@ -45,23 +47,29 @@ namespace Starquill.UI
             if (gm == null) return;
 
             RefreshHeader(gm.LootInventory);
-            RefreshGrid(gm.LootInventory);
+            RefreshList(gm.LootInventory);
         }
 
         private void RefreshHeader(LootInventory inventory)
         {
             if (inventoryCountLabel != null)
-                inventoryCountLabel.text = $"Inventory: {inventory.Count}/{inventory.Capacity}";
+                inventoryCountLabel.text = $"Inventory {inventory.Count}/{inventory.Capacity}";
         }
 
-        private void RefreshGrid(LootInventory inventory)
+        private void RefreshList(LootInventory inventory)
         {
             if (itemGridContainer == null) return;
 
             for (int i = itemGridContainer.childCount - 1; i >= 0; i--)
                 Destroy(itemGridContainer.GetChild(i).gameObject);
 
-            var sorted = inventory.Items.OrderByDescending(ItemComparer.ScoreItem).ToList();
+            if (inventory.Count == 0)
+            {
+                UiFactory.EmptyState(itemGridContainer, "No loot yet · keep exploring");
+                return;
+            }
+
+            var sorted = Sort(inventory.Items);
 
             var gm = GameManager.Instance;
             int questLevel = gm != null ? gm.questLevel : 1;
@@ -80,6 +88,20 @@ namespace Starquill.UI
                     SlotIndexForSprite = (int)item.Slot,
                     OnTapped = () => ShowItemDetail(capturedItem)
                 }, itemGridContainer);
+            }
+        }
+
+        private List<EquipmentInstance> Sort(IReadOnlyList<EquipmentInstance> items)
+        {
+            switch (sortMode)
+            {
+                case SortMode.Newest:
+                    return items.Reverse().ToList();
+                case SortMode.Rarity:
+                    return items.OrderByDescending(i => (int)i.Rarity)
+                        .ThenByDescending(ItemComparer.ScoreItem).ToList();
+                default:
+                    return items.OrderByDescending(ItemComparer.ScoreItem).ToList();
             }
         }
 
@@ -106,10 +128,9 @@ namespace Starquill.UI
 
         private void ShowItemDetail(EquipmentInstance item)
         {
-            if (itemDetailPanel == null) return;
             var gm = GameManager.Instance;
             int questLevel = gm != null ? gm.questLevel : 1;
-            itemDetailPanel.Show(item, questLevel);
+            ItemDetailSheet.Show(transform.root, item, questLevel, Refresh);
         }
 
         private void HandleOptimizeAll()
@@ -117,9 +138,8 @@ namespace Starquill.UI
             var gm = GameManager.Instance;
             if (gm == null || gm.Roster == null) return;
 
-            int totalEquipped = 0;
             for (int i = 0; i < gm.Roster.Characters.Count; i++)
-                totalEquipped += gm.AutoEquipCharacter(i);
+                gm.AutoEquipCharacter(i);
 
             Refresh();
         }
@@ -130,12 +150,6 @@ namespace Starquill.UI
                 screenManager.OnScreenChanged -= HandleScreenChanged;
             if (optimizeAllButton != null)
                 optimizeAllButton.onClick.RemoveAllListeners();
-            if (itemDetailPanel != null)
-            {
-                itemDetailPanel.OnSold -= Refresh;
-                itemDetailPanel.OnEquipped -= Refresh;
-                itemDetailPanel.OnClosed -= Refresh;
-            }
         }
     }
 }
