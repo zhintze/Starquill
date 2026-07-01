@@ -160,7 +160,7 @@ namespace Starquill.UI
                         gm != null ? gm.AbilityTable : null,
                         gm != null ? gm.economyConfig : null);
                     string text = $"<size=14>{ItemDisplayData.StatLabelColored(displayData.PrimaryStat, displayData.PrimaryValue)}"
-                        + $"  <alpha=#B4>{ItemDisplayData.StatLabelColored(displayData.SecondaryStat, displayData.SecondaryValue)}</alpha></size>";
+                        + $"  {ItemDisplayData.StatLabelColored(displayData.SecondaryStat, displayData.SecondaryValue)}</size>";
                     if (displayData.HasAbility)
                     {
                         string pips = ItemCardBuilder.BuildPips(displayData.AbilityLevel, displayData.AbilityMaxLevel);

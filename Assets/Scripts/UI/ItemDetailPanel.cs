@@ -62,7 +62,7 @@ namespace Starquill.UI
                 string header = $"<color=#{ColorUtility.ToHtmlStringRGB(data.RarityColor)}>{data.RarityName}</color>"
                     + $" · {data.SlotName} · <size=13>Score {data.Score:F0}</size>";
                 string pair = $"<size=26>{ItemDisplayData.StatLabelColored(data.PrimaryStat, data.PrimaryValue)}</size>"
-                    + $"   <size=18><alpha=#B4>{ItemDisplayData.StatLabelColored(data.SecondaryStat, data.SecondaryValue)}</alpha></size>";
+                    + $"   <size=18>{ItemDisplayData.StatLabelColored(data.SecondaryStat, data.SecondaryValue)}</size>";
                 itemStatsLabel.text = $"{header}\n{pair}";
             }
 

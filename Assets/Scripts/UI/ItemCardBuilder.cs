@@ -77,7 +77,7 @@ namespace Starquill.UI
             // Row 2: stat pair - primary large, secondary smaller/dimmer
             var pairObj = MakeChild(card, "StatPair", new Vector2(textLeft, 0.44f), new Vector2(1f, 0.72f), 12, 0, -12);
             string pair = $"<size=24>{ItemDisplayData.StatLabelColored(data.PrimaryStat, data.PrimaryValue)}</size>"
-                + $"    <size=16><alpha=#B4>{ItemDisplayData.StatLabelColored(data.SecondaryStat, data.SecondaryValue)}</alpha></size>";
+                + $"    <size=16>{ItemDisplayData.StatLabelColored(data.SecondaryStat, data.SecondaryValue)}</size>";
             AddText(pairObj, pair, 24, Color.white, TextAlignmentOptions.MidlineLeft);
 
             // Row 3: ability (omitted when absent)
