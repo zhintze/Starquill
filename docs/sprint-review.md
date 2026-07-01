@@ -455,3 +455,21 @@ Made the stat pair + ability model legible across all item surfaces:
 - ExploreScene rebuilt and saved via Tools > Build Explore Scene
 
 Design: `docs/plans/2026-07-01-sprint8.5-equipment-ui-readability-design.md` · Plan: `...-plan.md`
+
+---
+
+## Mobile UI Redesign (Sprint 8.5 extension)
+
+**Date:** 2026-07-01 | **Status:** Implemented; explore/loot/party screens visually verified in play mode; user Test Runner pass + ClearSave play-test pending
+
+Play-testing 8.5 exposed app-wide desktop-density UI (11-18px text at 1080x1920, empty 280px cards, box-glyph Unicode, literal `</alpha>` tags, zero-stat items from pre-redesign saves). Full redesign per Nielsen heuristics + Jakob's law:
+
+- **UiTheme**: design tokens — type scale (floor 28px), 8px spacing grid, ≥120px touch targets, surface/accent colors (invariant-tested)
+- **UiFactory**: app-wide component library — Text/Button/Chip/PipRow/ProgressBar/Frame/SegmentedTabs/HeaderBar/EmptyState; Image-based pips and chips replace unsupported Unicode glyphs
+- **ItemCardBuilder v2**: mid-density 240px card (framed sprite, rarity name, stat pair, ability + pips, meta line, delta chip); one card for loot list, drawer candidates, and party slot list
+- **ComparisonData**: pure equipped-vs-selected stat rows with legacy-item detection (+9 tests)
+- **BottomSheet + ItemDetailSheet**: modal detail flow (comparison table, ability XP bar + gold level-up, target picker, EQUIP/Sell) replacing the overlay panel and the drawer's preview/Equip state — both deleted
+- **Loot screen**: sort tabs (Score/Newest/Rarity), masked scroll viewport, empty state; fixed pre-existing bug where `LootScreenController.Initialize` was never called
+- **Chrome**: top bar 140px (gold 44), nav 160px with accent underline active state, verb cards 340x180, party header/stat strip/tabs on theme scale, paper doll band 560px
+
+Design: `docs/plans/2026-07-01-mobile-ui-redesign-design.md` · Plan: `...-plan.md`

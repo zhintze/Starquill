@@ -7,7 +7,7 @@ Each sprint follows spec-driven development: design doc → implementation plan 
 
 ---
 
-## Sprint 8.5: Equipment & Loot UI Readability — IMPLEMENTED 2026-07-01 (play-test checklist pending)
+## Sprint 8.5: Equipment & Loot UI Readability — IMPLEMENTED 2026-07-01, extended into the Mobile UI Redesign (UiTheme/UiFactory design system, ItemCard v2, bottom-sheet flow, app-wide mobile sizing — see `2026-07-01-mobile-ui-redesign-design.md`). Explore/Loot/Party visually verified in play mode; final Test Runner pass + ClearSave play-test pending.
 
 **Why first:** the stat pair + AwakenedAbility redesign passes all tests but cannot be verified in gameplay — the current item displays don't legibly present the new model. Every later sprint (quest rewards, shop) renders items through these same components, so fixing them first prevents rework.
 
