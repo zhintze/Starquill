@@ -162,7 +162,7 @@ namespace Starquill.UI
             return row;
         }
 
-        public static Image Frame(Transform parent, Color rarityColor, float size = 0f)
+        public static RawImage Frame(Transform parent, Color rarityColor, float size = 0f)
         {
             float s = size > 0f ? size : UiTheme.CardIcon;
             var frame = new GameObject("Frame", typeof(RectTransform), typeof(Image));
@@ -170,16 +170,17 @@ namespace Starquill.UI
             frame.GetComponent<RectTransform>().sizeDelta = new Vector2(s, s);
             frame.GetComponent<Image>().color = new Color(rarityColor.r, rarityColor.g, rarityColor.b, 0.16f);
 
-            var inner = new GameObject("Sprite", typeof(RectTransform), typeof(Image));
+            // RawImage so callers can crop into the character-sized item canvas
+            // via uvRect (see ItemIconFraming).
+            var inner = new GameObject("Icon", typeof(RectTransform), typeof(RawImage));
             inner.transform.SetParent(frame.transform, false);
             var innerRT = inner.GetComponent<RectTransform>();
             StretchFill(innerRT);
             innerRT.offsetMin = new Vector2(6, 6);
             innerRT.offsetMax = new Vector2(-6, -6);
-            var img = inner.GetComponent<Image>();
-            img.preserveAspect = true;
+            var img = inner.GetComponent<RawImage>();
             img.color = Color.clear;
-            return img; // caller assigns sprite
+            return img; // caller assigns texture + uvRect
         }
 
         // ---------- Bars, tabs, headers ----------

@@ -48,7 +48,7 @@ namespace Starquill.UI
                 frameRT.anchorMax = new Vector2(0, 0.5f);
                 frameRT.pivot = new Vector2(0, 0.5f);
                 frameRT.anchoredPosition = new Vector2(pad, 0);
-                LoadEquipmentSprite(frameImg, item, options.SlotIndexForSprite);
+                LoadEquipmentIcon(frameImg, item, options.SlotIndexForSprite);
             }
 
             // Middle column bounds (pixels from left / right)
@@ -160,7 +160,12 @@ namespace Starquill.UI
             return tmp;
         }
 
-        public static void LoadEquipmentSprite(Image target, EquipmentInstance item, int slotIndex)
+        /// Project-wide default item icon: composites ALL of the item's sprite
+        /// layers (mirroring DisplayBuilder's per-layer variant + tint rules)
+        /// and crops into the item content via the per-category frame
+        /// (ItemIconFraming), so hats, braces, boots, and multi-layer weapons
+        /// all land large and centered.
+        public static void LoadEquipmentIcon(RawImage target, EquipmentInstance item, int slotIndex)
         {
             if (target == null || item == null) return;
             if (item.LayerCodes == null || item.LayerCodes.Length == 0)
@@ -169,22 +174,66 @@ namespace Starquill.UI
                 return;
             }
 
-            string spritePath;
-            if (slotIndex == 5 || slotIndex == 6)
-                spritePath = ImageToken.BuildWeaponSpritePath(item.ItemType, item.LayerCodes[0], item.ItemNum);
-            else
-                spritePath = ImageToken.BuildEquipmentSpritePath(item.ItemType, item.ItemNum, item.LayerCodes[0]);
+            bool isWeapon = item.ItemType.StartsWith("w");
+            var uv = ItemIconFraming.GetFrame(item.ItemType);
 
-            var sprite = Resources.Load<Sprite>(spritePath);
-            if (sprite != null)
+            // Gather (layer, texture, tint) per layer code, DisplayBuilder-style.
+            var pieces = new System.Collections.Generic.List<(int layer, Texture2D tex, Color tint)>();
+            for (int i = 0; i < item.LayerCodes.Length; i++)
             {
-                target.sprite = sprite;
-                target.color = item.BaseColor;
-                target.preserveAspect = true;
+                int layer = item.LayerCodes[i];
+                string path;
+                if (isWeapon)
+                {
+                    int variant = item.LayerVariants != null && i < item.LayerVariants.Length
+                        ? item.LayerVariants[i] : item.ItemNum;
+                    path = ImageToken.BuildWeaponSpritePath(item.ItemType, layer, variant);
+                }
+                else
+                {
+                    path = ImageToken.BuildEquipmentSpritePath(item.ItemType, item.ItemNum, layer);
+                }
+
+                var tex = Resources.Load<Texture2D>(path);
+                if (tex == null) continue;
+
+                Color tint = item.BaseColor;
+                if (item.VarianceColors != null && item.VarianceColors.TryGetValue(layer, out var vc))
+                    tint = vc;
+
+                pieces.Add((layer, tex, tint));
             }
-            else
+
+            if (pieces.Count == 0)
             {
                 target.color = new Color(item.BaseColor.r, item.BaseColor.g, item.BaseColor.b, 0.3f);
+                return;
+            }
+
+            pieces.Sort((a, b) => a.layer.CompareTo(b.layer));
+
+            // First (lowest) layer on the target; remaining layers stack above
+            // as siblings with identical rect + uvRect.
+            target.texture = pieces[0].tex;
+            target.uvRect = uv;
+            target.color = pieces[0].tint;
+
+            var parent = target.transform.parent;
+            for (int i = 1; i < pieces.Count; i++)
+            {
+                var overlay = new GameObject($"Icon_L{pieces[i].layer}",
+                    typeof(RectTransform), typeof(RawImage));
+                overlay.transform.SetParent(parent, false);
+                var rt = overlay.GetComponent<RectTransform>();
+                var targetRT = target.rectTransform;
+                rt.anchorMin = targetRT.anchorMin;
+                rt.anchorMax = targetRT.anchorMax;
+                rt.offsetMin = targetRT.offsetMin;
+                rt.offsetMax = targetRT.offsetMax;
+                var img = overlay.GetComponent<RawImage>();
+                img.texture = pieces[i].tex;
+                img.uvRect = uv;
+                img.color = pieces[i].tint;
             }
         }
     }

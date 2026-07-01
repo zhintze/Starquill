@@ -65,6 +65,10 @@ Each sprint follows spec-driven development: design doc → implementation plan 
 
 ---
 
+## Full UI Pass 2 (scheduled after Sprints 9-11 land)
+
+The 2026-07-01 mobile UI redesign established the design system and fixed density/readability, but it was executed while Quests, Shop, and offline earnings didn't exist. Once those are functional, a second full UI pass is needed: unify the new screens onto UiTheme/UiFactory, revisit information architecture with real content, art-direct the placeholder surfaces (buttons, frames, backgrounds are flat color blocks), and re-run the heuristic evaluation across the complete app. Track alongside Sprint 12 polish.
+
 ## Sprint 12: Polish + MVP Ship
 
 **Goal:** shippable Android build.
