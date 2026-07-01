@@ -168,6 +168,17 @@ public static class ExploreSceneBuilder
         gridLayout.constraintCount = 3;
         gridLayout.childAlignment = TextAnchor.MiddleCenter;
 
+        // --- LootToastFeed inside ExplorePanel (above VerbBar) ---
+        var lootFeed = new GameObject("LootToastFeed", typeof(RectTransform));
+        lootFeed.transform.SetParent(explorePanel.transform, false);
+        var lootFeedRT = lootFeed.GetComponent<RectTransform>();
+        lootFeedRT.anchorMin = new Vector2(0, 0);
+        lootFeedRT.anchorMax = new Vector2(1, 0);
+        lootFeedRT.pivot = new Vector2(0.5f, 0);
+        lootFeedRT.anchoredPosition = new Vector2(0, 138); // just above VerbBar (130) + gap
+        lootFeedRT.sizeDelta = new Vector2(-32, 110);      // 3 rows of 34px
+        lootFeed.AddComponent<Starquill.UI.LootToastFeed>();
+
         // ============================================================
         // === QUESTS PLACEHOLDER (screen index 1) ===
         // ============================================================
