@@ -63,8 +63,8 @@ public static class ExploreSceneBuilder
         var explorePanelRT = explorePanel.GetComponent<RectTransform>();
         explorePanelRT.anchorMin = new Vector2(0, 0);
         explorePanelRT.anchorMax = new Vector2(1, 1);
-        explorePanelRT.offsetMin = new Vector2(0, 120); // above BottomNav
-        explorePanelRT.offsetMax = new Vector2(0, -100); // below TopBar
+        explorePanelRT.offsetMin = new Vector2(0, 160); // above BottomNav
+        explorePanelRT.offsetMax = new Vector2(0, -140); // below TopBar
         explorePanel.GetComponent<Image>().color = Color.clear;
 
         // --- CombatAreaPanel inside ExplorePanel ---
@@ -152,7 +152,7 @@ public static class ExploreSceneBuilder
         verbBarRT.anchorMax = new Vector2(1, 0);
         verbBarRT.pivot = new Vector2(0.5f, 0);
         verbBarRT.anchoredPosition = Vector2.zero; // ExplorePanel bottom is already above BottomNav
-        verbBarRT.sizeDelta = new Vector2(0, 130);
+        verbBarRT.sizeDelta = new Vector2(0, 200);
         verbBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.85f);
 
         var verbGrid = new GameObject("VerbGrid", typeof(RectTransform));
@@ -162,7 +162,7 @@ public static class ExploreSceneBuilder
         verbGridRT.offsetMin = new Vector2(10, 10);
         verbGridRT.offsetMax = new Vector2(-10, -10);
         var gridLayout = verbGrid.AddComponent<GridLayoutGroup>();
-        gridLayout.cellSize = new Vector2(330, 100);
+        gridLayout.cellSize = new Vector2(340, 180);
         gridLayout.spacing = new Vector2(15, 0);
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         gridLayout.constraintCount = 3;
@@ -175,8 +175,8 @@ public static class ExploreSceneBuilder
         lootFeedRT.anchorMin = new Vector2(0, 0);
         lootFeedRT.anchorMax = new Vector2(1, 0);
         lootFeedRT.pivot = new Vector2(0.5f, 0);
-        lootFeedRT.anchoredPosition = new Vector2(0, 138); // just above VerbBar (130) + gap
-        lootFeedRT.sizeDelta = new Vector2(-32, 110);      // 3 rows of 34px
+        lootFeedRT.anchoredPosition = new Vector2(0, 208); // just above VerbBar (200) + gap
+        lootFeedRT.sizeDelta = new Vector2(-32, 220);      // 3 rows of 72px
         lootFeed.AddComponent<Starquill.UI.LootToastFeed>();
 
         // ============================================================
@@ -191,8 +191,8 @@ public static class ExploreSceneBuilder
         var lootPanelRT = lootPanel.GetComponent<RectTransform>();
         lootPanelRT.anchorMin = new Vector2(0, 0);
         lootPanelRT.anchorMax = new Vector2(1, 1);
-        lootPanelRT.offsetMin = new Vector2(0, 120);
-        lootPanelRT.offsetMax = new Vector2(0, -100);
+        lootPanelRT.offsetMin = new Vector2(0, 160);
+        lootPanelRT.offsetMax = new Vector2(0, -140);
         lootPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
 
         // Loot Header Bar (60px top)
@@ -281,8 +281,8 @@ public static class ExploreSceneBuilder
         var partyPanelRT = partyPanel.GetComponent<RectTransform>();
         partyPanelRT.anchorMin = new Vector2(0, 0);
         partyPanelRT.anchorMax = new Vector2(1, 1);
-        partyPanelRT.offsetMin = new Vector2(0, 120);
-        partyPanelRT.offsetMax = new Vector2(0, -100);
+        partyPanelRT.offsetMin = new Vector2(0, 160);
+        partyPanelRT.offsetMax = new Vector2(0, -140);
         partyPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
 
         // --- Header Strip (80px anchored top) ---
@@ -292,7 +292,7 @@ public static class ExploreSceneBuilder
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot = new Vector2(0.5f, 1);
         headerRT.anchoredPosition = Vector2.zero;
-        headerRT.sizeDelta = new Vector2(0, 80);
+        headerRT.sizeDelta = new Vector2(0, 120);
         headerStrip.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.95f);
 
         var headerHL = headerStrip.AddComponent<HorizontalLayoutGroup>();
@@ -304,26 +304,26 @@ public static class ExploreSceneBuilder
         headerHL.childForceExpandWidth = false;
         headerHL.childForceExpandHeight = true;
 
-        var partyNameLabel = CreateTMPLabel("NameLabel", headerStrip.transform, "Name", 28, Color.white, TextAlignmentOptions.MidlineLeft);
+        var partyNameLabel = CreateTMPLabel("NameLabel", headerStrip.transform, "Name", 38, Color.white, TextAlignmentOptions.MidlineLeft);
         partyNameLabel.AddComponent<LayoutElement>().flexibleWidth = 2;
 
-        var partySpeciesLabel = CreateTMPLabel("SpeciesLabel", headerStrip.transform, "Species", 22, new Color(0.7f, 0.7f, 0.8f), TextAlignmentOptions.MidlineLeft);
+        var partySpeciesLabel = CreateTMPLabel("SpeciesLabel", headerStrip.transform, "Species", 28, new Color(0.7f, 0.7f, 0.8f), TextAlignmentOptions.MidlineLeft);
         partySpeciesLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var partyLevelLabel = CreateTMPLabel("LevelLabel", headerStrip.transform, "Lv 1", 24, new Color(0.9f, 0.85f, 0.5f), TextAlignmentOptions.Center);
+        var partyLevelLabel = CreateTMPLabel("LevelLabel", headerStrip.transform, "Lv 1", 34, new Color(0.9f, 0.85f, 0.5f), TextAlignmentOptions.Center);
         partyLevelLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var partyXpLabel = CreateTMPLabel("XPLabel", headerStrip.transform, "0/100 XP", 20, new Color(0.6f, 0.8f, 1f), TextAlignmentOptions.Center);
+        var partyXpLabel = CreateTMPLabel("XPLabel", headerStrip.transform, "0/100 XP", 28, new Color(0.6f, 0.8f, 1f), TextAlignmentOptions.Center);
         partyXpLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
         // Level Up Button
         var levelUpBtnObj = new GameObject("LevelUpButton", typeof(RectTransform), typeof(Image), typeof(Button));
         levelUpBtnObj.transform.SetParent(headerStrip.transform, false);
         levelUpBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.6f, 0.3f);
-        levelUpBtnObj.AddComponent<LayoutElement>().preferredWidth = 80;
+        levelUpBtnObj.AddComponent<LayoutElement>().preferredWidth = 220;
         var levelUpBtn = levelUpBtnObj.GetComponent<Button>();
 
-        var levelUpLabel = CreateTMPLabel("Label", levelUpBtnObj.transform, "Level Up", 16, Color.white, TextAlignmentOptions.Center);
+        var levelUpLabel = CreateTMPLabel("Label", levelUpBtnObj.transform, "Level Up", 30, Color.white, TextAlignmentOptions.Center);
         StretchFill(levelUpLabel);
 
         // Level Up Glow (Image overlay on the button)
@@ -337,8 +337,8 @@ public static class ExploreSceneBuilder
         focusRT.anchorMin = new Vector2(0, 1);
         focusRT.anchorMax = new Vector2(1, 1);
         focusRT.pivot = new Vector2(0.5f, 1);
-        focusRT.anchoredPosition = new Vector2(0, -80); // below HeaderStrip
-        focusRT.sizeDelta = new Vector2(0, 670);
+        focusRT.anchoredPosition = new Vector2(0, -120); // below HeaderStrip
+        focusRT.sizeDelta = new Vector2(0, 560);
         focusArea.GetComponent<Image>().color = Color.clear;
 
         // Portrait Strip (left, 120px wide)
@@ -446,8 +446,8 @@ public static class ExploreSceneBuilder
         statBarRT.anchorMin = new Vector2(0, 1);
         statBarRT.anchorMax = new Vector2(1, 1);
         statBarRT.pivot = new Vector2(0.5f, 1);
-        statBarRT.anchoredPosition = new Vector2(0, -750); // 80 (header) + 670 (focus)
-        statBarRT.sizeDelta = new Vector2(0, 60);
+        statBarRT.anchoredPosition = new Vector2(0, -680); // 120 (header) + 560 (focus)
+        statBarRT.sizeDelta = new Vector2(0, 90);
         statBar.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.8f);
 
         var statHL = statBar.AddComponent<HorizontalLayoutGroup>();
@@ -463,7 +463,7 @@ public static class ExploreSceneBuilder
         var focusStatLabels = new TMP_Text[6];
         for (int i = 0; i < 6; i++)
         {
-            var statLabel = CreateTMPLabel($"Stat_{statNames[i]}", statBar.transform, $"{statNames[i]} 10", 18, Color.white, TextAlignmentOptions.Center);
+            var statLabel = CreateTMPLabel($"Stat_{statNames[i]}", statBar.transform, $"{statNames[i]} 10", 32, Color.white, TextAlignmentOptions.Center);
             statLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
             focusStatLabels[i] = statLabel.GetComponent<TMP_Text>();
         }
@@ -474,8 +474,8 @@ public static class ExploreSceneBuilder
         subTabBarRT.anchorMin = new Vector2(0, 1);
         subTabBarRT.anchorMax = new Vector2(1, 1);
         subTabBarRT.pivot = new Vector2(0.5f, 1);
-        subTabBarRT.anchoredPosition = new Vector2(0, -810); // 750 + 60 (stat bar)
-        subTabBarRT.sizeDelta = new Vector2(0, 80);
+        subTabBarRT.anchoredPosition = new Vector2(0, -770); // 680 + 90 (stat bar)
+        subTabBarRT.sizeDelta = new Vector2(0, 120);
         subTabBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.9f);
 
         var subTabHL = subTabBar.AddComponent<HorizontalLayoutGroup>();
@@ -494,7 +494,7 @@ public static class ExploreSceneBuilder
             var tabBtnObj = new GameObject($"SubTab_{subTabNames[i]}", typeof(RectTransform), typeof(Image), typeof(Button));
             tabBtnObj.transform.SetParent(subTabBar.transform, false);
             tabBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.28f);
-            var tabLabel = CreateTMPLabel("Label", tabBtnObj.transform, subTabNames[i], 22, Color.white, TextAlignmentOptions.Center);
+            var tabLabel = CreateTMPLabel("Label", tabBtnObj.transform, subTabNames[i], 34, Color.white, TextAlignmentOptions.Center);
             StretchFill(tabLabel);
             subTabButtons[i] = tabBtnObj.GetComponent<Button>();
         }
@@ -822,7 +822,7 @@ public static class ExploreSceneBuilder
         topBarRT.anchorMax = new Vector2(1, 1);
         topBarRT.pivot = new Vector2(0.5f, 1);
         topBarRT.anchoredPosition = Vector2.zero;
-        topBarRT.sizeDelta = new Vector2(0, 100);
+        topBarRT.sizeDelta = new Vector2(0, 140);
         topBar.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.9f);
 
         var topBarHL = topBar.AddComponent<HorizontalLayoutGroup>();
@@ -834,16 +834,16 @@ public static class ExploreSceneBuilder
         topBarHL.childForceExpandWidth = true;
         topBarHL.childForceExpandHeight = true;
 
-        var goldLabel = CreateTMPLabel("GoldLabel", topBar.transform, "1.2M Gold", 36, new Color(1, 0.84f, 0, 1), TextAlignmentOptions.MidlineLeft);
+        var goldLabel = CreateTMPLabel("GoldLabel", topBar.transform, "1.2M Gold", 44, new Color(1, 0.84f, 0, 1), TextAlignmentOptions.MidlineLeft);
         goldLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var fragLabel = CreateTMPLabel("FragmentLabel", topBar.transform, "7/12", 28, new Color(0.2f, 0.8f, 0.7f, 1), TextAlignmentOptions.Center);
+        var fragLabel = CreateTMPLabel("FragmentLabel", topBar.transform, "7/12", 32, new Color(0.2f, 0.8f, 0.7f, 1), TextAlignmentOptions.Center);
         fragLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var waveLabel = CreateTMPLabel("WaveLabel", topBar.transform, "Wave 3/5", 28, Color.white, TextAlignmentOptions.Center);
+        var waveLabel = CreateTMPLabel("WaveLabel", topBar.transform, "Wave 3/5", 32, Color.white, TextAlignmentOptions.Center);
         waveLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
-        var questLabel = CreateTMPLabel("QuestLevelLabel", topBar.transform, "Quest Lv 34", 28, Color.white, TextAlignmentOptions.MidlineRight);
+        var questLabel = CreateTMPLabel("QuestLevelLabel", topBar.transform, "Quest Lv 34", 32, Color.white, TextAlignmentOptions.MidlineRight);
         questLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
 
         // ============================================================
@@ -856,7 +856,7 @@ public static class ExploreSceneBuilder
         bottomNavRT.anchorMax = new Vector2(1, 0);
         bottomNavRT.pivot = new Vector2(0.5f, 0);
         bottomNavRT.anchoredPosition = Vector2.zero;
-        bottomNavRT.sizeDelta = new Vector2(0, 120);
+        bottomNavRT.sizeDelta = new Vector2(0, 160);
         bottomNav.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 1f);
 
         var navHL = bottomNav.AddComponent<HorizontalLayoutGroup>();
@@ -1027,8 +1027,8 @@ public static class ExploreSceneBuilder
         var rt = go.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0, 0);
         rt.anchorMax = new Vector2(1, 1);
-        rt.offsetMin = new Vector2(0, 120);
-        rt.offsetMax = new Vector2(0, -100);
+        rt.offsetMin = new Vector2(0, 160);
+        rt.offsetMax = new Vector2(0, -140);
         go.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
 
         var label = CreateTMPLabel("Label", go.transform, labelText, 36, new Color(0.5f, 0.5f, 0.5f), TextAlignmentOptions.Center);

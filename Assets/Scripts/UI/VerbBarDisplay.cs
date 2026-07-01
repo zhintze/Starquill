@@ -82,7 +82,7 @@ namespace Starquill.UI
             nameRT.offsetMax = Vector2.zero;
             var nameTMP = nameObj.AddComponent<TextMeshProUGUI>();
             nameTMP.text = verbName;
-            nameTMP.fontSize = 28;
+            nameTMP.fontSize = 34;
             nameTMP.alignment = TextAlignmentOptions.Center;
             nameTMP.color = Color.white;
             nameTMP.raycastTarget = false;

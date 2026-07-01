@@ -4,13 +4,14 @@ using UnityEngine.UI;
 
 namespace Starquill.UI
 {
+    /// Bottom navigation: 5 equal targets, accent underline + bright label on the active tab.
     public class BottomNavDisplay : MonoBehaviour
     {
         [SerializeField] private Button[] navButtons;
-        [SerializeField] private Color activeColor = new Color(1f, 0.8f, 0.2f);
-        [SerializeField] private Color inactiveColor = new Color(0.5f, 0.5f, 0.5f);
         [SerializeField] private ScreenManager screenManager;
 
+        private Image[] underlines;
+        private TMP_Text[] labels;
         private int activeTab;
 
         public void SetScreenManager(ScreenManager manager)
@@ -21,16 +22,13 @@ namespace Starquill.UI
         public void SetActiveTab(int index)
         {
             activeTab = index;
+            if (navButtons == null) return;
             for (int i = 0; i < navButtons.Length; i++)
             {
-                if (navButtons[i] == null) continue;
-                var colors = navButtons[i].colors;
-                colors.normalColor = i == index ? activeColor : inactiveColor;
-                navButtons[i].colors = colors;
-
-                var label = navButtons[i].GetComponentInChildren<TMP_Text>();
-                if (label != null)
-                    label.color = i == index ? Color.white : new Color(0.7f, 0.7f, 0.7f);
+                if (labels != null && labels[i] != null)
+                    labels[i].color = i == index ? UiTheme.TextPrimary : UiTheme.TextDim;
+                if (underlines != null && underlines[i] != null)
+                    underlines[i].color = i == index ? UiTheme.AccentGreen : Color.clear;
             }
         }
 
@@ -38,37 +36,42 @@ namespace Starquill.UI
         {
             var tabNames = new[] { "Explore", "Quests", "Loot", "Party", "Shop" };
             navButtons = new Button[tabNames.Length];
+            underlines = new Image[tabNames.Length];
+            labels = new TMP_Text[tabNames.Length];
 
             for (int i = 0; i < tabNames.Length; i++)
             {
-                var btnObj = new GameObject($"NavBtn_{tabNames[i]}");
+                var btnObj = new GameObject($"NavBtn_{tabNames[i]}",
+                    typeof(RectTransform), typeof(Image), typeof(Button));
                 btnObj.transform.SetParent(transform, false);
+                btnObj.GetComponent<Image>().color = UiTheme.Card;
 
-                var rt = btnObj.AddComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(200, 100);
-
-                var img = btnObj.AddComponent<Image>();
-                img.color = inactiveColor;
-
-                var btn = btnObj.AddComponent<Button>();
+                var btn = btnObj.GetComponent<Button>();
                 navButtons[i] = btn;
-
                 int tabIndex = i;
                 btn.onClick.AddListener(() => OnNavButtonClicked(tabIndex));
 
-                var labelObj = new GameObject("Label");
-                labelObj.transform.SetParent(btnObj.transform, false);
-                var labelRT = labelObj.AddComponent<RectTransform>();
-                labelRT.anchorMin = Vector2.zero;
-                labelRT.anchorMax = Vector2.one;
-                labelRT.offsetMin = Vector2.zero;
-                labelRT.offsetMax = Vector2.zero;
-                var tmp = labelObj.AddComponent<TextMeshProUGUI>();
-                tmp.text = tabNames[i];
-                tmp.fontSize = 24;
-                tmp.alignment = TextAlignmentOptions.Center;
-                tmp.color = new Color(0.7f, 0.7f, 0.7f);
+                var label = UiFactory.Text(btnObj.transform, tabNames[i],
+                    UiFactory.TextStyle.Body, TextAlignmentOptions.Center);
+                label.fontSize = 32;
+                label.fontStyle = FontStyles.Bold;
+                label.color = UiTheme.TextDim;
+                UiFactory.StretchFill(label.rectTransform);
+                labels[i] = label;
+
+                var underline = new GameObject("Underline", typeof(RectTransform), typeof(Image));
+                underline.transform.SetParent(btnObj.transform, false);
+                var uRT = underline.GetComponent<RectTransform>();
+                uRT.anchorMin = new Vector2(0.15f, 0);
+                uRT.anchorMax = new Vector2(0.85f, 0);
+                uRT.pivot = new Vector2(0.5f, 0);
+                uRT.anchoredPosition = new Vector2(0, UiTheme.Space1);
+                uRT.sizeDelta = new Vector2(0, 8);
+                underlines[i] = underline.GetComponent<Image>();
+                underlines[i].color = Color.clear;
             }
+
+            SetActiveTab(0);
         }
 
         private void OnNavButtonClicked(int index)

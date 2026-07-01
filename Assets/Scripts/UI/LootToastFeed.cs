@@ -12,7 +12,7 @@ namespace Starquill.UI
     public class LootToastFeed : MonoBehaviour
     {
         private const int MaxRows = 3;
-        private const float RowHeight = 34f;
+        private const float RowHeight = 72f;
         private const float VisibleSeconds = 2.5f;
         private const float FadeSeconds = 0.6f;
 
@@ -59,8 +59,8 @@ namespace Starquill.UI
 
             var tmp = row.AddComponent<TextMeshProUGUI>();
             string hex = ColorUtility.ToHtmlStringRGB(data.RarityColor);
-            tmp.text = $"<color=#{hex}>▲ {data.DisplayName}</color>  <size=13><color=#9999A0>{ItemDisplayData.StatLabel(data.PrimaryStat, data.PrimaryValue)}</color></size>";
-            tmp.fontSize = 17;
+            tmp.text = $"<color=#{hex}>+ {data.DisplayName}</color>  <size=28><color=#9999A0>{ItemDisplayData.StatLabel(data.PrimaryStat, data.PrimaryValue)}</color></size>";
+            tmp.fontSize = 34;
             tmp.alignment = TextAlignmentOptions.MidlineLeft;
             tmp.richText = true;
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
