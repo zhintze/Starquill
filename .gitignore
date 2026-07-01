@@ -65,3 +65,6 @@ Assets/Resources/BillingMode.json.meta
 
 # Godot (archived)
 .godot/
+
+# Coplay MCP local package
+Packages/Coplay/
