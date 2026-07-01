@@ -4,258 +4,89 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Starquill is an open-world fantasy RPG built in Godot 4.4, featuring a "paper doll" visual style with modular character equipment systems. The game focuses on exploration, procedural content generation, and dice-based interactions using D&D-inspired character stats.
+Starquill is a **mobile idle RPG clicker** built in **Unity 6 (6000.3.8f1)**, portrait 1080x1920, IL2CPP. Players assemble a party of 4 paper-doll characters, who auto-battle waves of enemies while the player fires Verbs (pooled party abilities) to exploit a dual-triangle stat advantage system (Physical: STR>DEX>CON, Mental: INT>WIS>CHA). Loot drops constantly and immediately changes character appearance via a compositing pipeline.
 
-## Development Commands
+The original Godot open-world RPG is archived in `godot-archive/` and is not part of active development.
 
-### Building and Exporting
-```bash
-# Run the game in Godot editor (headless)
-godot --headless --verbose -- main.tscn
+## Key Documents
 
-# Build game executable (uses export presets)
-# Built executables are stored in ./build/ directory
-# - Starquill.exe (Windows)
-# - Starquill.console.exe (Windows console)
-# - Starquill.pck (packed game data)
-```
+- `docs/implemented-systems.md`: authoritative reference for what is built and how it works
+- `docs/sprint-review.md`: historical sprint log (Sprints 1-8 + equipment stat redesign)
+- `docs/plans/`: dated design and implementation plan docs, one pair per sprint
+- `docs/plans/2026-02-12-idle-rpg-clicker-design.md`: original master design (equipment/affix sections superseded; see banner in that file)
 
-### Testing Commands
-This project uses Godot's built-in testing system. Run tests through the Godot editor or use:
-```bash
-# Run tests with timeout
-timeout 30 godot --headless --verbose -- main.tscn
-```
+## Architecture
 
-## Architecture Overview
-
-### Autoload Singletons (Global Systems)
-The game uses a bus-based architecture with these autoloaded singletons:
-
-- **ConfigManager**: Central configuration and data loading system
-- **StarquillData**: Unified data registry for species and equipment
-- **Game**: Main game flow controller (start_new_game, go_to_next_level)
-- **SceneLoader**: Scene transition management
-- **Bus System**: Event communication between systems
-  - `BusFlow`: Level transitions and boot events
-  - `BusActors`: Character/actor events
-  - `BusCombat`: Combat-related events
-  - `BusInventory`: Inventory system events
-  - `BusUi`: UI interaction events
-  - `BusSave`: Save/load game events
-  - `BusAudio`: Audio and music management
-
-### Core Systems
-
-#### Character System (`scripts/character/`)
-- **Character**: Main character class with equipment slots and stats
-- **Stats**: D&D-inspired stats (STR, DEX, CON, INT, WIS, CHA)
-- **Species**: Character species with modular visual parts
-- **SpeciesInstance**: Runtime instances of species with randomized attributes
-
-#### Equipment System (`scripts/equipment/`)
-- **EquipmentFactory**: Creates equipment instances with randomization
-- **EquipmentInstance**: Runtime equipment with colors and stats
-- **EquipmentCatalog**: Static equipment definitions loaded from JSON
-
-#### Visual Layer System (`scripts/display/`)
-Handles the "paper doll" character rendering with:
-- **DisplayBuilder**: Constructs character visuals from equipment layers
-- **ColorManager**: Manages color palettes from JSON data
-- Layer-based equipment rendering with conflict detection
-
-### Data Management
-
-#### Configuration System
-- **ConfigManager** (`scripts/core/config_manager.gd`): Centralized config management
-  - Loads species data from `assets/data/species.json`
-  - Loads equipment catalog from `assets/data/equipment.json`
-  - Manages color palettes from `assets/data/color_palettes.json`
-  - Handles project overrides via `config/starquill_config.json`
-
-#### Data Loading Patterns
-- JSON-based configuration with fallback paths
-- Species data loaded into StarquillData registry on boot
-- Equipment randomization with slot-specific restrictions
-- Modular image numbering system for character parts
-
-### Project Structure
+### Assembly Definitions (dependency order)
 
 ```
-scripts/
-├── character/     # Character classes and stats
-├── combat/        # Combat mechanics (basic)
-├── core/          # Core systems (config, data management)
-├── display/       # Visual rendering and layer management
-├── equipment/     # Equipment system and factory
-├── inventory/     # Inventory management
-├── services/      # Utility services
-├── species/       # Species definitions and instances
-├── tools/         # Development tools
-├── ui/            # User interface components
-├── util/          # Utility functions
-└── verbs/         # Action/verb system
-
-autoload/          # Global singleton scripts
-assets/data/       # JSON data files (species, equipment, colors)
-scenes/            # Godot scene files
-build/             # Compiled game executables
+Core → Data → Combat / Economy / Characters / Equipment / Exploration / Display → Managers
+UI (references Managers and below)
 ```
 
-## Development Guidelines
+Rules:
+- Equipment references Display (ColorManager); Characters references Equipment + Display (factory chain)
+- If a type is needed by both Equipment and Managers, put it in Equipment (lower in the chain). Example: `SerializedEquipment` lives in the Equipment namespace to avoid a circular dependency.
+- Tests live in `Assets/Tests/EditMode/` under `EditModeTests.asmdef` (~262 NUnit tests in 34 files)
 
-### Equipment System Usage
-- Use `EquipmentFactory.create_from_catalog()` for specific equipment
-- Use `EquipmentFactory.create_random_from_prefix()` for slot-based randomization
-- Equipment restrictions: torso (tr01-tr06), legs (lg01-lg02) for main slots
-- Misc slots accept any equipment type for variety
+### Core Flow
 
-### Character Creation
-- Use `StarquillData.create_species_instance()` or `create_random_species_instance()`
-- Apply equipment via `Character.equip_instance()`
-- Character updates trigger via signals: `equipment_changed`, `model_changed`
+`GameManager` (singleton MonoBehaviour, `Assets/Scripts/Managers/GameManager.cs`) owns the game loop:
+- `ProcessTick()` drives auto-combat via `CombatTickProcessor`, loot drops via `ProcessLootDrops()`, and ability XP via `TickAbilityXP()`
+- UI is event-driven: GameManager fires events (`OnCombatTick`, `OnGoldChanged`, `OnWaveStarted`, `OnWaveCleared`, `OnVerbActivated`, `OnLootDropped`, `OnRosterChanged`); `ExploreSceneController` and other UI controllers subscribe
+- `ExploreSceneController` uses a `DeferredInitialSync` coroutine (yield null) to wait for `GameManager.Start()` ordering
+
+### Equipment Model (post stat-redesign, 2026-02-17)
+
+Each `EquipmentInstance` has:
+- A **primary/secondary stat pair** (`PrimaryStat`/`PrimaryValue`, `SecondaryStat`/`SecondaryValue`), rolled by `EquipmentFactory.GenerateStatPair()` from prefix-weighted pools with a rarity-based budget
+- One optional **AwakenedAbility**: a passive stat boost that levels via per-tick XP (`abilityBaseXPThreshold` 100, growth 1.8) or gold accelerator (`LevelUpAbility`), max level by rarity (Common 2 → Legendary 7)
+- Abilities are defined in `Assets/Resources/Data/abilities.json`, loaded by `AbilityTable`, rolled per equipment type prefix
+
+The old affix system (`AffixTable`, `RolledAffix`, `affixes.json`, `StatMods`) is deleted. Do not reintroduce it.
+
+### Paper Doll Display
+
+`DisplayBuilder` 4-stage pipeline → `CharacterDisplay` RenderTexture compositing (400x400, bilinear). Layer codes and color variance come from equipment JSON; palettes from `ColorManager`.
 
 ### Data Loading
-- Species and equipment data auto-loads during ConfigManager initialization
-- Use StarquillData APIs for accessing loaded data
-- Color palettes managed through ColorManager singleton
 
-### Bus System Communication
-- Use appropriate bus singletons for cross-system communication
-- BusFlow for level/scene transitions
-- BusActors for character events
-- Emit signals through bus helpers rather than direct signal emission
+JSON in `Assets/Resources/Data/` (equipment, weapons, abilities, species, speciesModularParts, names, color_palettes), parsed via MiniJSON + SimpleJson helpers in the Core assembly. ScriptableObject configs in `Assets/Data/Config/` (DefaultEconomyConfig, DefaultAdvantageMatrix). `EconomyConfig` holds all tuning knobs and economy formulas (EnemyHP, GoldPerKill, UpgradeCost, OfflineGold).
 
-## Godot MCP Integration
+## Development Workflow
 
-This project has Godot MCP (Model Context Protocol) enabled, allowing Claude Code to interact directly with the Godot Editor.
+### Running Tests
 
-### MCP Server Status
-- **Server**: Runs automatically when Godot editor is open
-- **Port**: 9080 (WebSocket)
-- **Connection**: Configured in Claude Code (`claude mcp list` to verify)
+Tests **cannot run headless on this machine** (Arch Linux batch-mode issue). Use Unity Editor GUI: Window > General > Test Runner > EditMode > Run All.
 
-### Available MCP Commands
+### Editor Tools (Tools menu)
 
-#### Node Commands (`addons/godot_mcp/commands/node_commands.gd`)
-- **create_node**: Create a new node in the current scene
-  - Params: `parent_path`, `node_type`, `node_name`
-  - Example: Create a Camera2D node
-- **delete_node**: Delete a node from the scene
-  - Params: `node_path`
-- **update_node_property**: Modify a node's property
-  - Params: `node_path`, `property_name`, `property_value`
-- **get_node_properties**: Get all properties of a node
-  - Params: `node_path`
-- **list_nodes**: List all nodes in the current scene
-  - Returns: Scene tree structure
+- **Tools > Setup GameManager**: creates ScriptableObjects + GameManager + fixes EventSystem
+- **Tools > Build Explore Scene**: rebuilds the ExploreScene hierarchy from scratch (`Assets/Editor/ExploreSceneBuilder.cs`). Always save the scene after.
+- `Assets/Editor/ClearSave.cs`: wipes save data
 
-#### Scene Commands (`addons/godot_mcp/commands/scene_commands.gd`)
-- **get_current_scene**: Get the currently open scene
-  - Returns: Scene file path and structure
-- **get_scene_structure**: Get detailed scene tree structure
-  - Params: `scene_path` (optional, uses current if not provided)
-- **create_scene**: Create a new scene file
-  - Params: `scene_path`, `root_node_type`
-- **open_scene**: Open an existing scene in the editor
-  - Params: `scene_path`
-- **save_scene**: Save the current scene
-  - Params: `scene_path` (optional)
+### Scenes
 
-#### Script Commands (`addons/godot_mcp/commands/script_commands.gd`)
-- **get_current_script**: Get the currently open script
-  - Returns: Script path and content
-- **get_script**: Read a specific script file
-  - Params: `script_path`
-- **get_script_metadata**: Get script information (classes, functions, etc.)
-  - Params: `script_path`
-- **create_script**: Create a new GDScript file
-  - Params: `script_path`, `content`, `template` (optional)
-- **create_script_template**: Create script from template
-  - Params: `script_path`, `template_type`
-- **edit_script**: Modify an existing script
-  - Params: `script_path`, `content`
+- `Assets/Scenes/ExploreScene.unity`: the game (starting scene in build settings)
+- `Assets/Scenes/DisplayTest.unity`: paper-doll rendering harness
 
-#### Editor Commands (`addons/godot_mcp/commands/editor_commands.gd`)
-- **get_editor_state**: Get current editor state
-  - Returns: Current scene, script, selected nodes, play status
-- **get_selected_node**: Get currently selected node
-  - Returns: Node info, properties, script path
-- **create_resource**: Create a new Godot resource
-  - Params: `resource_type`, `resource_path`, `properties`
+### Coplay MCP
 
-#### Project Commands (`addons/godot_mcp/commands/project_commands.gd`)
-- **get_project_info**: Get project metadata
-  - Returns: Project name, version, settings
-- **get_project_settings**: Get project configuration
-  - Params: `setting_path` (optional)
-- **get_project_structure**: Get project directory structure
-  - Params: `root_path` (optional)
-- **list_project_files**: List files in project
-  - Params: `directory`, `pattern` (optional)
-- **list_project_resources**: List all resources
-  - Params: `resource_type` (optional filter)
+Unity Editor integration via Coplay MCP (file-based RPC through `Temp/Coplay/MCPRequests/`). If tools disconnect, restart Claude Code. `save_scene` needs the full path (`Assets/Scenes/ExploreScene`), not just the scene name. `Packages/Coplay/` is gitignored local tooling.
 
-#### Editor Script Commands (`addons/godot_mcp/commands/editor_script_commands.gd`)
-- **execute_editor_script**: Run GDScript code in editor context
-  - Params: `code`
-  - Use for one-off editor automation tasks
+## Git Conventions
 
-### MCP Usage Examples
+- Active branch: `unity-idle-clicker`. Do not commit to `main`.
+- No `Co-Authored-By` lines in commit messages.
+- Do not push unless explicitly told to.
 
-```
-# Get current scene structure
-@mcp godot-mcp get_current_scene
+## Known Gotchas
 
-# Create a new Camera2D node
-@mcp godot-mcp create_node --parent_path="/root/MainScene" --node_type="Camera2D" --node_name="MainCamera"
-
-# Read a script file
-@mcp godot-mcp get_script --script_path="res://scripts/world/camera_controller.gd"
-
-# Get editor state
-@mcp godot-mcp get_editor_state
-
-# List all scenes in project
-@mcp godot-mcp list_project_files --directory="res://scenes" --pattern="*.tscn"
-```
-
-### MCP Limitations
-- No export/build commands (use `./deploy-android.sh` for Android builds)
-- Editor must be running for MCP server to be active
-- Changes are live in editor but may need manual save
-- Best for: Scene manipulation, script reading/writing, project inspection
-
-## Android Development
-
-### Setup
-- **Device**: Configured for Jelly Max (JELLYMAX00004650)
-- **Debug Keystore**: `~/.local/share/godot/keystores/debug.keystore`
-- **Export Preset**: Android (arm64-v8a)
-- **Package**: com.starquill.game
-
-### Deployment
-```bash
-# Build and deploy to connected Android device
-./deploy-android.sh
-
-# Manual export (in Godot editor)
-Project > Export > Android > Export Project
-```
-
-### Android Export Settings
-Located in `export_presets.cfg`:
-- Platform: Android
-- Architecture: arm64-v8a only (for performance)
-- Min SDK: Auto (from templates)
-- Permissions: Minimal (no special permissions required)
-
-## Key Files for Understanding the System
-
-- `project.godot`: Godot project configuration with autoload definitions
-- `scripts/core/config_manager.gd`: Central configuration and boot system
-- `scripts/core/starquill_data.gd`: Main data registry and API
-- `autoload/game.gd`: Game flow entry points
-- `scripts/equipment/equipment_factory.gd`: Equipment creation and randomization
-- `scripts/world/camera_controller.gd`: Camera system with pinch-zoom support
-- `README.md`: Project scope and design goals
+- Unity 6 `BuildProfileContext` NullReferenceException on Linux: delete `Library/BuildProfileContext.asset`
+- `System.Random` vs `UnityEngine.Random` ambiguity: qualify `UnityEngine.Random.Range()`
+- If `SerializeField` references appear null at runtime, rebuild the scene (Tools > Build Explore Scene) and save; scene rebuild fixes serialization
+- Input System: `activeInputHandler=2` (Both); EventSystem needs `StandaloneInputModule`
+- `IReadOnlyList.Contains()` requires `using System.Linq;`
+- RectTransform: never use `anchoredPosition` across different parent hierarchies; convert via world position
+- Variance colors serialize as flat `float[]` + `int[]` keys for JsonUtility compatibility
+- `com.unity.purchasing` was removed (unused, produced package errors); re-add the current 5.x line when Shop/IAP work begins

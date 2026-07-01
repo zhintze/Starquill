@@ -391,12 +391,50 @@ b200274e Revise Explore screen layout: larger characters, compact UI panels
 
 ---
 
-## Sprint 4: [Planned — Minimum Viable Combat]
+## Sprint 4: Combat Wiring
 
-*Wire GameManager to Explore screen for live auto-combat, verb activation, wave progression.*
+**Date:** 2026-02-14 | **Status:** Complete (99 tests total)
+
+Wired GameManager tick loop to the Explore screen: live auto-combat, verb card tap-to-activate, wave progression, damage numbers, gold counter animation. Event-driven UI pattern established (GameManager fires events, ExploreSceneController subscribes; DeferredInitialSync coroutine for Start() ordering).
 
 ---
 
-## Sprint 5: [Planned — Full Explore Screen]
+## Sprint 5: Equipment & Character Generation
 
-*Add damage numbers, floating icons, boost indicators, bottom nav screen switching, real art assets, and path indicator bar (dual-mode progress for combat waves and exploration travel).*
+**Date:** 2026-02-15 | **Status:** Complete (44 new tests, 143 total)
+
+EquipmentCatalog + EquipmentFactory (armor + modular weapons), CharacterFactory + NameGenerator, starter roster generation, paper-doll integration for generated loadouts.
+
+---
+
+## Sprint 6: Party Screen
+
+**Date:** 2026-02-15 | **Status:** Complete (40 new tests, 183 total)
+
+PartyScreenController, RosterGridDisplay, CharacterFocusDisplay, EquipmentSlotsDisplay, ScreenManager + BottomNavDisplay screen switching.
+
+---
+
+## Sprint 7: Loot Drop Pipeline + Inventory Backend
+
+**Date:** 2026-02-15 | **Status:** Complete (~35 new tests, ~218 total)
+
+LootDropper (drop chance + rarity + 70/30 armor/weapon + pity), LootInventory (capacity 50), SellCalculator, ItemComparer, AutoEquipper, GameManager.ProcessLootDrops + SellItem + EquipItemFromInventory, inventory save serialization, EconomyConfig.baseDropRate.
+
+---
+
+## Sprint 7.5 + 8: Loot Screen UI + Equipment Cards
+
+**Date:** 2026-02-16 | **Status:** Complete (commit `f41831f5`)
+
+Loot Screen (inventory list, ItemDetailPanel, equip/sell), equipment drawer with unified 3-column card layout, upgrade pip indicators, starter loadout, weapon display fixes (layer variants, shield types).
+
+---
+
+## Equipment Stat Redesign
+
+**Date:** 2026-02-17 | **Status:** Complete, verified 2026-07-01 (all 262 tests pass)
+
+Replaced 6-stat StatMods + RolledAffixes with a primary/secondary stat pair (prefix-weighted pools, rarity budgets) plus one AwakenedAbility per item (passive stat boost, per-tick XP leveling with gold accelerator, rarity-scaled potency and max level). Deleted AffixTable/RolledAffix/affixes.json; added AbilityTable/AbilityEntry/AwakenedAbility/abilities.json. Plan: `docs/plans/2026-02-17-equipment-stat-redesign-plan.md`.
+
+**Known issue:** equipment/loot/item UI readability is too poor to verify the new stat model in gameplay; flagged for the roadmap.

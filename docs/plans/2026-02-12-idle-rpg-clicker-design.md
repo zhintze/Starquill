@@ -1,6 +1,11 @@
 # Starquill: Idle RPG Clicker — Architecture & Systems Design
 ## "Bounty Bash"-Style Mobile Game (Unity)
 
+> **⚠ Partially superseded (2026-07-01).** For implemented reality, see `docs/implemented-systems.md`; for remaining work, see `docs/roadmap.md`. Notably out of date here:
+> - **Equipment:** the affix system, equipment sets, and enhance/reroll/ascend/merge described below were replaced by the primary/secondary stat pair + AwakenedAbility model (`docs/plans/2026-02-17-equipment-stat-redesign-plan.md`).
+> - **Section 12 MVP Build Plan:** the 2-sprint plan was not followed; actual execution was Sprints 1-8 per `docs/sprint-review.md`.
+> Everything else (core loop, verbs, advantage triangles, economy math, quest structure) remains the design of record.
+
 ---
 
 ## 1. Game Summary
