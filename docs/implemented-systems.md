@@ -141,7 +141,7 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 | Offline earnings claim | `OfflineGold()` formula exists; no claim flow/modal |
 | Equipment/loot UI readability | current displays block gameplay verification of the stat redesign |
 | Character level-up / stat allocation | not started |
-| Monetization (ads/IAP) | `com.unity.purchasing` removed until Shop sprint; `com.unity.ads` installed, unused |
+| Monetization (ads/IAP) | `com.unity.purchasing` 5.4.0 + `com.unity.ads` installed, unused (4.x purchasing produced package errors; upgraded) |
 | Cloud save / analytics / Remote Config | not started |
 | Prestige, dungeon keys, fragments | post-MVP (design docs exist: `dungeon-key-system-design-doc.md`) |
 

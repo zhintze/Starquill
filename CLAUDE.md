@@ -89,4 +89,4 @@ Unity Editor integration via Coplay MCP (file-based RPC through `Temp/Coplay/MCP
 - `IReadOnlyList.Contains()` requires `using System.Linq;`
 - RectTransform: never use `anchoredPosition` across different parent hierarchies; convert via world position
 - Variance colors serialize as flat `float[]` + `int[]` keys for JsonUtility compatibility
-- `com.unity.purchasing` was removed (unused, produced package errors); re-add the current 5.x line when Shop/IAP work begins
+- `com.unity.purchasing` is on the 5.x line (the 4.x line produced package errors in Unity 6); it is installed but unused until Shop/IAP work begins
