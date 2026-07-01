@@ -42,6 +42,7 @@ namespace Starquill.Managers
         private EquipmentFactory equipmentFactory;
         private LootInventory lootInventory;
         private LootDropper lootDropper;
+        private AbilityTable abilityTable;
         private List<EnemyState> currentEnemies = new();
         private float tickTimer;
         private float currentTime;
@@ -54,6 +55,7 @@ namespace Starquill.Managers
         public bool VerbsLocked => verbLockTimer > 0f;
         public CharacterRoster Roster => roster;
         public LootInventory LootInventory => lootInventory;
+        public AbilityTable AbilityTable => abilityTable;
         public event Action<EquipmentInstance> OnLootDropped;
 
         private void Awake()
@@ -74,7 +76,7 @@ namespace Starquill.Managers
             equipmentCatalog = new EquipmentCatalog();
             equipmentCatalog.LoadFromResources();
 
-            var abilityTable = new AbilityTable();
+            abilityTable = new AbilityTable();
             abilityTable.LoadFromResources();
 
             var registry = DisplayDataRegistry.Instance;
