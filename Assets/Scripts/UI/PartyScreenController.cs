@@ -68,7 +68,7 @@ namespace Starquill.UI
             if (equipmentDrawer != null)
             {
                 equipmentDrawer.Initialize();
-                equipmentDrawer.OnEquipPressed += HandleDrawerEquip;
+                equipmentDrawer.OnItemsChanged += HandleDrawerItemsChanged;
                 equipmentDrawer.OnBackPressed += HandleDrawerBack;
             }
 
@@ -162,7 +162,7 @@ namespace Starquill.UI
 
             var equipped = character.equipment[slotIndex];
             var candidates = gm.LootInventory.GetItemsForSlot((EquipmentSlot)slotIndex);
-            equipmentDrawer.Open(slotIndex, equipped, candidates);
+            equipmentDrawer.Open(slotIndex, equipped, candidates, SelectedRosterIndex);
             equipmentDrawer.UpdateSummary($"{candidates.Count} items for slot \u00B7 {gm.LootInventory.Count}/{gm.LootInventory.Capacity} inventory");
         }
 
@@ -174,11 +174,8 @@ namespace Starquill.UI
             RefreshAll();
         }
 
-        private void HandleDrawerEquip(EquipmentInstance item)
+        private void HandleDrawerItemsChanged()
         {
-            var gm = GameManager.Instance;
-            if (gm == null || item == null) return;
-            gm.EquipItemFromInventory(item, SelectedRosterIndex);
             if (equipmentDrawer != null) equipmentDrawer.Close();
             if (equipmentListArea != null) equipmentListArea.SetActive(true);
             if (equipmentSlots != null) equipmentSlots.ClearSelection();
@@ -261,7 +258,7 @@ namespace Starquill.UI
             }
             if (equipmentDrawer != null)
             {
-                equipmentDrawer.OnEquipPressed -= HandleDrawerEquip;
+                equipmentDrawer.OnItemsChanged -= HandleDrawerItemsChanged;
                 equipmentDrawer.OnBackPressed -= HandleDrawerBack;
             }
             if (screenManager != null) screenManager.OnScreenChanged -= HandleScreenChanged;

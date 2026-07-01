@@ -17,6 +17,7 @@ namespace Starquill.UI
             public EquipmentInstance CompareAgainst;
             public bool ShowBestTag;
             public bool ShowSprite;
+            public bool HideDelta;
             public int SlotIndexForSprite;
             public Action OnTapped;
         }
@@ -106,7 +107,7 @@ namespace Starquill.UI
             metaTmp.alignment = TextAlignmentOptions.TopLeft;
 
             // Right: delta chip (+ BEST caption above when flagged)
-            if (item != null)
+            if (item != null && !options.HideDelta)
             {
                 var delta = ItemComparer.Compare(item, options.CompareAgainst);
                 Color chipColor = delta.IsUpgrade ? UiTheme.DeltaUp
@@ -157,16 +158,6 @@ namespace Starquill.UI
             tmp.richText = true;
             tmp.alignment = TextAlignmentOptions.MidlineLeft;
             return tmp;
-        }
-
-        // Interim text pips for legacy call sites (ItemDetailPanel, drawer selected slot);
-        // both are removed in the redesign's later tasks. Uses basic-latin glyphs only.
-        public static string BuildPips(int level, int maxLevel)
-        {
-            var sb = new System.Text.StringBuilder();
-            for (int i = 0; i < maxLevel; i++)
-                sb.Append(i < level ? "•" : "·");
-            return sb.ToString();
         }
 
         public static void LoadEquipmentSprite(Image target, EquipmentInstance item, int slotIndex)
