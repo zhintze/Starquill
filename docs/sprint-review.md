@@ -438,3 +438,20 @@ Loot Screen (inventory list, ItemDetailPanel, equip/sell), equipment drawer with
 Replaced 6-stat StatMods + RolledAffixes with a primary/secondary stat pair (prefix-weighted pools, rarity budgets) plus one AwakenedAbility per item (passive stat boost, per-tick XP leveling with gold accelerator, rarity-scaled potency and max level). Deleted AffixTable/RolledAffix/affixes.json; added AbilityTable/AbilityEntry/AwakenedAbility/abilities.json. Plan: `docs/plans/2026-02-17-equipment-stat-redesign-plan.md`.
 
 **Known issue:** equipment/loot/item UI readability is too poor to verify the new stat model in gameplay; flagged for the roadmap.
+
+---
+
+## Sprint 8.5: Equipment & Loot UI Readability
+
+**Date:** 2026-07-01 | **Status:** Implemented; 276/276 tests passed mid-sprint (Checkpoint A); post-refactor test re-run + play-test checklist pending
+
+Made the stat pair + ability model legible across all item surfaces:
+- `AbilityTable.GetById` + `FormatDescription`; `GameManager.AbilityTable` + `GetAbilityLevelUpCost` exposure
+- `ItemDisplayData` restructured: typed stat-pair and ability fields (name, description, level, XP fraction) replacing the merged StatSummary; stat pair no longer double-counts ability potency
+- New shared `ItemCardBuilder` (stat-pair-forward layout: rarity stripe, primary stat large with stat colors, secondary dimmer, ability row with level pips, score/sell/delta footer) replacing three ad-hoc card builders
+- Loot screen: 9-column tile grid → vertical card list
+- `ItemDetailPanel`: sectioned header/pair/ability layout, ability XP progress bar, gold Level Up button wired to `GameManager.LevelUpAbility`
+- New `LootToastFeed` on the explore screen announcing drops (rarity-colored, primary stat, fade after 2.5s, max 3)
+- ExploreScene rebuilt and saved via Tools > Build Explore Scene
+
+Design: `docs/plans/2026-07-01-sprint8.5-equipment-ui-readability-design.md` · Plan: `...-plan.md`
