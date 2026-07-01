@@ -370,16 +370,24 @@ namespace Starquill.Managers
 
         private static readonly float[] RarityGoldMultipliers = { 0.5f, 1.0f, 1.5f, 2.5f, 4.0f };
 
+        public float GetAbilityLevelUpCost(EquipmentInstance item)
+        {
+            if (item?.Ability == null || item.Ability.Level >= item.Ability.MaxLevel)
+                return float.MaxValue;
+
+            float rarityMult = (int)item.Rarity < RarityGoldMultipliers.Length
+                ? RarityGoldMultipliers[(int)item.Rarity] : 1.0f;
+            return item.Ability.GoldCostToLevel(
+                economyConfig.abilityBaseLevelUpCost,
+                economyConfig.abilityCostGrowthRate,
+                rarityMult);
+        }
+
         public bool LevelUpAbility(EquipmentInstance item)
         {
             if (item?.Ability == null || item.Ability.Level >= item.Ability.MaxLevel) return false;
 
-            float rarityMult = (int)item.Rarity < RarityGoldMultipliers.Length
-                ? RarityGoldMultipliers[(int)item.Rarity] : 1.0f;
-            float cost = item.Ability.GoldCostToLevel(
-                economyConfig.abilityBaseLevelUpCost,
-                economyConfig.abilityCostGrowthRate,
-                rarityMult);
+            float cost = GetAbilityLevelUpCost(item);
 
             if (gold < cost) return false;
 
