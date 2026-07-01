@@ -105,5 +105,40 @@ namespace Starquill.Tests.Equipment
                     $"Ability {ability.Id} has non-positive PotencyPerLevel: {ability.PotencyPerLevel}");
             }
         }
+
+        [Test]
+        public void GetById_KnownId_ReturnsEntry()
+        {
+            var entry = table.GetById("ironhide");
+            Assert.IsNotNull(entry);
+            Assert.AreEqual("Ironhide", entry.Name);
+        }
+
+        [Test]
+        public void GetById_UnknownOrNull_ReturnsNull()
+        {
+            Assert.IsNull(table.GetById("no_such_ability"));
+            Assert.IsNull(table.GetById(null));
+        }
+
+        [Test]
+        public void FormatDescription_SubstitutesPotency()
+        {
+            var entry = table.GetById("ironhide");
+            Assert.AreEqual("+5 CON while equipped", AbilityTable.FormatDescription(entry, 5.0f));
+        }
+
+        [Test]
+        public void FormatDescription_TrimsTrailingZeroes()
+        {
+            var entry = table.GetById("ironhide");
+            Assert.AreEqual("+5.5 CON while equipped", AbilityTable.FormatDescription(entry, 5.5f));
+        }
+
+        [Test]
+        public void FormatDescription_NullEntry_ReturnsEmpty()
+        {
+            Assert.AreEqual("", AbilityTable.FormatDescription(null, 5f));
+        }
     }
 }

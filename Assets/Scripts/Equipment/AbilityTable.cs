@@ -9,6 +9,8 @@ namespace Starquill.Equipment
     {
         public List<AbilityEntry> AllAbilities { get; private set; } = new();
 
+        private readonly Dictionary<string, AbilityEntry> byId = new();
+
         public void LoadFromResources()
         {
             var asset = Resources.Load<TextAsset>("Data/abilities");
@@ -18,6 +20,7 @@ namespace Starquill.Equipment
         public void LoadFromJson(string json)
         {
             AllAbilities.Clear();
+            byId.Clear();
             var list = SimpleJson.ParseArray(json);
             foreach (var obj in list)
             {
@@ -43,7 +46,21 @@ namespace Starquill.Equipment
                     entry.ValidTypes.Add(t);
 
                 AllAbilities.Add(entry);
+                if (!string.IsNullOrEmpty(entry.Id))
+                    byId[entry.Id] = entry;
             }
+        }
+
+        public AbilityEntry GetById(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            return byId.TryGetValue(id, out var entry) ? entry : null;
+        }
+
+        public static string FormatDescription(AbilityEntry entry, float potency)
+        {
+            if (entry == null || string.IsNullOrEmpty(entry.Description)) return "";
+            return entry.Description.Replace("{potency}", potency.ToString("0.#"));
         }
 
         public List<AbilityEntry> GetValidAbilities(string itemTypePrefix)
