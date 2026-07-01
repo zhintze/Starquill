@@ -9,6 +9,26 @@ namespace Starquill.Tests.EditMode.UI
 {
     public class ItemDisplayDataTests
     {
+        private AbilityTable table;
+        private EconomyConfig economy;
+
+        [SetUp]
+        public void SetUp()
+        {
+            table = new AbilityTable();
+            var asset = Resources.Load<TextAsset>("Data/abilities");
+            Assert.IsNotNull(asset, "abilities.json not found in Resources");
+            table.LoadFromJson(asset.text);
+
+            economy = ScriptableObject.CreateInstance<EconomyConfig>();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(economy);
+        }
+
         private EquipmentInstance MakeItem(string name, EquipmentSlot slot, Rarity rarity,
             int str = 0, int dex = 0, int intStat = 0)
         {
@@ -26,6 +46,28 @@ namespace Starquill.Tests.EditMode.UI
                 Color.white, null,
                 primaryStat, primaryVal, secondaryStat, secondaryVal, null,
                 null, null, null, false, null, name);
+        }
+
+        private EquipmentInstance MakeItemWithAbility(AwakenedAbility ability)
+        {
+            return new EquipmentInstance("tr03", 1, EquipmentSlot.Torso, Rarity.Rare,
+                Color.white, null,
+                StatType.CON, 8, StatType.STR, 3, ability,
+                new[] { 48 }, null, null, false, null, "Rare Chain Shirt");
+        }
+
+        private AwakenedAbility MakeAbility(int level = 1, int maxLevel = 3, float currentXP = 0f)
+        {
+            return new AwakenedAbility
+            {
+                AbilityId = "ironhide",
+                BoostedStat = StatType.CON,
+                BasePotency = 3f,
+                PotencyPerLevel = 2f,
+                Level = level,
+                MaxLevel = maxLevel,
+                CurrentXP = currentXP
+            };
         }
 
         [Test]
@@ -83,12 +125,87 @@ namespace Starquill.Tests.EditMode.UI
         }
 
         [Test]
-        public void FromItem_FormatsStatSummary()
+        public void FromItem_PopulatesStatPairFromItemFields()
         {
             var item = MakeItem("Multi Stat", EquipmentSlot.Head, Rarity.Common, str: 5, dex: 3);
             var data = ItemDisplayData.FromItem(item, 1);
-            Assert.IsTrue(data.StatSummary.Contains("STR"), $"Expected 'STR' in '{data.StatSummary}'");
-            Assert.IsTrue(data.StatSummary.Contains("DEX"), $"Expected 'DEX' in '{data.StatSummary}'");
+            Assert.AreEqual(StatType.STR, data.PrimaryStat);
+            Assert.AreEqual(5, data.PrimaryValue);
+            Assert.AreEqual(StatType.DEX, data.SecondaryStat);
+            Assert.AreEqual(3, data.SecondaryValue);
+        }
+
+        [Test]
+        public void FromItem_StatPairExcludesAbilityPotency()
+        {
+            // Ability boosts CON; PrimaryValue must stay the raw pair value (no double count)
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility()), 1, table, economy);
+            Assert.AreEqual(8, data.PrimaryValue);
+            Assert.AreEqual(3, data.SecondaryValue);
+        }
+
+        [Test]
+        public void FromItem_ResolvesAbilityNameAndDescription()
+        {
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility()), 1, table, economy);
+            Assert.IsTrue(data.HasAbility);
+            Assert.AreEqual("Ironhide", data.AbilityName);
+            Assert.AreEqual("+3 CON while equipped", data.AbilityDescription);
+            Assert.AreEqual(StatType.CON, data.AbilityStat);
+            Assert.AreEqual(3f, data.AbilityPotency, 0.01f);
+            Assert.AreEqual(1, data.AbilityLevel);
+            Assert.AreEqual(3, data.AbilityMaxLevel);
+        }
+
+        [Test]
+        public void FromItem_NullTable_FallsBackToRawId()
+        {
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility()), 1, null, economy);
+            Assert.AreEqual("ironhide", data.AbilityName);
+            Assert.AreEqual("", data.AbilityDescription);
+        }
+
+        [Test]
+        public void FromItem_NoAbility_HasAbilityFalse()
+        {
+            var item = MakeItem("Plain Helm", EquipmentSlot.Head, Rarity.Common, str: 3);
+            var data = ItemDisplayData.FromItem(item, 1, table, economy);
+            Assert.IsFalse(data.HasAbility);
+        }
+
+        [Test]
+        public void FromItem_XpFraction_ZeroXp()
+        {
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility(currentXP: 0f)), 1, table, economy);
+            Assert.AreEqual(0f, data.AbilityXpFraction, 0.001f);
+        }
+
+        [Test]
+        public void FromItem_XpFraction_HalfThreshold()
+        {
+            // Level 1 threshold = abilityBaseXPThreshold (100) * growth^0 = 100
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility(currentXP: 50f)), 1, table, economy);
+            Assert.AreEqual(0.5f, data.AbilityXpFraction, 0.001f);
+        }
+
+        [Test]
+        public void FromItem_XpFraction_MaxLevelIsOne()
+        {
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility(level: 3, maxLevel: 3)), 1, table, economy);
+            Assert.AreEqual(1f, data.AbilityXpFraction, 0.001f);
+        }
+
+        [Test]
+        public void FromItem_NullEconomy_XpFractionZero()
+        {
+            var data = ItemDisplayData.FromItem(MakeItemWithAbility(MakeAbility(currentXP: 50f)), 1, table, null);
+            Assert.AreEqual(0f, data.AbilityXpFraction, 0.001f);
+        }
+
+        [Test]
+        public void StatLabel_FormatsSignedValue()
+        {
+            Assert.AreEqual("CON +7", ItemDisplayData.StatLabel(StatType.CON, 7));
         }
 
         [Test]
@@ -98,7 +215,7 @@ namespace Starquill.Tests.EditMode.UI
             Assert.AreEqual("", data.DisplayName);
             Assert.AreEqual("", data.SlotName);
             Assert.AreEqual("", data.RarityName);
-            Assert.AreEqual("", data.StatSummary);
+            Assert.IsFalse(data.HasAbility);
             Assert.AreEqual(0f, data.Score);
             Assert.AreEqual(0.0, data.SellValue);
         }

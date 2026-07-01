@@ -244,7 +244,9 @@ namespace Starquill.UI
             if (item != null)
             {
                 var displayData = ItemDisplayData.FromItem(item, 1);
-                statsTmp.text = $"<size=12>{displayData.StatSummary}</size>";
+                string pairSummary = ItemDisplayData.StatLabel(displayData.PrimaryStat, displayData.PrimaryValue)
+                    + "  " + ItemDisplayData.StatLabel(displayData.SecondaryStat, displayData.SecondaryValue);
+                statsTmp.text = $"<size=12>{pairSummary}</size>";
             }
             else
             {

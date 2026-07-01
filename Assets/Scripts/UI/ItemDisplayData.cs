@@ -1,4 +1,3 @@
-using System;
 using Starquill.Core;
 using Starquill.Data;
 using Starquill.Equipment;
@@ -14,9 +13,22 @@ namespace Starquill.UI
         public Color RarityColor;
         public float Score;
         public double SellValue;
-        public string StatSummary;
         public EquipmentSlot Slot;
         public Rarity Rarity;
+
+        public StatType PrimaryStat;
+        public int PrimaryValue;
+        public StatType SecondaryStat;
+        public int SecondaryValue;
+
+        public bool HasAbility;
+        public string AbilityName;
+        public string AbilityDescription;
+        public StatType AbilityStat;
+        public float AbilityPotency;
+        public int AbilityLevel;
+        public int AbilityMaxLevel;
+        public float AbilityXpFraction;
 
         private static readonly Color[] RarityColors =
         {
@@ -58,7 +70,20 @@ namespace Starquill.UI
             return RarityColors[0];
         }
 
-        public static ItemDisplayData FromItem(EquipmentInstance item, int questLevel)
+        public static string StatLabel(StatType stat, int value)
+        {
+            string sign = value >= 0 ? "+" : "";
+            return $"{stat} {sign}{value}";
+        }
+
+        public static string StatLabelColored(StatType stat, int value)
+        {
+            string hex = ColorUtility.ToHtmlStringRGB(StatTypeColors.GetColor(stat));
+            return $"<color=#{hex}>{StatLabel(stat, value)}</color>";
+        }
+
+        public static ItemDisplayData FromItem(EquipmentInstance item, int questLevel,
+            AbilityTable abilityTable = null, EconomyConfig economy = null)
         {
             if (item == null)
             {
@@ -68,18 +93,12 @@ namespace Starquill.UI
                     SlotName = "",
                     RarityName = "",
                     RarityColor = Color.white,
-                    Score = 0f,
-                    SellValue = 0,
-                    StatSummary = "",
                     Slot = EquipmentSlot.Head,
                     Rarity = Rarity.Common
                 };
             }
 
-            var totalStats = item.GetTotalStatMods();
-            string statSummary = BuildStatSummary(totalStats);
-
-            return new ItemDisplayData
+            var data = new ItemDisplayData
             {
                 DisplayName = item.DisplayName,
                 SlotName = GetSlotName(item.Slot),
@@ -87,28 +106,43 @@ namespace Starquill.UI
                 RarityColor = GetRarityColor(item.Rarity),
                 Score = ItemComparer.ScoreItem(item),
                 SellValue = SellCalculator.GetSellValue(item, questLevel),
-                StatSummary = statSummary,
                 Slot = item.Slot,
-                Rarity = item.Rarity
+                Rarity = item.Rarity,
+                PrimaryStat = item.PrimaryStat,
+                PrimaryValue = item.PrimaryValue,
+                SecondaryStat = item.SecondaryStat,
+                SecondaryValue = item.SecondaryValue
             };
-        }
 
-        private static string BuildStatSummary(Stats stats)
-        {
-            var parts = new System.Collections.Generic.List<string>();
-            var statTypes = (StatType[])Enum.GetValues(typeof(StatType));
-
-            foreach (var statType in statTypes)
+            var ability = item.Ability;
+            if (ability != null)
             {
-                int value = stats.GetStat(statType);
-                if (value != 0)
+                data.HasAbility = true;
+                data.AbilityStat = ability.BoostedStat;
+                data.AbilityPotency = ability.CurrentPotency;
+                data.AbilityLevel = ability.Level;
+                data.AbilityMaxLevel = ability.MaxLevel;
+
+                var entry = abilityTable?.GetById(ability.AbilityId);
+                data.AbilityName = entry != null ? entry.Name : ability.AbilityId;
+                data.AbilityDescription = entry != null
+                    ? AbilityTable.FormatDescription(entry, ability.CurrentPotency)
+                    : "";
+
+                if (ability.Level >= ability.MaxLevel)
                 {
-                    string sign = value > 0 ? "+" : "";
-                    parts.Add($"{statType} {sign}{value}");
+                    data.AbilityXpFraction = 1f;
+                }
+                else if (economy != null)
+                {
+                    float needed = ability.XPToNextLevel(
+                        economy.abilityBaseXPThreshold, economy.abilityXPGrowthRate);
+                    data.AbilityXpFraction = needed > 0f
+                        ? Mathf.Clamp01(ability.CurrentXP / needed) : 0f;
                 }
             }
 
-            return string.Join("  ", parts);
+            return data;
         }
     }
 }

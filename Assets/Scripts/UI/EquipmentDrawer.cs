@@ -155,7 +155,9 @@ namespace Starquill.UI
                 if (selectedSlotStats != null)
                 {
                     var displayData = ItemDisplayData.FromItem(equippedItem, 1);
-                    selectedSlotStats.text = $"<size=12>{displayData.StatSummary}</size>";
+                    string pairSummary = ItemDisplayData.StatLabel(displayData.PrimaryStat, displayData.PrimaryValue)
+                        + "  " + ItemDisplayData.StatLabel(displayData.SecondaryStat, displayData.SecondaryValue);
+                    selectedSlotStats.text = $"<size=12>{pairSummary}</size>";
                 }
             }
             else
@@ -317,7 +319,9 @@ namespace Starquill.UI
             string deltaHex = ColorUtility.ToHtmlStringRGB(deltaColor);
 
             var displayData = ItemDisplayData.FromItem(item, 1);
-            statsTmp.text = $"<color=#{deltaHex}><size=22>{arrow} {sign}{delta.TotalDelta:F0}</size></color>\n\n<size=12>{displayData.StatSummary}</size>";
+            string rowPairSummary = ItemDisplayData.StatLabel(displayData.PrimaryStat, displayData.PrimaryValue)
+                + "  " + ItemDisplayData.StatLabel(displayData.SecondaryStat, displayData.SecondaryValue);
+            statsTmp.text = $"<color=#{deltaHex}><size=22>{arrow} {sign}{delta.TotalDelta:F0}</size></color>\n\n<size=12>{rowPairSummary}</size>";
             statsTmp.fontSize = 16;
             statsTmp.alignment = TextAlignmentOptions.Center;
             statsTmp.color = new Color(0.7f, 0.7f, 0.75f);

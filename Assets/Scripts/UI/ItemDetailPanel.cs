@@ -44,7 +44,9 @@ namespace Starquill.UI
 
             if (itemStatsLabel != null)
             {
-                string stats = $"{data.RarityName} {data.SlotName}\nScore: {data.Score:F0}\n{data.StatSummary}";
+                string pairSummary = ItemDisplayData.StatLabel(data.PrimaryStat, data.PrimaryValue)
+                    + "  " + ItemDisplayData.StatLabel(data.SecondaryStat, data.SecondaryValue);
+                string stats = $"{data.RarityName} {data.SlotName}\nScore: {data.Score:F0}\n{pairSummary}";
                 if (item.Ability != null)
                 {
                     stats += $"\n\nAbility: {item.Ability.AbilityId} (Lv {item.Ability.Level}/{item.Ability.MaxLevel})";
