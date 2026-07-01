@@ -250,8 +250,14 @@ public static class ExploreSceneBuilder
         lootGridScrollRT.offsetMin = new Vector2(0, 0);
         lootGridScrollRT.offsetMax = new Vector2(0, -240);
 
+        var lootViewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        lootViewport.transform.SetParent(lootGridScroll.transform, false);
+        StretchFill(lootViewport);
+        lootViewport.GetComponent<Image>().color = new Color(1, 1, 1, 0.01f);
+        lootViewport.GetComponent<Mask>().showMaskGraphic = false;
+
         var lootGridContainer = new GameObject("ItemGridContainer", typeof(RectTransform));
-        lootGridContainer.transform.SetParent(lootGridScroll.transform, false);
+        lootGridContainer.transform.SetParent(lootViewport.transform, false);
         var lootGridContainerRT = lootGridContainer.GetComponent<RectTransform>();
         lootGridContainerRT.anchorMin = new Vector2(0, 1);
         lootGridContainerRT.anchorMax = new Vector2(1, 1);
@@ -271,8 +277,11 @@ public static class ExploreSceneBuilder
 
         var lootScrollRect = lootGridScroll.GetComponent<ScrollRect>();
         lootScrollRect.content = lootGridContainerRT;
+        lootScrollRect.viewport = lootViewport.GetComponent<RectTransform>();
         lootScrollRect.horizontal = false;
         lootScrollRect.vertical = true;
+        lootScrollRect.scrollSensitivity = 30;
+        lootScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
         // ============================================================
         // === PARTY PANEL (screen index 3) ===

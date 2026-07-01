@@ -168,7 +168,7 @@ namespace Starquill.UI
             var frame = new GameObject("Frame", typeof(RectTransform), typeof(Image));
             frame.transform.SetParent(parent, false);
             frame.GetComponent<RectTransform>().sizeDelta = new Vector2(s, s);
-            frame.GetComponent<Image>().color = new Color(rarityColor.r, rarityColor.g, rarityColor.b, 0.35f);
+            frame.GetComponent<Image>().color = new Color(rarityColor.r, rarityColor.g, rarityColor.b, 0.16f);
 
             var inner = new GameObject("Sprite", typeof(RectTransform), typeof(Image));
             inner.transform.SetParent(frame.transform, false);

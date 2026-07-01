@@ -19,8 +19,20 @@ namespace Starquill.UI
         private enum SortMode { Score, Newest, Rarity }
         private SortMode sortMode = SortMode.Score;
 
+        private bool initialized;
+
+        private System.Collections.IEnumerator Start()
+        {
+            yield return null; // wait for GameManager.Start()
+            Initialize();
+            Refresh();
+        }
+
         public void Initialize()
         {
+            if (initialized) return;
+            initialized = true;
+
             if (optimizeAllButton != null)
                 optimizeAllButton.onClick.AddListener(HandleOptimizeAll);
             if (screenManager != null)
