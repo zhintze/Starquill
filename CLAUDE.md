@@ -20,7 +20,7 @@ The original Godot open-world RPG is archived in `godot-archive/` and is not par
 ### Assembly Definitions (dependency order)
 
 ```
-Core → Data → Combat / Economy / Characters / Equipment / Exploration / Display → Managers
+Core → Data → Combat / Characters / Equipment / Exploration / Display → Managers
 UI (references Managers and below)
 ```
 

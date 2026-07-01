@@ -5,7 +5,6 @@
         "Starquill.Core",
         "Starquill.Data",
         "Starquill.Combat",
-        "Starquill.Economy",
         "Starquill.Characters",
         "Starquill.Equipment",
         "Starquill.Exploration",

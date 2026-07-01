@@ -9,7 +9,7 @@
 
 Unity 6 (6000.3.8f1) mobile idle RPG clicker, portrait 1080x1920, IL2CPP. A party of 4 paper-doll characters auto-battles enemy waves. The player taps Verbs (pooled party abilities) to exploit a dual-triangle advantage system. Loot drops feed a collection/equip loop that visibly changes characters.
 
-**Assemblies:** `Core → Data → Combat / Economy / Characters / Equipment / Exploration / Display → Managers`, with `UI` on top. Tests in `EditModeTests` (34 files, ~262 tests).
+**Assemblies:** `Core → Data → Combat / Characters / Equipment / Exploration / Display → Managers`, with `UI` on top. Tests in `EditModeTests` (34 files, ~262 tests). The empty `Starquill.Economy` assembly was removed 2026-07-01; economy code lives in Data (`EconomyConfig`) and Equipment (`SellCalculator`, `PityTracker`).
 
 ---
 
