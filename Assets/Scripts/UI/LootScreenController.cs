@@ -63,42 +63,45 @@ namespace Starquill.UI
 
             var sorted = inventory.Items.OrderByDescending(ItemComparer.ScoreItem).ToList();
 
+            var gm = GameManager.Instance;
+            int questLevel = gm != null ? gm.questLevel : 1;
+
             foreach (var item in sorted)
             {
-                var tile = CreateItemTile(item);
-                tile.transform.SetParent(itemGridContainer, false);
+                var data = ItemDisplayData.FromItem(item, questLevel,
+                    gm != null ? gm.AbilityTable : null,
+                    gm != null ? gm.economyConfig : null);
+
+                var capturedItem = item;
+                ItemCardBuilder.Build(data, item, new ItemCardBuilder.CardOptions
+                {
+                    CompareAgainst = FindBestUpgradeTarget(item),
+                    ShowSprite = true,
+                    SlotIndexForSprite = (int)item.Slot,
+                    OnTapped = () => ShowItemDetail(capturedItem)
+                }, itemGridContainer);
             }
         }
 
-        private GameObject CreateItemTile(EquipmentInstance item)
+        // Equipped item of the roster character for whom this item is the biggest upgrade.
+        private EquipmentInstance FindBestUpgradeTarget(EquipmentInstance item)
         {
-            var tile = new GameObject($"Item_{item.DisplayName}",
-                typeof(RectTransform), typeof(Image), typeof(Button));
+            var gm = GameManager.Instance;
+            if (gm == null || gm.Roster == null || gm.Roster.Characters.Count == 0) return null;
 
-            var img = tile.GetComponent<Image>();
-            Color rarityColor = ItemDisplayData.GetRarityColor(item.Rarity);
-            img.color = rarityColor;
-
-            var labelObj = new GameObject("Label", typeof(RectTransform));
-            labelObj.transform.SetParent(tile.transform, false);
-            var labelRT = labelObj.GetComponent<RectTransform>();
-            labelRT.anchorMin = Vector2.zero;
-            labelRT.anchorMax = Vector2.one;
-            labelRT.offsetMin = new Vector2(4, 4);
-            labelRT.offsetMax = new Vector2(-4, -4);
-            var tmp = labelObj.AddComponent<TextMeshProUGUI>();
-            tmp.text = $"{item.DisplayName}\n<size=10>{item.Rarity} {ItemDisplayData.GetSlotName(item.Slot)}</size>";
-            tmp.fontSize = 12;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.richText = true;
-            tmp.textWrappingMode = TextWrappingModes.Normal;
-
-            var btn = tile.GetComponent<Button>();
-            var capturedItem = item;
-            btn.onClick.AddListener(() => ShowItemDetail(capturedItem));
-
-            return tile;
+            EquipmentInstance bestEquipped = null;
+            float bestDelta = float.MinValue;
+            foreach (var character in gm.Roster.Characters)
+            {
+                var equipped = character.equipment[(int)item.Slot];
+                var diff = ItemComparer.Compare(item, equipped);
+                if (diff.TotalDelta > bestDelta)
+                {
+                    bestDelta = diff.TotalDelta;
+                    bestEquipped = equipped;
+                }
+            }
+            return bestEquipped;
         }
 
         private void ShowItemDetail(EquipmentInstance item)

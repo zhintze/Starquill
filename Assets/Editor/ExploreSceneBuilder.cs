@@ -233,13 +233,15 @@ public static class ExploreSceneBuilder
         lootGridContainerRT.anchoredPosition = Vector2.zero;
         lootGridContainerRT.sizeDelta = new Vector2(0, 1200);
 
-        var lootGrid = lootGridContainer.AddComponent<GridLayoutGroup>();
-        lootGrid.cellSize = new Vector2(100, 100);
-        lootGrid.spacing = new Vector2(8, 8);
-        lootGrid.padding = new RectOffset(10, 10, 10, 10);
-        lootGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        lootGrid.constraintCount = 9;
-        lootGrid.childAlignment = TextAnchor.UpperLeft;
+        var lootList = lootGridContainer.AddComponent<VerticalLayoutGroup>();
+        lootList.spacing = 10;
+        lootList.padding = new RectOffset(10, 10, 10, 10);
+        lootList.childControlWidth = true;
+        lootList.childControlHeight = true;
+        lootList.childForceExpandWidth = true;
+        lootList.childForceExpandHeight = false;
+        var lootListFitter = lootGridContainer.AddComponent<ContentSizeFitter>();
+        lootListFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var lootScrollRect = lootGridScroll.GetComponent<ScrollRect>();
         lootScrollRect.content = lootGridContainerRT;
