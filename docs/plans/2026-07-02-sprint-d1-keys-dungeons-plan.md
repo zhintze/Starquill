@@ -981,6 +981,9 @@ namespace Starquill.Tests.Destinations
             Assert.AreEqual(2.2f, spec.EnemyHpMultiplier, 0.001f);    // 1 + 0.6*2
             Assert.AreEqual(Rarity.Epic, spec.RarityFloor);
             Assert.AreEqual(5, spec.BaseRolls);                        // 2 + D
+            // NOTE: corrected during implementation to 13 — Math.Round(190/15)
+            // = Math.Round(12.667) = 13; the 12 below was a plan arithmetic
+            // error. Do not "fix" the test back.
             Assert.AreEqual(12, spec.ParWaves);                        // 190/15 rounded
         }
 
