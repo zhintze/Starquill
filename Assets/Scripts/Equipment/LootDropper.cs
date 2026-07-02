@@ -18,7 +18,8 @@ namespace Starquill.Equipment
             this.pity = pity;
         }
 
-        public EquipmentInstance TryDrop(int questLevel, System.Random rng)
+        public EquipmentInstance TryDrop(int questLevel, System.Random rng,
+            DropModifiers modifiers = null)
         {
             // Check pity first
             var pityRarity = pity.RegisterKill(config);
@@ -30,16 +31,21 @@ namespace Starquill.Equipment
             // Determine rarity
             Rarity rarity = pityRarity ?? EquipmentFactory.RollRarity(questLevel, rng);
 
-            // Pick random slot type: 70% armor, 30% weapon
+            // Slot preference (dungeon keys) replaces the 70/30 armor/weapon split
             EquipmentInstance item;
-            if (rng.NextDouble() < 0.30)
+            bool wantWeapon = modifiers?.PreferWeapon == true && rng.NextDouble() < modifiers.SlotWeight;
+            string forcedPrefix = null;
+            if (!wantWeapon && modifiers?.PreferredSlot != null && rng.NextDouble() < modifiers.SlotWeight)
+                forcedPrefix = PrefixForSlot(modifiers.PreferredSlot.Value);
+
+            if (wantWeapon || (forcedPrefix == null && rng.NextDouble() < 0.30))
             {
-                item = factory.CreateRandomWeapon(rarity, rng, questLevel: questLevel);
+                item = factory.CreateRandomWeapon(rarity, rng, questLevel: questLevel, modifiers: modifiers);
             }
             else
             {
-                string prefix = ArmorPrefixes[rng.Next(ArmorPrefixes.Length)];
-                item = factory.CreateRandom(prefix, rarity, rng, questLevel);
+                string prefix = forcedPrefix ?? ArmorPrefixes[rng.Next(ArmorPrefixes.Length)];
+                item = factory.CreateRandom(prefix, rarity, rng, questLevel, modifiers);
             }
 
             // Register the drop with pity tracker
@@ -47,6 +53,21 @@ namespace Starquill.Equipment
                 pity.RegisterDrop(item.Rarity);
 
             return item;
+        }
+
+        /// Catalog prefix for a preferred equipment slot. Public: the dungeon
+        /// reward roller (Task 14) reuses this mapping.
+        public static string PrefixForSlot(EquipmentSlot slot)
+        {
+            return slot switch
+            {
+                EquipmentSlot.Head => "hd",
+                EquipmentSlot.Torso => "tr",
+                EquipmentSlot.Arms => "ar",
+                EquipmentSlot.Legs => "lg",
+                EquipmentSlot.Feet => "fe",
+                _ => "mc"
+            };
         }
     }
 }
