@@ -38,6 +38,9 @@ namespace Starquill.UI
         private void HandleLootDropped(EquipmentInstance item)
         {
             if (item == null) return;
+            // Loot drops regardless of which screen is showing; toasts can't
+            // run (StartCoroutine errors) while the explore panel is inactive.
+            if (!gameObject.activeInHierarchy) return;
 
             while (rows.Count >= MaxRows)
             {
