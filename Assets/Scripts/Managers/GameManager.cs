@@ -358,7 +358,7 @@ namespace Starquill.Managers
 
             double goldBonus = economyConfig.GoldPerKill(questLevel, 0f, economyConfig.prestigeMultiplierBase)
                 * spec.TotalEnemies * reward.GoldMultiplier;
-            gold += goldBonus;
+            double goldBefore = gold;
 
             var lootRewards = new List<EquipmentInstance>();
             var rewardRng = new System.Random();
@@ -370,12 +370,20 @@ namespace Starquill.Managers
                 var item = rewardRng.NextDouble() < 0.7
                     ? equipmentFactory.CreateRandom(RandomArmorPrefix(rewardRng), rarity, rewardRng)
                     : equipmentFactory.CreateRandomWeapon(rarity, rewardRng);
-                if (item != null && lootInventory.AddItem(item))
+                if (item == null) continue;
+                if (lootInventory.AddItem(item))
                 {
                     lootRewards.Add(item);
                     OnLootDropped?.Invoke(item);
                 }
+                else
+                {
+                    // Inventory full: guaranteed rewards convert to gold
+                    // rather than vanish.
+                    goldBonus += SellCalculator.GetSellValue(item, questLevel);
+                }
             }
+            gold = goldBefore + goldBonus;
 
             questLevel += spec.Tier == QuestTier.Boss ? 2 : 1;
 
