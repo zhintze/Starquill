@@ -60,3 +60,21 @@ Over 80 quest levels, enemy waves grow **23,000×** while party DPS grows **2.1�
 1. **Where does the Training ladder live** — per-character (6 buttons, more decisions, more taps) or party-wide (one button, cleaner)? Recommendation: party-wide for MVP.
 2. **Accept enemy-side counterweight?** R1+R2 without prestige means numbers only ever grow. Fine for MVP (prestige lands post-MVP), but confirm the pre-prestige wall target (~Q60-70?).
 3. **XP curve**: with exponential channels in place, character levels stay a cozy secondary system. Keep 1.18 cost growth / 3 pts, or flatten to make levels feel steadier? Recommendation: keep, revisit post-R1.
+
+---
+
+## Resolution (2026-07-02, commit 05289c28)
+
+All recommendations implemented per PM rulings (per-character Training with 50% catch-up; ~2-week first prestige; XP levels grant a felt ×1.015 damage each, curve unchanged). Tuned via grid search in `tools/balance_sim.py` v2:
+
+| Knob | Value |
+|---|---|
+| Training cost | `50 × 1.25^level` (UpgradeCost, finally consumed) |
+| Training effect | ×1.05 damage per level, per character |
+| Catch-up discount | ×0.5 below roster's highest training level |
+| Char level bonus | ×1.015 damage per level |
+| Gear budget scaling | ×(1 + Q × 0.015) |
+| Boost pricing | minutes of current income (5 / 3 min) |
+| CHA gold | +2%/point, wired into the kill payout |
+
+Resulting curve: Q20 ≈ 3s waves (first session), Q40 ≈ 18s, Q60 ≈ 75s, wall (>5 min waves) ≈ Q75-78 at ~15-20 active hours — the prestige hook point. Retune against live play data before ship; prestige lands post-MVP and resets the ladder.
