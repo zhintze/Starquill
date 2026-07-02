@@ -45,7 +45,7 @@ namespace Starquill.Equipment
         }
 
         public EquipmentInstance CreateRandom(string prefix, Rarity rarity, System.Random rng,
-            int questLevel = 1)
+            int questLevel = 1, DropModifiers modifiers = null)
         {
             var entries = catalog.GetByPrefix(prefix);
             if (entries.Count == 0) return null;
@@ -53,17 +53,18 @@ namespace Starquill.Equipment
             var entry = entries[rng.Next(entries.Count)];
             int itemNum = rng.Next(1, entry.Amount + 1);
             var slot = EquipmentCatalog.SlotForPrefix(prefix);
-            var baseColor = colors.GetRandomColor("main", rng);
+            var baseColor = colors.GetRandomColor("main", rng, modifiers?.ColorFamily);
 
             var varianceColors = new Dictionary<int, Color>();
             if (entry.LayerColorVariance != null)
             {
                 foreach (int layer in entry.LayerColorVariance)
-                    varianceColors[layer] = colors.GetRandomColor("main", rng);
+                    varianceColors[layer] = colors.GetRandomColor("main", rng, modifiers?.ColorFamily);
             }
 
             var (primaryStat, primaryVal, secondaryStat, secondaryVal) =
-                GenerateStatPair(prefix, rarity, rng, questLevel);
+                GenerateStatPair(prefix, rarity, rng, questLevel,
+                    forcedStatA: modifiers?.ForcedStatA, forcedStatB: modifiers?.ForcedStatB);
 
             var abilityEntry = abilityTable.RollAbility(entry.ItemType, rng);
             var ability = abilityEntry != null
@@ -81,7 +82,7 @@ namespace Starquill.Equipment
         }
 
         public EquipmentInstance CreateRandomWeapon(Rarity rarity, System.Random rng,
-            string requiredHandType = null, int questLevel = 1)
+            string requiredHandType = null, int questLevel = 1, DropModifiers modifiers = null)
         {
             var weapons = catalog.WeaponEntries;
             if (weapons.Count == 0) return null;
@@ -100,7 +101,7 @@ namespace Starquill.Equipment
             if (pool.Count == 0) return null;
 
             var entry = pool[rng.Next(pool.Count)];
-            var baseColor = colors.GetRandomColor("main", rng);
+            var baseColor = colors.GetRandomColor("main", rng, modifiers?.ColorFamily);
 
             int itemNum;
             int[] layerVariants = null;
@@ -121,13 +122,14 @@ namespace Starquill.Equipment
             if (entry.LayerColorVariance != null)
             {
                 foreach (int layer in entry.LayerColorVariance)
-                    varianceColors[layer] = colors.GetRandomColor("main", rng);
+                    varianceColors[layer] = colors.GetRandomColor("main", rng, modifiers?.ColorFamily);
             }
 
             var slot = EquipmentSlot.MainHand;
             string poolKey = IsShield(entry.ItemType) ? entry.ItemType : "w";
             var (primaryStat, primaryVal, secondaryStat, secondaryVal) =
-                GenerateStatPair(poolKey, rarity, rng, questLevel);
+                GenerateStatPair(poolKey, rarity, rng, questLevel,
+                    forcedStatA: modifiers?.ForcedStatA, forcedStatB: modifiers?.ForcedStatB);
 
             var abilityEntry = abilityTable.RollAbility(entry.ItemType, rng);
             var ability = abilityEntry != null
@@ -234,8 +236,19 @@ namespace Starquill.Equipment
 
         public static (StatType primary, int primaryVal, StatType secondary, int secondaryVal)
             GenerateStatPair(string itemTypePrefix, Rarity rarity, System.Random rng,
-                int questLevel = 1, float budgetPerLevel = 0.015f)
+                int questLevel = 1, float budgetPerLevel = 0.015f,
+                StatType? forcedStatA = null, StatType? forcedStatB = null)
         {
+            // Forced pair (dungeon key archetype targeting): primary rolls
+            // 50/50 between A and B, the other becomes secondary.
+            if (forcedStatA.HasValue && forcedStatB.HasValue && forcedStatA != forcedStatB)
+            {
+                bool aFirst = rng.NextDouble() < 0.5;
+                var fp = aFirst ? forcedStatA.Value : forcedStatB.Value;
+                var fs = aFirst ? forcedStatB.Value : forcedStatA.Value;
+                return BuildBudgetedPair(fp, fs, rarity, rng, questLevel, budgetPerLevel);
+            }
+
             string poolKey = GetPoolKey(itemTypePrefix);
 
             var primaryPool = PrimaryStatPools.ContainsKey(poolKey)
@@ -264,6 +277,13 @@ namespace Starquill.Equipment
                     if (allStats[i] != primary) { secondary = allStats[i]; break; }
             }
 
+            return BuildBudgetedPair(primary, secondary, rarity, rng, questLevel, budgetPerLevel);
+        }
+
+        private static (StatType primary, int primaryVal, StatType secondary, int secondaryVal)
+            BuildBudgetedPair(StatType primary, StatType secondary, Rarity rarity,
+                System.Random rng, int questLevel, float budgetPerLevel)
+        {
             var (minBudget, maxBudget) = rarity switch
             {
                 Rarity.Common => (4, 6),
@@ -288,12 +308,13 @@ namespace Starquill.Equipment
             return (primary, primaryVal, secondary, secondaryVal);
         }
 
-        public static Rarity RollRarity(int questLevel, System.Random rng)
+        public static Rarity RollRarity(int questLevel, System.Random rng,
+            float legendaryWeightMult = 1f)
         {
             float uncommonWeight = 15f + questLevel * 0.5f;
             float rareWeight = 3f + questLevel * 0.3f;
             float epicWeight = 0.5f + questLevel * 0.1f;
-            float legendaryWeight = 0.05f + questLevel * 0.02f;
+            float legendaryWeight = (0.05f + questLevel * 0.02f) * legendaryWeightMult;
             float commonWeight = 100f - uncommonWeight - rareWeight - epicWeight - legendaryWeight;
             if (commonWeight < 10f) commonWeight = 10f;
 
@@ -312,9 +333,10 @@ namespace Starquill.Equipment
 
         /// RollRarity with a minimum: results below the floor are raised to it.
         /// Used by quest rewards (elite/hard/boss guaranteed-quality drops).
-        public static Rarity RollRarityWithFloor(int questLevel, Rarity? floor, System.Random rng)
+        public static Rarity RollRarityWithFloor(int questLevel, Rarity? floor, System.Random rng,
+            float legendaryWeightMult = 1f)
         {
-            var rolled = RollRarity(questLevel, rng);
+            var rolled = RollRarity(questLevel, rng, legendaryWeightMult);
             if (floor.HasValue && (int)rolled < (int)floor.Value)
                 return floor.Value;
             return rolled;
