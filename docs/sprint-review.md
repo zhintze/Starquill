@@ -499,3 +499,17 @@ Design: `docs/plans/2026-07-01-mobile-ui-redesign-design.md` · Plan: `...-plan.
 - Quests screen replaces the placeholder: one sectioned scroll (QUEST / DESTINATIONS headers) — current-quest card per phase + zone ladder; Destinations ships as a live future-slot (fragment progress bar + locked Encounters/Locations/Dungeons cards teasing the dungeon-key system)
 - Design review revisions (same day): banner moved to top of explore screen; the original design's dual-mode **path indicator bar** implemented below the TopBar (explore = travel toward guaranteed discovery with `travelWavesToDiscovery` knob + save persistence; quest = wave progress); tabs collapsed into sectioned scroll
 - Design/plan: `docs/plans/2026-07-01-sprint10-quests-ui-{design,plan}.md`
+
+---
+
+## Sprint 11: Shop, Offline Earnings, Character XP, Ads/IAP
+
+**Date:** 2026-07-01 | **Status:** Implemented; all mechanics verified in play mode (boost purchase/duration, chest claim + ad-double + re-arm, offline sheet with real away-time, Remove Ads mock, character XP accruing); user Test Runner pass pending (~25 new tests)
+
+- `BoostManager` (injected-time, tested): Auto-Fire Verbs (500g×level, drawn verbs fire after 2s) and Verb Speed-Up (300g×level, cooldowns halved + 5s rotation), 5-minute durations, re-buy extends, expiries persisted
+- Exploration Chest: 4-hour cycle, gold bundle + Uncommon-floor item, rewarded-ad double, persisted timer
+- Offline earnings: `OfflineEarningsCalculator` (50% efficiency, 8h cap, <60s = 0) → "Welcome back" sheet with Claim / Claim-2x(ad); dismissal still grants the plain amount
+- Character XP live (PM ruling): per-kill `charXpBase + questLevel` to active party + quest completion bonus (10×level, boss ×2) — the existing level-up system now functions
+- `Starquill.Services`: IAdService (MockAdService in editor, UnityAdsService rewarded impl with placeholder game id for ship) + IIapService (mock; real Unity Purchasing 5.x wiring = Sprint 12 device task). Placements: offline2x, chestDouble. removeAdsOwned persisted, gates Sprint 12 interstitials
+- Shop screen (nav 4, placeholder replaced): BOOSTS / CHEST / PREMIUM sections, live countdowns, affordability states
+- Design/plan: `docs/plans/2026-07-01-sprint11-shop-offline-{design,plan}.md`

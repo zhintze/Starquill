@@ -26,9 +26,9 @@ Starquill is a mobile idle RPG for Android. A party of four hand-drawn "paper do
 ## The meta loop (across days)
 
 - **Equipment depth.** Every item carries a primary + secondary stat and most carry an **awakened ability** — a passive bonus that levels up over time while worn, or instantly for gold. Rarity governs everything: stat budget, ability ceiling, sell value.
-- **Party building.** The player owns a roster of characters across species, fields four, and swaps them to cover stat matchups. Characters gain XP and level up, granting stat points *(system built; XP hookup lands in Sprint 11)*.
-- **Offline earnings.** The party keeps exploring while away at 50% efficiency, capped at 8 hours; a claim modal presents the haul on return *(formula built; claim flow lands in Sprint 11)*.
-- **The shop** sells timed boosts (auto-firing Verbs, faster ability rotation) and a 4-hour free chest *(Sprint 11)*.
+- **Party building.** The player owns a roster of characters across species, fields four, and swaps them to cover stat matchups. Characters gain XP from kills and quests and level up, granting stat points weighted toward their species strengths.
+- **Offline earnings.** The party keeps exploring while away at 50% efficiency, capped at 8 hours; a "Welcome back" claim sheet presents the haul on return — doubled by watching an ad.
+- **The shop** sells timed boosts (auto-firing Verbs, faster ability rotation) and a free 4-hour chest, ad-doubleable.
 - **Monetization is rewarded-ad-first and never pay-to-win** *(decision: ships in MVP)*: watch an ad to double offline earnings or the timed chest; a one-time Remove Ads purchase. Interstitials only at quest completion.
 
 ## How the systems interlock
@@ -46,6 +46,5 @@ Combat produces gold and loot → loot raises stats (and its abilities grow whil
 | | |
 |---|---|
 | Playable now | Explore combat, Verbs, full loot/equip/sell loop, paper-doll rendering, party management, complete quest loop (discover → accept → fight → complete/retreat → boss → next zone), save/load |
-| Sprint 11 (next) | Shop, offline claim, character XP hookup, rewarded ads + Remove Ads IAP |
-| Sprint 12 | Tutorial, animation/juice, balance pass, second full UI pass, ship |
+| Sprint 12 (next) | Tutorial, animation/juice, balance pass, second full UI pass, real IAP store + ad IDs, interstitials, ship |
 | Known gaps | Quest rewards on a full inventory currently convert to gold — a stopgap the PM has flagged for redesign (candidates: reward mailbox, make-room prompt). The explore screen's wave counter displays a cosmetic "X/5" that doesn't reflect explore mode's endless waves. Art is placeholder-flat outside the character/paper-doll work. |

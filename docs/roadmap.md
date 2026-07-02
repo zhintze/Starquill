@@ -51,7 +51,7 @@ Each sprint follows spec-driven development: design doc → implementation plan 
 
 ---
 
-## Sprint 11: Shop Screen + Offline Earnings
+## Sprint 11: Shop Screen + Offline Earnings — IMPLEMENTED 2026-07-01 (Test Runner pass pending)
 
 **Goal:** the economy's spend-and-return loop.
 
