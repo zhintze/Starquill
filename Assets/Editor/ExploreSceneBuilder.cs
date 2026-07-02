@@ -193,7 +193,32 @@ public static class ExploreSceneBuilder
         // ============================================================
         // === QUESTS PLACEHOLDER (screen index 1) ===
         // ============================================================
-        var questsPanel = CreatePlaceholderPanel("QuestsPlaceholder", safeAreaRT, "Quests\n(Coming Soon)");
+        var questsPanel = CreatePanel("QuestsPanel", safeAreaRT);
+        var questsPanelRT = questsPanel.GetComponent<RectTransform>();
+        questsPanelRT.anchorMin = new Vector2(0, 0);
+        questsPanelRT.anchorMax = new Vector2(1, 1);
+        questsPanelRT.offsetMin = new Vector2(0, 160);
+        questsPanelRT.offsetMax = new Vector2(0, -140);
+        questsPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
+
+        // Tabs strip (controller fills with SegmentedTabs at runtime)
+        var questTabsContainer = new GameObject("QuestTabsContainer", typeof(RectTransform));
+        questTabsContainer.transform.SetParent(questsPanel.transform, false);
+        var questTabsRT = questTabsContainer.GetComponent<RectTransform>();
+        questTabsRT.anchorMin = new Vector2(0, 1);
+        questTabsRT.anchorMax = new Vector2(1, 1);
+        questTabsRT.pivot = new Vector2(0.5f, 1);
+        questTabsRT.anchoredPosition = Vector2.zero;
+        questTabsRT.sizeDelta = new Vector2(-32, 120);
+        var questTabsVL = questTabsContainer.AddComponent<VerticalLayoutGroup>();
+        questTabsVL.childControlWidth = true;
+        questTabsVL.childControlHeight = true;
+        questTabsVL.childForceExpandWidth = true;
+        questTabsVL.childForceExpandHeight = true;
+
+        // Two scrollable content roots below the tabs
+        var questsContentRoot = BuildQuestContentRoot(questsPanel, "QuestsContent");
+        var destinationsContentRoot = BuildQuestContentRoot(questsPanel, "DestinationsContent");
 
         // ============================================================
         // === LOOT PANEL (screen index 2) ===
@@ -1005,6 +1030,13 @@ public static class ExploreSceneBuilder
         SetPrivateField(controller, "damageNumbers", damageSpawner);
         SetPrivateField(controller, "goldCounter", goldAnimator);
 
+        // QuestsScreenController on QuestsPanel
+        var questsScreenCtrl = questsPanel.AddComponent<Starquill.UI.QuestsScreenController>();
+        SetPrivateField(questsScreenCtrl, "tabsContainer", questTabsContainer.transform);
+        SetPrivateField(questsScreenCtrl, "questsContent", questsContentRoot.transform);
+        SetPrivateField(questsScreenCtrl, "destinationsContent", destinationsContentRoot.transform);
+        SetPrivateField(questsScreenCtrl, "screenManager", screenManager);
+
         // LootScreenController on LootPanel
         var lootScreenCtrl = lootPanel.AddComponent<Starquill.UI.LootScreenController>();
         SetPrivateField(lootScreenCtrl, "inventoryCountLabel", inventoryCountLabel.GetComponent<TMP_Text>());
@@ -1039,6 +1071,49 @@ public static class ExploreSceneBuilder
         var go = new GameObject(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
         return go;
+    }
+
+    static GameObject BuildQuestContentRoot(GameObject parent, string rootName)
+    {
+        var scroll = new GameObject(rootName + "Scroll", typeof(RectTransform), typeof(ScrollRect));
+        scroll.transform.SetParent(parent.transform, false);
+        var scrollRT = scroll.GetComponent<RectTransform>();
+        scrollRT.anchorMin = new Vector2(0, 0);
+        scrollRT.anchorMax = new Vector2(1, 1);
+        scrollRT.offsetMin = new Vector2(16, 16);
+        scrollRT.offsetMax = new Vector2(-16, -136);
+
+        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
+        viewport.transform.SetParent(scroll.transform, false);
+        StretchFill(viewport);
+        viewport.GetComponent<Image>().color = new Color(1, 1, 1, 0.01f);
+        viewport.GetComponent<Mask>().showMaskGraphic = false;
+
+        var root = new GameObject(rootName, typeof(RectTransform));
+        root.transform.SetParent(viewport.transform, false);
+        var rootRT = root.GetComponent<RectTransform>();
+        rootRT.anchorMin = new Vector2(0, 1);
+        rootRT.anchorMax = new Vector2(1, 1);
+        rootRT.pivot = new Vector2(0.5f, 1);
+        rootRT.anchoredPosition = Vector2.zero;
+        var vl = root.AddComponent<VerticalLayoutGroup>();
+        vl.spacing = 24;
+        vl.padding = new RectOffset(0, 0, 8, 8);
+        vl.childControlWidth = true;
+        vl.childControlHeight = true;
+        vl.childForceExpandWidth = true;
+        vl.childForceExpandHeight = false;
+        var fitter = root.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        var sr = scroll.GetComponent<ScrollRect>();
+        sr.content = rootRT;
+        sr.viewport = viewport.GetComponent<RectTransform>();
+        sr.horizontal = false;
+        sr.vertical = true;
+        sr.scrollSensitivity = 30;
+        sr.movementType = ScrollRect.MovementType.Clamped;
+        return root;
     }
 
     static GameObject CreatePlaceholderPanel(string name, Transform parent, string labelText)
