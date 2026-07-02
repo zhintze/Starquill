@@ -105,7 +105,7 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 
 ## 7b. Quests (`Assets/Scripts/Quests/`, added Sprint 9)
 
-`QuestZoneTable` (loads `quest_zones.json`, 2 zones with dominant stat types + dialogue) → deterministic `QuestGenerator` (tier ladder 1-3 N / 4 E / 5-7 N / 8 E / 9-10 H / 11 Boss; typed waves, HP ramp, mini-boss/boss waves) → `QuestLog` state machine (Idle/Offered/Active/Retreated, guarded transitions, retreat = half-gold penalty, boss completion advances zone). GameManager orchestrates discovery offers, quest-wave spawning, rewards (tier gold multiplier + rarity-floor loot rolls, overflow converts to gold), questLevel progression (+1, boss +2), and save persistence (specs regenerate on load).
+`QuestZoneTable` (loads `quest_zones.json`, 2 zones with dominant stat types + dialogue) → deterministic `QuestGenerator` (tier ladder 1-3 N / 4 E / 5-7 N / 8 E / 9-10 H / 11 Boss; typed waves, HP ramp, mini-boss/boss waves) → `QuestLog` state machine (Idle/Offered/Active/Retreated, guarded transitions, retreat = half-gold penalty, boss completion advances zone). GameManager orchestrates discovery offers, quest-wave spawning, rewards (tier gold multiplier + rarity-floor loot rolls; full-inventory overflow converts to gold as a STOPGAP — flagged in roadmap open decisions, not intended behavior), questLevel progression (+1, boss +2), and save persistence (specs regenerate on load).
 
 ## 8. Managers (`Assets/Scripts/Managers/`)
 

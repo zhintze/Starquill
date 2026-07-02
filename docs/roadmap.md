@@ -89,6 +89,7 @@ The 2026-07-01 mobile UI redesign established the design system and fixed densit
 | Character level-up / stat allocation | In original MVP scope, never built. Add as Sprint 11.5, fold into Sprint 12, or cut to post-MVP | Post-MVP: equipment + abilities already provide progression; adding a second progression system before ship risks the timeline |
 | Monetization wiring (rewarded ads, IAP) | Ship MVP gold-only, or wire ads/IAP in Sprint 11-12 | Gold-only MVP; monetization as first post-MVP sprint once retention is observed |
 | Cloud save / analytics / Remote Config | Sprint 12 or post-MVP | Post-MVP |
+| Full-inventory quest rewards | Current stopgap converts overflow rewards to gold — explicitly NOT the intended behavior (neither discarding nor auto-gold is acceptable). Candidates: overflow stash / reward mailbox, pre-completion "make room" prompt, inventory capacity growth | Revisit by Sprint 11 (shop may add capacity upgrades) or Sprint 12 |
 
 ## Post-MVP Backlog (existing designs)
 
