@@ -56,8 +56,11 @@ namespace Starquill.UI
             }
             else
             {
+                // Copy must stay honest when par was beaten but not by enough
+                // for a roll (rolls need wavesPerRoll waves past par each).
                 var bonus = UiFactory.Text(content,
-                    "Beat par for bonus reward rolls", UiFactory.TextStyle.CaptionDim);
+                    $"Clear {gm.economyConfig.dungeonBonusWavesPerRoll} waves past par per bonus roll",
+                    UiFactory.TextStyle.CaptionDim);
                 bonus.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontCaption + 10f;
             }
 
@@ -68,6 +71,41 @@ namespace Starquill.UI
 
             if (rewards != null && rewards.Count > 0)
             {
+                // Dungeons pay out up to BaseRolls + bonus cap cards: far more
+                // than a quest. A plain vertical stack overflows the sheet and
+                // the layout group crushes the header rows into each other, so
+                // the cards live in their own scroll (KeyFusionSheet pattern).
+                var scrollGO = new GameObject("RewardScroll", typeof(RectTransform),
+                    typeof(Image), typeof(RectMask2D), typeof(ScrollRect));
+                scrollGO.transform.SetParent(content, false);
+                scrollGO.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.15f);
+                var scrollLE = scrollGO.AddComponent<LayoutElement>();
+                scrollLE.preferredHeight = 520f;
+                scrollLE.flexibleHeight = 0;
+
+                var list = new GameObject("List", typeof(RectTransform));
+                list.transform.SetParent(scrollGO.transform, false);
+                var listRT = list.GetComponent<RectTransform>();
+                listRT.anchorMin = new Vector2(0, 1);
+                listRT.anchorMax = new Vector2(1, 1);
+                listRT.pivot = new Vector2(0.5f, 1);
+                listRT.sizeDelta = Vector2.zero;
+                var listLayout = list.AddComponent<VerticalLayoutGroup>();
+                listLayout.spacing = UiTheme.Space1;
+                listLayout.childControlWidth = true;
+                listLayout.childControlHeight = true;
+                listLayout.childForceExpandWidth = true;
+                listLayout.childForceExpandHeight = false;
+                var fitter = list.AddComponent<ContentSizeFitter>();
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                var scroll = scrollGO.GetComponent<ScrollRect>();
+                scroll.content = listRT;
+                scroll.viewport = (RectTransform)scrollGO.transform;
+                scroll.horizontal = false;
+                scroll.vertical = true;
+                scroll.movementType = ScrollRect.MovementType.Clamped;
+
                 foreach (var item in rewards)
                 {
                     var data = ItemDisplayData.FromItem(item, gm.questLevel,
@@ -80,7 +118,7 @@ namespace Starquill.UI
                         SlotIndexForSprite = (int)item.Slot,
                         OnTapped = () => ItemDetailSheet.Show(getSheet()?.transform.parent ?? content.root,
                             captured, gm.questLevel, null)
-                    }, content);
+                    }, list.transform);
                 }
             }
 
