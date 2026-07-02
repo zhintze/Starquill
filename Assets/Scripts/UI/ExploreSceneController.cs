@@ -83,6 +83,8 @@ namespace Starquill.UI
 
             if (gm == null) yield break;
 
+            OfflineClaimSheet.ShowIfPending(transform.root);
+
             SetupPlaceholderParty();
 
             if (goldCounter != null)

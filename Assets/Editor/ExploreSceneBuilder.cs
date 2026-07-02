@@ -850,7 +850,16 @@ public static class ExploreSceneBuilder
         // ============================================================
         // === SHOP PLACEHOLDER (screen index 4) ===
         // ============================================================
-        var shopPanel = CreatePlaceholderPanel("ShopPlaceholder", safeAreaRT, "Shop\n(Coming Soon)");
+        var shopPanel = CreatePanel("ShopPanel", safeAreaRT);
+        var shopPanelRT = shopPanel.GetComponent<RectTransform>();
+        shopPanelRT.anchorMin = new Vector2(0, 0);
+        shopPanelRT.anchorMax = new Vector2(1, 1);
+        shopPanelRT.offsetMin = new Vector2(0, 160);
+        shopPanelRT.offsetMax = new Vector2(0, -140);
+        shopPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
+        var shopContentRoot = BuildQuestContentRoot(shopPanel, "ShopContent");
+        // shop uses the full panel height (no tabs strip)
+        shopContentRoot.transform.parent.parent.GetComponent<RectTransform>().offsetMax = new Vector2(-16, -16);
 
         // ============================================================
         // === TOP BAR PANEL (anchored top, 100px, single row) ===
@@ -1029,6 +1038,11 @@ public static class ExploreSceneBuilder
         var questsScreenCtrl = questsPanel.AddComponent<Starquill.UI.QuestsScreenController>();
         SetPrivateField(questsScreenCtrl, "content", questsContentRoot.transform);
         SetPrivateField(questsScreenCtrl, "screenManager", screenManager);
+
+        // ShopScreenController on ShopPanel
+        var shopScreenCtrl = shopPanel.AddComponent<Starquill.UI.ShopScreenController>();
+        SetPrivateField(shopScreenCtrl, "content", shopContentRoot.transform);
+        SetPrivateField(shopScreenCtrl, "screenManager", screenManager);
 
         // LootScreenController on LootPanel
         var lootScreenCtrl = lootPanel.AddComponent<Starquill.UI.LootScreenController>();
