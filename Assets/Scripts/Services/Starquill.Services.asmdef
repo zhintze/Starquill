@@ -1,0 +1,9 @@
+{
+    "name": "Starquill.Services",
+    "rootNamespace": "Starquill.Services",
+    "references": ["Starquill.Core", "UnityEngine.Advertisements"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}
