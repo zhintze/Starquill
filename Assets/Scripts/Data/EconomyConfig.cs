@@ -65,6 +65,22 @@ namespace Starquill.Data
         public float boostAutoFireIncomeMinutes = 5f;
         public float boostSpeedUpIncomeMinutes = 3f;
 
+        [Header("Destinations: Keys")]
+        public float keyDropRate = 0.004f;      // per active kill
+        public int keySoftCap = 30;             // over: drop rate halves
+        public int keyMaxDifficulty = 6;
+        public float fusionBaseCost = 250f;     // x questLevel x D^2
+        public float keySellBase = 25f;         // x questLevel x D
+
+        [Header("Destinations: Dungeons")]
+        public float dungeonDurationBase = 150f;    // seconds, +dungeonDurationPerD per D above 1
+        public float dungeonDurationPerD = 20f;
+        public float dungeonEnemyMultPerD = 0.6f;   // D3 steep curve
+        public float dungeonWaveHpRamp = 0.02f;     // +2% enemy HP per wave cleared
+        public int dungeonBonusWavesPerRoll = 3;    // waves over par per bonus roll
+        public int dungeonBonusRollCap = 3;
+        public float dungeonParSecondsPerWave = 15f;
+
         [Header("Ability Leveling")]
         public float abilityBaseXPRate = 1f;
         public float abilityBaseXPThreshold = 100f;
