@@ -10,7 +10,8 @@
         "Starquill.Managers",
         "Starquill.Characters",
         "Starquill.Exploration",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Starquill.Quests"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
