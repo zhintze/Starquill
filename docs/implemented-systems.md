@@ -101,18 +101,25 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 
 ## 7. Exploration (`Assets/Scripts/Exploration/`)
 
-`ExplorationManager` / `ExplorationState`: ambient explore mode driving wave spawning; discovery rolls feed the quest system (§7b). Fragments remain unconsumed (post-MVP).
+`ExplorationManager` / `ExplorationState` (Exploring / InQuest / QuestRetreat / InDungeon): ambient explore mode driving wave spawning; discovery rolls feed the quest system (§7b). Travel, fragments, and quest discovery freeze during dungeon runs. Fragments remain unconsumed (Locations, Sprint D2).
 
 ## 7b. Quests (`Assets/Scripts/Quests/`, added Sprint 9)
 
 `QuestZoneTable` (loads `quest_zones.json`, 2 zones with dominant stat types + dialogue) → deterministic `QuestGenerator` (tier ladder 1-3 N / 4 E / 5-7 N / 8 E / 9-10 H / 11 Boss; typed waves, HP ramp, mini-boss/boss waves) → `QuestLog` state machine (Idle/Offered/Active/Retreated, guarded transitions, retreat = half-gold penalty, boss completion advances zone). GameManager orchestrates discovery offers, quest-wave spawning, rewards (tier gold multiplier + rarity-floor loot rolls; full-inventory overflow converts to gold as a STOPGAP — flagged in roadmap open decisions, not intended behavior), questLevel progression (+1, boss +2), and save persistence (specs regenerate on load).
 
+## 7c. Destinations (`Assets/Scripts/Destinations/`, added Sprint D1)
+
+Keys + dungeons per `docs/plans/2026-07-02-destinations-design.md` (Locations are Sprint D2):
+- **Keys are instances** (`KeyInstance`): up to one modifier of each kind — color family (8 HSV buckets over the "main" palette via `ColorFamilyClassifier` in Core + family-filtered `ColorManager`), equipment slot (`KeySlot`, 7), class archetype (`ClassArchetype`, 15 two-stat builds, ids are save-format contract) — plus difficulty D1-6. `KeyPouch` (soft cap 30: over it, drop rate halves), `KeyRoller` (drops: kind 40/30/30, difficulty 85/13/2), `KeyFusion` (different kinds combine, same variant merges as upgrade, cross-variant invalid; cost = fusionBaseCost × questLevel × D²).
+- **Dungeons are timed wave rushes**: `DungeonGenerator` (deterministic from key + runCounter + questLevel; duration 150s + 20s/D, enemy ×(1+0.6·(D−1)), rarity floor D1 Unc → D5+ Legendary, mini-boss every 5th wave) + `DungeonRun` (countdown, waves cleared, bonus rolls per 3 waves over par, cap +3). All drops inside a dungeon carry the key's modifiers (`DropModifiers` → forced primary/secondary stats, color family, slot bias); end-of-run curated rolls via `DungeonRewardRoller` (floored, legendary-weighted at D4). Runs are not persisted: pause/quit banks cleared-wave rewards immediately.
+- Key sources: active kills (`keyDropRate` 0.004), quest tiers (Elite/Hard 1 key, Boss 1 D2 key, Hard +25% extra). Keys sell for keySellBase × questLevel × D.
+
 ## 8. Managers (`Assets/Scripts/Managers/`)
 
 `GameManager` (scene singleton): owns Party, VerbPool, ExplorationManager, LootInventory, gold, questLevel.
 - `ProcessTick()`: combat tick → gold → loot drops → ability XP
-- Events: `OnCombatTick`, `OnGoldChanged`, `OnWaveStarted`, `OnWaveCleared`, `OnVerbActivated`, `OnLootDropped`, `OnRosterChanged`
-- Player actions: `OnVerbTapped(slot)`, `SellItem`, `EquipItemFromInventory`, `AutoEquipCharacter`, `LevelUpAbility`, `BuildPartyFromRoster`
+- Events: `OnCombatTick`, `OnGoldChanged`, `OnWaveStarted`, `OnWaveCleared`, `OnVerbActivated`, `OnLootDropped`, `OnRosterChanged`, `OnKeysChanged`, `OnDungeonStarted`, `OnDungeonEnded`
+- Player actions: `OnVerbTapped(slot)`, `SellItem`, `EquipItemFromInventory`, `AutoEquipCharacter`, `LevelUpAbility`, `BuildPartyFromRoster`, `StartDungeon(key)`, `FuseKeys(a,b)` (atomic: validates rules + gold before consuming), `SellKey`
 - Save on pause/quit via `SaveManager`/`SaveData` (local JSON: roster, equipment, inventory, gold, quest level, pity counters)
 
 ## 9. UI (`Assets/Scripts/UI/`, 27 files)
@@ -145,6 +152,7 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 | Character level-up / stat allocation | not started |
 | Monetization (ads/IAP) | `com.unity.purchasing` 5.4.0 + `com.unity.ads` installed, unused (4.x purchasing produced package errors; upgraded) |
 | Cloud save / analytics / Remote Config | not started |
-| Prestige, dungeon keys, fragments | post-MVP (design docs exist: `dungeon-key-system-design-doc.md`) |
+| Destinations: Locations (fragment consumer) + dialogue trees | Sprint D2 (`docs/plans/2026-07-02-destinations-design.md` §4); keys + dungeons shipped in Sprint D1 (§7c) |
+| Prestige | post-MVP (`prestigeMultiplier` stubbed at 1.0 throughout) |
 
 The remaining-work roadmap lives in `docs/roadmap.md`.

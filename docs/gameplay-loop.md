@@ -37,7 +37,7 @@ Combat produces gold and loot → loot raises stats (and its abilities grow whil
 
 ## Where the game is headed (designed, not yet built)
 
-- **Destinations** — visible today as a teaser section on the Quests screen with a live "fragments" counter. Post-MVP it becomes the dungeon-key system: color-themed keys spent on targeted-loot **Encounters**, time-limited discovered **Locations**, and multi-zone **Dungeons**.
+- **Destinations** — the first half is now playable: color/type/class **keys** drop from kills and quest bosses, fuse (for gold) into precision hunting tools, and open **Dungeons** — timed wave rushes where every drop matches the key (a Brown Helm key showers brown helmets) and beating par pays bonus curated rolls. Still to come: time-limited discovered **Locations** (the fragments counter's purpose) with one-time dialogue finales.
 - **Prestige** — a costly reset for permanent multipliers (Stellar Ink). All economy formulas already carry the multiplier, stubbed at 1.0.
 - **Verb collection** — abilities currently come with the character; the design adds Verb drops and a collection layer.
 

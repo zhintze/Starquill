@@ -95,6 +95,6 @@ The 2026-07-01 mobile UI redesign established the design system and fixed densit
 
 ## Post-MVP Backlog (existing designs)
 
-- Destinations: keys/encounters, discovered locations, dungeons (`docs/plans/2026-07-02-destinations-design.md`; three-sprint plan D1-D3)
+- Destinations (`docs/plans/2026-07-02-destinations-design.md`): **Sprint D1 (keys + dungeons) SHIPPED 2026-07-02** — key drops/fusion/selling, key-targeted timed dungeon rushes, pouch + fusion UI, run HUD + completion sheet. Remaining: Sprint D2 (Locations: fragment consumer, procedural one-time visits, dialogue trees), Sprint D3 (content + balance-sim branch + key art)
 - Prestige with Stellar Ink (design doc §Prestige; `prestigeMultiplier` stubbed at 1.0 throughout)
 - Additional species, quest zones, seasonal events, social features
