@@ -77,11 +77,15 @@ namespace Starquill.UI
             title.text = run.Spec.Key.DisplayName;
             countdown.text = KeyPresenter.FormatMinSec(Mathf.CeilToInt(run.TimeLeft));
 
-            bool parBeaten = run.WavesCleared > run.Spec.ParWaves;
+            // Only promise bonus loot once a roll is actually earned: beating
+            // par by 1-2 waves still pays zero (dungeonBonusWavesPerRoll).
+            var config = gm.economyConfig;
+            int bonusRolls = run.BonusRolls(
+                config.dungeonBonusWavesPerRoll, config.dungeonBonusRollCap);
             waveLine.text = $"Waves {run.WavesCleared} / par {run.Spec.ParWaves}"
-                + (parBeaten ? " · bonus loot" : "");
-            waveLine.color = parBeaten ? UiTheme.BestGold : UiTheme.TextSecondary;
-            var accent = parBeaten ? UiTheme.BestGold : KeyPresenter.AccentColor(run.Spec.Key);
+                + (bonusRolls > 0 ? $" · +{bonusRolls} bonus" : "");
+            waveLine.color = bonusRolls > 0 ? UiTheme.BestGold : UiTheme.TextSecondary;
+            var accent = bonusRolls > 0 ? UiTheme.BestGold : KeyPresenter.AccentColor(run.Spec.Key);
             foreach (var a in accents)
                 if (a != null) a.color = accent;
         }
