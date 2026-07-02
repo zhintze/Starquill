@@ -46,6 +46,14 @@ namespace Starquill.Data
         [Header("Loot")]
         public float baseDropRate = 0.15f;
 
+        [Header("Boosts & Chest & Character XP")]
+        public float boostAutoFireCostPerLevel = 500f;
+        public float boostSpeedUpCostPerLevel = 300f;
+        public float boostDurationSeconds = 300f;
+        public float chestIntervalSeconds = 14400f;
+        public float chestGoldKillMultiple = 25f;
+        public int charXpBase = 3;
+
         [Header("Ability Leveling")]
         public float abilityBaseXPRate = 1f;
         public float abilityBaseXPThreshold = 100f;
