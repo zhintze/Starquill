@@ -8,8 +8,8 @@ namespace Starquill.Equipment
     public class DropModifiers
     {
         public ColorFamily? ColorFamily;
-        public EquipmentSlot? PreferredSlot;   // Head/Torso/Arms/Legs/Feet/MainHand/Misc1
-        public bool PreferWeapon;              // KeySlot.Weapon maps here
+        public EquipmentSlot? PreferredSlot;   // armor slots + Misc1; for weapons use PreferWeapon
+        public bool PreferWeapon;              // KeySlot.Weapon maps here (never PreferredSlot=MainHand)
         public float SlotWeight = 0.8f;        // chance the preferred slot is used
         public StatType? ForcedStatA;          // class archetype pair; primary rolls
         public StatType? ForcedStatB;          //   50/50 between A and B
