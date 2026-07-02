@@ -70,6 +70,9 @@ namespace Starquill.Managers
         public bool RemoveAdsOwned { get; private set; }
         public float PendingOfflineSeconds { get; private set; }
         public double PendingOfflineGold { get; private set; }
+        private readonly List<EquipmentInstance> rewardMailbox = new();
+        public IReadOnlyList<EquipmentInstance> RewardMailbox => rewardMailbox;
+        public event Action OnMailboxChanged;
         public event Action OnBoostsChanged;
         public event Action<double, List<EquipmentInstance>> OnChestClaimed;
 
@@ -180,6 +183,15 @@ namespace Starquill.Managers
                 }
             }
 
+            if (save.rewardMailbox != null)
+            {
+                foreach (var si in save.rewardMailbox)
+                {
+                    if (si != null && !string.IsNullOrEmpty(si.itemType))
+                        rewardMailbox.Add(equipmentFactory.Reconstruct(si));
+                }
+            }
+
             BuildPartyFromRoster();
             SpawnWave();
             RebuildVerbPool();
@@ -279,7 +291,8 @@ namespace Starquill.Managers
                 }
                 else
                 {
-                    gold += SellCalculator.GetSellValue(item, questLevel); // overflow stopgap
+                    rewardMailbox.Add(item);
+                    OnMailboxChanged?.Invoke();
                 }
             }
 
@@ -317,12 +330,26 @@ namespace Starquill.Managers
         {
             if (kills <= 0 && bonusPerMember <= 0) return;
             int perKill = economyConfig.charXpBase + questLevel;
+            int fullGain = kills * perKill + bonusPerMember;
+
+            var actives = new HashSet<CharacterInstance>();
             foreach (var member in party.Members)
             {
                 if (member == null) continue;
-                member.xp += kills * perKill + bonusPerMember;
+                actives.Add(member);
+                member.xp += fullGain;
             }
-            if (kills > 0 || bonusPerMember > 0) OnRosterChanged?.Invoke();
+
+            // Benched roster members keep progressing at a reduced share so
+            // party swaps never reset a character's growth.
+            int benchGain = (int)(fullGain * economyConfig.benchXpShare);
+            if (benchGain > 0 && roster != null)
+            {
+                foreach (var c in roster.Characters)
+                    if (!actives.Contains(c)) c.xp += benchGain;
+            }
+
+            OnRosterChanged?.Invoke();
         }
 
         private void ProcessTick()
@@ -545,9 +572,11 @@ namespace Starquill.Managers
                 }
                 else
                 {
-                    // Inventory full: guaranteed rewards convert to gold
-                    // rather than vanish.
-                    goldBonus += SellCalculator.GetSellValue(item, questLevel);
+                    // Inventory full: guaranteed rewards wait in the mailbox
+                    // until the player makes room (never lost, never
+                    // silently converted).
+                    rewardMailbox.Add(item);
+                    OnMailboxChanged?.Invoke();
                 }
             }
             gold = goldBefore + goldBonus;
@@ -561,8 +590,38 @@ namespace Starquill.Managers
             exploration.QuestCompleted();
             OnGoldChanged?.Invoke(gold);
             OnQuestCompleted?.Invoke(spec, goldBonus, lootRewards);
+
+            if (!RemoveAdsOwned)
+                adService.ShowInterstitial(AdPlacement.Interstitial);
+
             SaveState();
             SpawnWave();
+        }
+
+        /// Moves mailbox rewards into the inventory while space allows.
+        /// Returns how many were collected; leftovers stay in the mailbox.
+        public int CollectMailbox()
+        {
+            int collected = 0;
+            for (int i = 0; i < rewardMailbox.Count;)
+            {
+                if (lootInventory.AddItem(rewardMailbox[i]))
+                {
+                    OnLootDropped?.Invoke(rewardMailbox[i]);
+                    rewardMailbox.RemoveAt(i);
+                    collected++;
+                }
+                else
+                {
+                    break; // inventory full again
+                }
+            }
+            if (collected > 0)
+            {
+                OnMailboxChanged?.Invoke();
+                SaveState();
+            }
+            return collected;
         }
 
         private static string RandomArmorPrefix(System.Random rng)
@@ -597,6 +656,9 @@ namespace Starquill.Managers
             saveManager.CurrentSave.boostSpeedUpExpiry = boosts.GetExpiry(BoostType.VerbSpeedUp);
             saveManager.CurrentSave.chestReadyAtTimestamp = chestReadyAt;
             saveManager.CurrentSave.removeAdsOwned = RemoveAdsOwned;
+            saveManager.CurrentSave.rewardMailbox.Clear();
+            foreach (var item in rewardMailbox)
+                saveManager.CurrentSave.rewardMailbox.Add(SerializedEquipment.FromInstance(item));
             saveManager.Save();
         }
 

@@ -29,7 +29,9 @@ namespace Starquill.UI
 
         public void SetWaveInfo(int wave, int maxWave)
         {
-            if (waveLabel != null) waveLabel.text = $"Wave {wave}/{maxWave}";
+            // maxWave <= 0 means endless exploring: no denominator.
+            if (waveLabel != null)
+                waveLabel.text = maxWave > 0 ? $"Wave {wave}/{maxWave}" : $"Wave {wave}";
         }
 
         public void SetQuestLevel(int level)

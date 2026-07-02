@@ -38,11 +38,23 @@ namespace Starquill.Services
             Advertisement.Show(placement, this);
         }
 
+        public void ShowInterstitial(string placement)
+        {
+            if (!loaded.Contains(placement))
+            {
+                Advertisement.Load(placement, this);
+                return;
+            }
+            loaded.Remove(placement);
+            Advertisement.Show(placement, this);
+        }
+
         // --- initialization ---
         public void OnInitializationComplete()
         {
             Advertisement.Load(AdPlacement.Offline2x, this);
             Advertisement.Load(AdPlacement.ChestDouble, this);
+            Advertisement.Load(AdPlacement.Interstitial, this);
         }
 
         public void OnInitializationFailed(UnityAdsInitializationError error, string message) { }

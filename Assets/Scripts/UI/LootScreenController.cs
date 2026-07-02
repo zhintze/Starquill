@@ -75,6 +75,8 @@ namespace Starquill.UI
             for (int i = itemGridContainer.childCount - 1; i >= 0; i--)
                 Destroy(itemGridContainer.GetChild(i).gameObject);
 
+            BuildMailboxCard();
+
             if (inventory.Count == 0)
             {
                 UiFactory.EmptyState(itemGridContainer, "No loot yet · keep exploring");
@@ -115,6 +117,41 @@ namespace Starquill.UI
                 default:
                     return items.OrderByDescending(ItemComparer.ScoreItem).ToList();
             }
+        }
+
+        /// Gold-edged notice at the top of the list when quest/chest rewards
+        /// are waiting because the inventory was full. Tap collects as many
+        /// as fit; leftovers keep the card visible.
+        private void BuildMailboxCard()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null || gm.RewardMailbox.Count == 0) return;
+
+            var card = new GameObject("MailboxCard", typeof(RectTransform), typeof(Image), typeof(Button));
+            card.transform.SetParent(itemGridContainer, false);
+            var le = card.AddComponent<LayoutElement>();
+            le.preferredHeight = UiTheme.TouchMin;
+            le.minHeight = UiTheme.TouchMin;
+            le.flexibleWidth = 1;
+            card.GetComponent<Image>().color = new Color(UiTheme.BestGold.r, UiTheme.BestGold.g, UiTheme.BestGold.b, 0.18f);
+
+            int waiting = gm.RewardMailbox.Count;
+            bool hasRoom = gm.LootInventory.Count < gm.LootInventory.Capacity;
+            string hint = hasRoom ? "tap to collect" : "sell something to make room";
+            var tmp = UiFactory.Text(card.transform,
+                $"{waiting} reward{(waiting == 1 ? "" : "s")} waiting · {hint}",
+                UiFactory.TextStyle.Body);
+            tmp.color = UiTheme.BestGold;
+            tmp.fontStyle = FontStyles.Bold;
+            UiFactory.StretchFill(tmp.rectTransform);
+            tmp.rectTransform.offsetMin = new Vector2(UiTheme.Space3, 0);
+            tmp.alignment = TextAlignmentOptions.MidlineLeft;
+
+            card.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                gm.CollectMailbox();
+                Refresh();
+            });
         }
 
         // Equipped item of the roster character for whom this item is the biggest upgrade.

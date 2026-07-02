@@ -53,6 +53,7 @@ namespace Starquill.Data
         public float chestIntervalSeconds = 14400f;
         public float chestGoldKillMultiple = 25f;
         public int charXpBase = 3;
+        public float benchXpShare = 0.5f;
 
         [Header("Ability Leveling")]
         public float abilityBaseXPRate = 1f;

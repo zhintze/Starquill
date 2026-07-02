@@ -34,6 +34,7 @@ namespace Starquill.Managers
         public double boostSpeedUpExpiry;
         public double chestReadyAtTimestamp;
         public bool removeAdsOwned;
+        public List<SerializedEquipment> rewardMailbox = new();
 
         public bool NeedsRosterInitialization()
         {

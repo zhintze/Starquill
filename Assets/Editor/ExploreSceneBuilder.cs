@@ -366,6 +366,29 @@ public static class ExploreSceneBuilder
         var levelUpLabel = CreateTMPLabel("Label", levelUpBtnObj.transform, "Level Up", 30, Color.white, TextAlignmentOptions.Center);
         StretchFill(levelUpLabel);
 
+        // XP fill bar along the header's bottom edge
+        var xpBarBg = new GameObject("XpBar", typeof(RectTransform), typeof(Image));
+        xpBarBg.transform.SetParent(headerStrip.transform, false);
+        var xpBarBgRT = xpBarBg.GetComponent<RectTransform>();
+        xpBarBgRT.anchorMin = new Vector2(0, 0);
+        xpBarBgRT.anchorMax = new Vector2(1, 0);
+        xpBarBgRT.pivot = new Vector2(0.5f, 0);
+        xpBarBgRT.sizeDelta = new Vector2(0, 8);
+        xpBarBgRT.anchoredPosition = Vector2.zero;
+        xpBarBg.GetComponent<Image>().color = new Color(0.06f, 0.06f, 0.09f);
+        xpBarBg.transform.SetAsLastSibling();
+        var xpBarBgLE = xpBarBg.AddComponent<LayoutElement>();
+        xpBarBgLE.ignoreLayout = true;
+
+        var xpBarFill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        xpBarFill.transform.SetParent(xpBarBg.transform, false);
+        var xpBarFillRT = xpBarFill.GetComponent<RectTransform>();
+        xpBarFillRT.anchorMin = Vector2.zero;
+        xpBarFillRT.anchorMax = new Vector2(0f, 1f);
+        xpBarFillRT.offsetMin = Vector2.zero;
+        xpBarFillRT.offsetMax = Vector2.zero;
+        xpBarFill.GetComponent<Image>().color = new Color(0.4f, 0.7f, 1f);
+
         // Level Up Glow (Image overlay on the button)
         var levelUpGlow = CreateImage("LevelUpGlow", levelUpBtnObj.transform, new Color(1f, 0.9f, 0.3f, 0.5f));
         StretchFill(levelUpGlow);
@@ -961,6 +984,7 @@ public static class ExploreSceneBuilder
         SetPrivateField(focusDisplay, "speciesLabel", partySpeciesLabel.GetComponent<TMP_Text>());
         SetPrivateField(focusDisplay, "levelLabel", partyLevelLabel.GetComponent<TMP_Text>());
         SetPrivateField(focusDisplay, "xpLabel", partyXpLabel.GetComponent<TMP_Text>());
+        SetPrivateField(focusDisplay, "xpFill", xpBarFillRT);
         SetPrivateField(focusDisplay, "levelUpButton", levelUpBtn);
         SetPrivateField(focusDisplay, "levelUpGlow", levelUpGlow.GetComponent<Image>());
         SetPrivateField(focusDisplay, "paperDollImage", paperDollRawImage);

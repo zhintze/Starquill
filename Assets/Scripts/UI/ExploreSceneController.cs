@@ -92,7 +92,7 @@ namespace Starquill.UI
             if (topBar != null)
             {
                 topBar.SetQuestLevel(gm.questLevel);
-                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 0);
             }
             if (enemyDisplay != null && gm.CurrentEnemies.Count > 0)
                 enemyDisplay.SetupEnemies(gm.CurrentEnemies);
@@ -149,7 +149,7 @@ namespace Starquill.UI
             if (isMuted) return;
 
             if (topBar != null && gm != null)
-                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 0);
 
             if (verbBar != null && gm.VerbPool != null && !gm.VerbsLocked)
                 verbBar.RebuildFromSlots(gm.VerbPool.DrawnSlots);
@@ -191,7 +191,7 @@ namespace Starquill.UI
         private void HandleWaveCleared()
         {
             if (topBar != null && gm != null)
-                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 5);
+                topBar.SetWaveInfo(gm.Exploration.CurrentWave, 0);
         }
 
         private void HandleVerbCardTapped(int slotIndex)
@@ -357,7 +357,7 @@ namespace Starquill.UI
             {
                 topBar.SetGold("1.2M");
                 topBar.SetFragments(7, 12);
-                topBar.SetWaveInfo(3, 5);
+                topBar.SetWaveInfo(3, 0);
                 topBar.SetQuestLevel(34);
             }
 

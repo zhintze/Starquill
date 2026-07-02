@@ -17,6 +17,7 @@ namespace Starquill.UI
         [SerializeField] private TMP_Text speciesLabel;
         [SerializeField] private TMP_Text levelLabel;
         [SerializeField] private TMP_Text xpLabel;
+        [SerializeField] private RectTransform xpFill;
         [SerializeField] private Button levelUpButton;
         [SerializeField] private Image levelUpGlow;
 
@@ -58,6 +59,11 @@ namespace Starquill.UI
         {
             if (xpLabel != null)
                 xpLabel.text = $"{character.xp}/{character.XpToNextLevel()} XP";
+            if (xpFill != null)
+            {
+                float fraction = Mathf.Clamp01((float)character.xp / character.XpToNextLevel());
+                xpFill.anchorMax = new Vector2(fraction, 1f);
+            }
         }
 
         public void UpdateLevelUpButton(CharacterInstance character)
