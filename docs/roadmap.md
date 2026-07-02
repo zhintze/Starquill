@@ -23,7 +23,7 @@ Each sprint follows spec-driven development: design doc → implementation plan 
 
 ---
 
-## Sprint 9: Quest System Backend
+## Sprint 9: Quest System Backend — IMPLEMENTED 2026-07-01 (Test Runner pass pending)
 
 **Goal:** quests as structured multi-wave challenges discovered during exploration, pure logic with test coverage, no UI.
 

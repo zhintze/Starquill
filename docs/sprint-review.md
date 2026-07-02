@@ -473,3 +473,15 @@ Play-testing 8.5 exposed app-wide desktop-density UI (11-18px text at 1080x1920,
 - **Chrome**: top bar 140px (gold 44), nav 160px with accent underline active state, verb cards 340x180, party header/stat strip/tabs on theme scale, paper doll band 560px
 
 Design: `docs/plans/2026-07-01-mobile-ui-redesign-design.md` · Plan: `...-plan.md`
+
+---
+
+## Sprint 9: Quest System Backend
+
+**Date:** 2026-07-01 | **Status:** Implemented; full loop verified in play mode (offer → accept → waves → complete → rewards; retreat/retry/dismiss; save resume); user Test Runner pass pending (~50 new tests)
+
+- New `Starquill.Quests` assembly (Core + Data only): QuestZone/QuestZoneTable (`quest_zones.json`, 2 zones), QuestTier ladder (1-3 N, 4 E, 5-7 N, 8 E, 9-10 H, 11 Boss), deterministic QuestGenerator (typed waves from zone dominants, HP ramp, mini-boss/boss waves), QuestRewardSpec per tier, QuestLog state machine (guarded transitions, retreat = half gold penalty, boss completion advances zone)
+- GameManager: discovery offers via ExplorationManager, Accept/Decline/Retreat/Retry/Dismiss API + events, quest-wave spawning from specs, completion rewards (tier gold multiplier + floor-clamped loot rolls; overflow converts to gold), questLevel +1 (+2 boss) — the game's first questLevel driver
+- Save: quest phase/indices persist; specs regenerate deterministically on load
+- Deleted unused QuestZoneDefinition ScriptableObject
+- Design/plan: `docs/plans/2026-07-01-sprint9-quest-backend-{design,plan}.md`
