@@ -63,6 +63,8 @@ namespace Starquill.Exploration
         }
 
         public void EnterQuest() { State = ExplorationState.InQuest; }
+        public void EnterDungeon() { State = ExplorationState.InDungeon; }
+        public void DungeonEnded() { State = ExplorationState.Exploring; }
         public void QuestCompleted() { State = ExplorationState.Exploring; CurrentWave = 0; }
         public void QuestRetreated() { State = ExplorationState.QuestRetreat; }
         public void RetryQuest() { State = ExplorationState.InQuest; }
