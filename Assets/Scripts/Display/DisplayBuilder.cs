@@ -225,10 +225,16 @@ namespace Starquill.Display
             var restrictions = new HashSet<string>(itemRestrictions ?? new string[0]);
             var filtered = items.Where(i => !restrictions.Contains(i.ItemType)).ToList();
 
+            // Dedup key includes the hand: dual-wielding the same weapon type
+            // must render BOTH (main + off draw differently); duplicate
+            // armor/accessory types still collapse to one.
+            static string DedupKey(EquipmentDisplayInfo item) =>
+                item.IsOffhand ? item.ItemType + ":offhand" : item.ItemType;
+
             var seen = new Dictionary<string, int>();
             for (int i = 0; i < filtered.Count; i++)
-                seen[filtered[i].ItemType] = i;
-            filtered = filtered.Where((item, idx) => seen[item.ItemType] == idx).ToList();
+                seen[DedupKey(filtered[i])] = i;
+            filtered = filtered.Where((item, idx) => seen[DedupKey(item)] == idx).ToList();
 
             int lastHatIdx = -1;
             for (int i = filtered.Count - 1; i >= 0; i--)
