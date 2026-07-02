@@ -31,11 +31,18 @@ namespace Starquill.UI
         public static string SubLine(KeyInstance key, EconomyConfig config)
             => $"Difficulty {key.Difficulty} · {FloorText(key)} floor · {DurationText(key, config)} rush";
 
-        /// Dungeon rush length as m:ss (matches DungeonGenerator.Generate).
+        /// Dungeon rush length as m:ss (same formula the generator uses).
         public static string DurationText(KeyInstance key, EconomyConfig config)
         {
-            int seconds = Mathf.RoundToInt(config.dungeonDurationBase
-                + config.dungeonDurationPerD * (key.Difficulty - 1));
+            int seconds = Mathf.RoundToInt(DungeonGenerator.DurationSeconds(
+                key.Difficulty, config.dungeonDurationBase, config.dungeonDurationPerD));
+            return FormatMinSec(seconds);
+        }
+
+        /// m:ss, shared by key cards and the run HUD countdown.
+        public static string FormatMinSec(int seconds)
+        {
+            seconds = Mathf.Max(0, seconds);
             return $"{seconds / 60}:{seconds % 60:00}";
         }
 
@@ -44,7 +51,11 @@ namespace Starquill.UI
 
         /// Enemy HP bonus over a normal wave, e.g. "+120%" at D3.
         public static string EnemyStrengthText(KeyInstance key, EconomyConfig config)
-            => $"+{Mathf.RoundToInt(config.dungeonEnemyMultPerD * (key.Difficulty - 1) * 100f)}%";
+        {
+            float mult = DungeonGenerator.EnemyHpMultiplier(
+                key.Difficulty, config.dungeonEnemyMultPerD);
+            return $"+{Mathf.RoundToInt((mult - 1f) * 100f)}%";
+        }
 
         /// "Juggernaut gear rolls STR + CON", or "" without a class modifier.
         public static string ArchetypeLine(KeyInstance key)

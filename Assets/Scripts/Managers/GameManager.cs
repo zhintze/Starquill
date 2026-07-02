@@ -739,8 +739,10 @@ namespace Starquill.Managers
                 economyConfig.dungeonEnemyMultPerD, economyConfig.dungeonParSecondsPerWave);
             activeDungeon = new DungeonRun(spec);
             exploration.EnterDungeon();
-            SpawnWave();
+            // Announce the run before its first OnWaveStarted so subscribers
+            // (HUD, banners) already know a dungeon is in progress.
             OnDungeonStarted?.Invoke(spec);
+            SpawnWave();
             SaveState();
             return true;
         }

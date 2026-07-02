@@ -23,18 +23,27 @@ namespace Starquill.Destinations
 
         public static float LegendaryMultForDifficulty(int d) => d == 4 ? 2f : 1f;
 
+        /// Single source for the difficulty -> rush length formula: Generate,
+        /// the key cards (KeyPresenter), and the run HUD all call this.
+        public static float DurationSeconds(int difficulty, float durationBase, float durationPerD)
+            => durationBase + durationPerD * (Math.Max(1, difficulty) - 1);
+
+        /// Single source for the difficulty -> enemy HP scaling formula.
+        public static float EnemyHpMultiplier(int difficulty, float enemyMultPerD)
+            => 1f + enemyMultPerD * (Math.Max(1, difficulty) - 1);
+
         public static DungeonSpec Generate(KeyInstance key, int runCounter, int questLevel,
             float durationBase, float durationPerD, float enemyMultPerD, float parSecondsPerWave)
         {
             int d = Math.Max(1, key.Difficulty);
-            float duration = durationBase + durationPerD * (d - 1);
+            float duration = DurationSeconds(d, durationBase, durationPerD);
             return new DungeonSpec
             {
                 Key = key,
                 Seed = (runCounter * 8887) ^ (questLevel * 31) ^ (d * 397),
                 QuestLevel = questLevel,
                 DurationSeconds = duration,
-                EnemyHpMultiplier = 1f + enemyMultPerD * (d - 1),
+                EnemyHpMultiplier = EnemyHpMultiplier(d, enemyMultPerD),
                 RarityFloor = FloorForDifficulty(d),
                 LegendaryWeightMult = LegendaryMultForDifficulty(d),
                 BaseRolls = Math.Min(6, 2 + d),
