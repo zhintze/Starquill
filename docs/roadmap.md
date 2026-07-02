@@ -95,6 +95,6 @@ The 2026-07-01 mobile UI redesign established the design system and fixed densit
 
 ## Post-MVP Backlog (existing designs)
 
-- Dungeon key / fragment destinations (`docs/dungeon-key-system-design-doc.md`)
+- Destinations: keys/encounters, discovered locations, dungeons (`docs/plans/2026-07-02-destinations-design.md`; three-sprint plan D1-D3)
 - Prestige with Stellar Ink (design doc §Prestige; `prestigeMultiplier` stubbed at 1.0 throughout)
 - Additional species, quest zones, seasonal events, social features

@@ -1,6 +1,11 @@
 # Dungeon Key & Location Discovery System
 ## Game Design Document — Unity Idle Clicker
 
+> **SUPERSEDED (2026-07-02):** this doc was written for a generic idle clicker
+> (generators, prestige, tap combos) and predates Starquill's implemented
+> systems. The current design of record is
+> `docs/plans/2026-07-02-destinations-design.md`. Kept for idea provenance only.
+
 ---
 
 ## System Overview
