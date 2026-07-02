@@ -168,43 +168,15 @@ namespace Starquill.Display
                     }
                     else
                     {
-                        // Sprites rotate around the canvas center, but the
-                        // weapon is drawn off-center at the hand. Compensate
-                        // so the rotation pivots on the weapon itself, or
-                        // long weapons fling off-canvas / behind the head.
-                        piece.Rotation = -40f;
-                        piece.Offset = new Vector2(-21, 15)
-                            + WeaponPivotCompensation(item.ItemType, -40f);
+                        // Weapon art is authored at the main hand. Mirroring
+                        // the canvas puts it exactly at the other hand — no
+                        // rotation or offset math needed.
+                        piece.FlipH = true;
                     }
                 }
 
                 pieces.Add(piece);
             }
-        }
-
-        /// Offset (in canvas pixels) that keeps a rotation visually pivoting
-        /// on the weapon's own pixel centroid (from ItemIconFraming) instead
-        /// of the canvas center the transform actually rotates around.
-        /// For pivot P (relative to canvas center) and rotation R:
-        /// the rotated transform moves P to R·P, so shifting by P − R·P
-        /// puts the weapon body back where it was drawn.
-        public static Vector2 WeaponPivotCompensation(string itemType, float rotationDegrees)
-        {
-            const float canvasPixels = 200f;
-            var frame = ItemIconFraming.GetFrame(itemType);
-            // frame is a bottom-left-origin uvRect; its center = weapon centroid
-            var pivot = new Vector2(
-                (frame.center.x - 0.5f) * canvasPixels,
-                (frame.center.y - 0.5f) * canvasPixels);
-
-            float rad = rotationDegrees * Mathf.Deg2Rad;
-            float cos = Mathf.Cos(rad);
-            float sin = Mathf.Sin(rad);
-            var rotated = new Vector2(
-                pivot.x * cos - pivot.y * sin,
-                pivot.x * sin + pivot.y * cos);
-
-            return pivot - rotated;
         }
 
         public static List<DisplayPiece> FilterHiddenLayers(List<DisplayPiece> pieces, HashSet<int> hiddenLayers)
