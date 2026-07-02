@@ -43,6 +43,9 @@ namespace Starquill.Tests.Destinations
     public class ColorFamilyTests
     {
         [TestCase(1f, 0f, 0f, ColorFamily.Red)]
+        // NOTE: corrected during implementation to (0.45f, 0.22f, 0.06f) — the
+        // original (0.55, 0.27, 0.07) sits exactly on the v<0.55 Brown/Orange
+        // boundary and classifies Orange. Do not "fix" the test back.
         [TestCase(0.55f, 0.27f, 0.07f, ColorFamily.Brown)]   // saddle brown (dark orange hue)
         [TestCase(1f, 0.55f, 0f, ColorFamily.Orange)]        // bright orange
         [TestCase(1f, 0.9f, 0.1f, ColorFamily.Yellow)]
