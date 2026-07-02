@@ -21,6 +21,13 @@ namespace Starquill.Managers
         public long lastPlayedTimestamp;
         public float fragmentProgress;
 
+        // Quest progression (Offered phase saves as Idle; offers re-roll)
+        public int questZoneIndex;
+        public int questNextIndex;
+        public int questPhase;
+        public int questActiveWave;
+        public double questGoldEarned;
+
         public bool NeedsRosterInitialization()
         {
             return roster == null || roster.Count == 0;

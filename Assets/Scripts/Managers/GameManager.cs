@@ -8,6 +8,7 @@ using Starquill.Data;
 using Starquill.Display;
 using Starquill.Equipment;
 using Starquill.Exploration;
+using Starquill.Quests;
 
 namespace Starquill.Managers
 {
@@ -43,6 +44,8 @@ namespace Starquill.Managers
         private LootInventory lootInventory;
         private LootDropper lootDropper;
         private AbilityTable abilityTable;
+        private QuestZoneTable questZones;
+        private readonly QuestLog questLog = new();
         private List<EnemyState> currentEnemies = new();
         private float tickTimer;
         private float currentTime;
@@ -56,6 +59,10 @@ namespace Starquill.Managers
         public CharacterRoster Roster => roster;
         public LootInventory LootInventory => lootInventory;
         public AbilityTable AbilityTable => abilityTable;
+        public QuestLog QuestLog => questLog;
+        public event Action<QuestSpec> OnQuestOffered;
+        public event Action<QuestSpec, double, List<EquipmentInstance>> OnQuestCompleted;
+        public event Action OnQuestRetreated;
         public event Action<EquipmentInstance> OnLootDropped;
 
         private void Awake()
@@ -94,6 +101,9 @@ namespace Starquill.Managers
             verbPool = new VerbPool(economyConfig.verbSlotCount, economyConfig.verbDrawCooldown);
             combatProcessor = new CombatTickProcessor(advantageMatrix, economyConfig);
             exploration = new ExplorationManager(economyConfig);
+            questZones = new QuestZoneTable();
+            questZones.LoadFromResources();
+            exploration.OnQuestDiscovered += HandleQuestDiscovered;
             pityTracker = new PityTracker();
 
             lootInventory = new LootInventory(50);
@@ -105,6 +115,23 @@ namespace Starquill.Managers
             var save = saveManager.Load();
             gold = save.gold;
             questLevel = save.currentQuestLevel;
+
+            // Restore quest progression; active/retreated specs regenerate
+            // deterministically from their indices + quest level.
+            var savedPhase = (QuestPhase)save.questPhase;
+            QuestSpec restoredSpec = null;
+            if (savedPhase == QuestPhase.Active || savedPhase == QuestPhase.Retreated)
+            {
+                var zone = questZones.GetZone(save.questZoneIndex);
+                if (zone != null)
+                    restoredSpec = QuestGenerator.Generate(zone, save.questZoneIndex, save.questNextIndex, questLevel);
+                else
+                    savedPhase = QuestPhase.Idle;
+            }
+            questLog.Restore(save.questZoneIndex, save.questNextIndex, savedPhase,
+                save.questActiveWave, save.questGoldEarned, restoredSpec);
+            if (savedPhase == QuestPhase.Active)
+                exploration.EnterQuest();
 
             if (save.NeedsRosterInitialization())
                 InitializeStarterRoster();
@@ -154,6 +181,7 @@ namespace Starquill.Managers
             if (result.GoldEarned > 0)
             {
                 gold += result.GoldEarned;
+                questLog.RecordGold(result.GoldEarned);
                 OnGoldChanged?.Invoke(gold);
             }
 
@@ -166,8 +194,7 @@ namespace Starquill.Managers
             if (result.WaveCleared)
             {
                 OnWaveCleared?.Invoke();
-                exploration.ProcessWaveCleared();
-                SpawnWave();
+                HandleWaveCleared();
             }
 
             if ((int)currentTime % 30 == 0)
@@ -194,6 +221,7 @@ namespace Starquill.Managers
             if (result.GoldEarned > 0)
             {
                 gold += result.GoldEarned;
+                questLog.RecordGold(result.GoldEarned);
                 OnGoldChanged?.Invoke(gold);
             }
 
@@ -204,8 +232,7 @@ namespace Starquill.Managers
             if (result.WaveCleared)
             {
                 OnWaveCleared?.Invoke();
-                exploration.ProcessWaveCleared();
-                SpawnWave();
+                HandleWaveCleared();
             }
         }
 
@@ -257,6 +284,115 @@ namespace Starquill.Managers
                 if (c != null) party.AddMember(c);
         }
 
+        private void HandleWaveCleared()
+        {
+            if (exploration.State == ExplorationState.InQuest && questLog.Phase == QuestPhase.Active)
+            {
+                if (questLog.IsOnLastWave)
+                {
+                    CompleteQuest();
+                }
+                else
+                {
+                    questLog.AdvanceWave();
+                    SpawnWave();
+                }
+                return;
+            }
+
+            exploration.ProcessWaveCleared();
+            SpawnWave();
+        }
+
+        private void HandleQuestDiscovered()
+        {
+            if (questLog.Phase != QuestPhase.Idle) return;
+
+            var zone = questZones.GetZone(questLog.ZoneIndex);
+            if (zone == null) return;
+
+            var spec = QuestGenerator.Generate(zone, questLog.ZoneIndex, questLog.NextQuestIndex, questLevel);
+            if (questLog.TryOffer(spec))
+                OnQuestOffered?.Invoke(spec);
+        }
+
+        public bool AcceptQuest()
+        {
+            if (!questLog.Accept()) return false;
+            exploration.EnterQuest();
+            SpawnWave();
+            return true;
+        }
+
+        public bool DeclineQuest() => questLog.Decline();
+
+        public bool RetreatQuest()
+        {
+            if (questLog.Phase != QuestPhase.Active) return false;
+
+            double deduct = questLog.Retreat();
+            gold = Math.Max(0, gold - deduct);
+            OnGoldChanged?.Invoke(gold);
+            exploration.QuestRetreated();
+            OnQuestRetreated?.Invoke();
+            // Party resumes exploring; the Retreated phase persists as the retry handle.
+            exploration.DismissRetry();
+            SpawnWave();
+            return true;
+        }
+
+        public bool RetryQuest()
+        {
+            if (!questLog.Retry()) return false;
+            exploration.EnterQuest();
+            SpawnWave();
+            return true;
+        }
+
+        public bool DismissRetreatedQuest() => questLog.Dismiss();
+
+        private void CompleteQuest()
+        {
+            var spec = questLog.ActiveSpec;
+            var reward = spec.Reward;
+
+            double goldBonus = economyConfig.GoldPerKill(questLevel, 0f, economyConfig.prestigeMultiplierBase)
+                * spec.TotalEnemies * reward.GoldMultiplier;
+            gold += goldBonus;
+
+            var lootRewards = new List<EquipmentInstance>();
+            var rewardRng = new System.Random();
+            int totalRolls = reward.LootRolls + reward.ExtraNoFloorRolls;
+            for (int i = 0; i < totalRolls; i++)
+            {
+                var floor = i < reward.LootRolls ? reward.RarityFloor : null;
+                var rarity = EquipmentFactory.RollRarityWithFloor(questLevel, floor, rewardRng);
+                var item = rewardRng.NextDouble() < 0.7
+                    ? equipmentFactory.CreateRandom(RandomArmorPrefix(rewardRng), rarity, rewardRng)
+                    : equipmentFactory.CreateRandomWeapon(rarity, rewardRng);
+                if (item != null && lootInventory.AddItem(item))
+                {
+                    lootRewards.Add(item);
+                    OnLootDropped?.Invoke(item);
+                }
+            }
+
+            questLevel += spec.Tier == QuestTier.Boss ? 2 : 1;
+
+            questLog.Complete();
+            exploration.QuestCompleted();
+            OnGoldChanged?.Invoke(gold);
+            OnQuestCompleted?.Invoke(spec, goldBonus, lootRewards);
+            SaveState();
+            SpawnWave();
+        }
+
+        private static string RandomArmorPrefix(System.Random rng)
+        {
+            var prefixes = new[] { "hd", "tr", "ar", "lg", "fe", "mc" };
+            return prefixes[rng.Next(prefixes.Length)];
+        }
+
         private void SaveState()
         {
             if (saveManager == null || roster == null || lootInventory == null) return;
@@ -269,12 +405,45 @@ namespace Starquill.Managers
             saveManager.CurrentSave.inventory.Clear();
             foreach (var item in lootInventory.Items)
                 saveManager.CurrentSave.inventory.Add(SerializedEquipment.FromInstance(item));
+
+            // Quest state (Offered saves as Idle; offers re-roll next session)
+            var savePhase = questLog.Phase == QuestPhase.Offered ? QuestPhase.Idle : questLog.Phase;
+            saveManager.CurrentSave.questZoneIndex = questLog.ZoneIndex;
+            saveManager.CurrentSave.questNextIndex = questLog.NextQuestIndex;
+            saveManager.CurrentSave.questPhase = (int)savePhase;
+            saveManager.CurrentSave.questActiveWave = questLog.ActiveWaveIndex;
+            saveManager.CurrentSave.questGoldEarned = questLog.GoldEarnedInQuest;
             saveManager.Save();
         }
 
         private void SpawnWave()
         {
             currentEnemies.Clear();
+
+            // Quest waves come from the generated spec (typed, HP-scaled).
+            if (exploration.State == ExplorationState.InQuest
+                && questLog.Phase == QuestPhase.Active
+                && questLog.ActiveSpec != null
+                && questLog.ActiveWaveIndex < questLog.ActiveSpec.Waves.Length)
+            {
+                var wave = questLog.ActiveSpec.Waves[questLog.ActiveWaveIndex];
+                for (int i = 0; i < wave.EnemyCount; i++)
+                {
+                    var waveType = i < wave.EnemyTypes.Length
+                        ? wave.EnemyTypes[i]
+                        : wave.EnemyTypes[0];
+                    // On boss waves the first enemy carries the full multiplier;
+                    // adds fight at half of it.
+                    float mult = wave.IsBossWave && i > 0 ? wave.HpMultiplier * 0.5f : wave.HpMultiplier;
+                    float questHp = economyConfig.EnemyHP(questLevel) * mult;
+                    string prefix = wave.IsBossWave && i == 0 ? "boss" : "quest_enemy";
+                    currentEnemies.Add(new EnemyState($"{prefix}_{i}", waveType, questHp, questHp * 0.05f));
+                }
+
+                OnWaveStarted?.Invoke(currentEnemies);
+                return;
+            }
+
             int enemyCount = 2 + questLevel / 10;
             if (enemyCount > 6) enemyCount = 6;
 
