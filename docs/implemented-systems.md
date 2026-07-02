@@ -34,7 +34,6 @@ JSON parsing: `MiniJSON` + `SimpleJson` helpers (Core assembly).
 - `VerbDefinition`: stat type, base damage, hit count, target mode, proc chance, cooldown, rarity
 - `StatusEffectDefinition`: stacking rules, overrides, cleanse relationships
 - `AdvantageMatrix`: static 6x6 damage/proc matrices (`Assets/Data/Config/DefaultAdvantageMatrix.asset`)
-- `QuestZoneDefinition`: zone ID, dominant enemy types, quest count, dialogue arrays (data model only; no quest system consumes it yet)
 - `EconomyConfig` (`Assets/Data/Config/DefaultEconomyConfig.asset`): all tuning knobs and formulas
 
 ### Economy formulas & knobs (EconomyConfig)
@@ -48,7 +47,7 @@ JSON parsing: `MiniJSON` + `SimpleJson` helpers (Core assembly).
 | autoAttackDPSFraction | 0.3 |
 | pity: Uncommon/Rare/Epic/Legendary | 50 / 200 / 1000 / 5000 kills |
 | baseDropRate | 0.15 per kill |
-| questDiscoveryRate / fragmentDropRate | 0.03 / 0.01 (no consumer yet) |
+| questDiscoveryRate / fragmentDropRate | 0.03 (quest offers) / 0.01 (no consumer yet) |
 | ability XP: threshold/growth/rate | 100 / 1.8 / 1 per tick |
 | ability gold cost: base/growth | 100 / 2.0 |
 | prestigeMultiplierBase | 1.0 (stubbed; prestige is post-MVP) |
@@ -102,7 +101,7 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 
 ## 7. Exploration (`Assets/Scripts/Exploration/`)
 
-`ExplorationManager` / `ExplorationState`: ambient explore mode driving wave spawning and quest-level scaling. Quest discovery/fragments are config knobs without consumers yet.
+`ExplorationManager` / `ExplorationState`: ambient explore mode driving wave spawning; discovery rolls feed the quest system (§7b). Fragments remain unconsumed (post-MVP).
 
 ## 7b. Quests (`Assets/Scripts/Quests/`, added Sprint 9)
 
