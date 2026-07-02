@@ -221,7 +221,23 @@ namespace Starquill.UI
                     confirm.SetEnabled(false, $"Need {preview.CostText}");
                 }
             });
-            confirm.SetEnabled(gm.gold >= preview.Cost, $"Need {preview.CostText}");
+
+            // Live gold gate: gold accrues every combat tick, so a snapshot
+            // taken at preview time goes stale. Re-evaluate on every gold
+            // change while this preview's button is alive; the handler
+            // detaches when the sheet closes and self-detaches once the
+            // button is destroyed (a newer preview replaced it).
+            void UpdateGate() => confirm.SetEnabled(gm.gold >= preview.Cost, $"Need {preview.CostText}");
+            Action<double> goldGate = null;
+            goldGate = _ =>
+            {
+                if (confirm.Button == null) { gm.OnGoldChanged -= goldGate; return; }
+                UpdateGate();
+            };
+            gm.OnGoldChanged += goldGate;
+            var sheet = getSheet();
+            if (sheet != null) sheet.OnClosed += () => gm.OnGoldChanged -= goldGate;
+            UpdateGate();
         }
     }
 }

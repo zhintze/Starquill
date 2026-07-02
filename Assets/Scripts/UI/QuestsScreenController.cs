@@ -49,7 +49,14 @@ namespace Starquill.UI
             if (index == 1) Refresh();
         }
 
-        private void HandleKeysChanged() => Refresh();
+        private void HandleKeysChanged()
+        {
+            // Keys drop constantly while exploring; rebuilding a hidden screen
+            // each time is wasted work. HandleScreenChanged refreshes on entry
+            // (ShopScreenController's visibility-guard pattern).
+            if (screenManager != null && screenManager.ActiveScreenIndex != 1) return;
+            Refresh();
+        }
 
         public void Refresh()
         {
@@ -96,7 +103,7 @@ namespace Starquill.UI
         private void BuildKeyPouch(GameManager gm)
         {
             var pouch = gm.KeyPouch;
-            int softCap = gm.economyConfig != null ? gm.economyConfig.keySoftCap : 30;
+            int softCap = gm.economyConfig.keySoftCap;
 
             var header = UiFactory.Text(content,
                 "KEYS  " + UiFactory.ColorTag($"{pouch.Keys.Count}/{softCap}", UiTheme.TextDim),
@@ -155,7 +162,7 @@ namespace Starquill.UI
             subRT.offsetMin = new Vector2(textLeft, UiTheme.Space1);
             subRT.offsetMax = new Vector2(-UiTheme.Space3, 0);
 
-            int maxD = gm.economyConfig != null ? gm.economyConfig.keyMaxDifficulty : 6;
+            int maxD = gm.economyConfig.keyMaxDifficulty;
             var pips = UiFactory.PipRow(card.transform,
                 KeyPresenter.DifficultyPips(key), maxD, 24f);
             var pipsRT = pips.GetComponent<RectTransform>();
