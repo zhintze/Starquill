@@ -20,6 +20,7 @@ namespace Starquill.Managers
         public List<SerializedEquipment> inventory = new();
         public long lastPlayedTimestamp;
         public float fragmentProgress;
+        public float travelProgress;
 
         // Quest progression (Offered phase saves as Idle; offers re-roll)
         public int questZoneIndex;

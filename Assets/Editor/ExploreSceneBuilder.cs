@@ -175,18 +175,29 @@ public static class ExploreSceneBuilder
         lootFeedRT.anchorMin = new Vector2(0, 0);
         lootFeedRT.anchorMax = new Vector2(1, 0);
         lootFeedRT.pivot = new Vector2(0.5f, 0);
-        lootFeedRT.anchoredPosition = new Vector2(0, 318); // above VerbBar (200) + quest banner (100) + gaps
+        lootFeedRT.anchoredPosition = new Vector2(0, 208); // just above VerbBar (200) + gap
         lootFeedRT.sizeDelta = new Vector2(-32, 220);      // 3 rows of 72px
         lootFeed.AddComponent<Starquill.UI.LootToastFeed>();
 
-        // --- QuestBannerDisplay (between VerbBar and toast feed) ---
+        // --- PathBarDisplay (always visible, directly below TopBar) ---
+        var pathBar = new GameObject("PathBar", typeof(RectTransform));
+        pathBar.transform.SetParent(explorePanel.transform, false);
+        var pathBarRT = pathBar.GetComponent<RectTransform>();
+        pathBarRT.anchorMin = new Vector2(0, 1);
+        pathBarRT.anchorMax = new Vector2(1, 1);
+        pathBarRT.pivot = new Vector2(0.5f, 1);
+        pathBarRT.anchoredPosition = Vector2.zero;
+        pathBarRT.sizeDelta = new Vector2(0, 56);
+        pathBar.AddComponent<Starquill.UI.PathBarDisplay>();
+
+        // --- QuestBannerDisplay (top of the explore area, open sky) ---
         var questBanner = new GameObject("QuestBanner", typeof(RectTransform));
         questBanner.transform.SetParent(explorePanel.transform, false);
         var questBannerRT = questBanner.GetComponent<RectTransform>();
-        questBannerRT.anchorMin = new Vector2(0, 0);
-        questBannerRT.anchorMax = new Vector2(1, 0);
-        questBannerRT.pivot = new Vector2(0.5f, 0);
-        questBannerRT.anchoredPosition = new Vector2(0, 208);
+        questBannerRT.anchorMin = new Vector2(0, 1);
+        questBannerRT.anchorMax = new Vector2(1, 1);
+        questBannerRT.pivot = new Vector2(0.5f, 1);
+        questBannerRT.anchoredPosition = new Vector2(0, -72);
         questBannerRT.sizeDelta = new Vector2(-32, 100);
         questBanner.AddComponent<Starquill.UI.QuestBannerDisplay>();
 
@@ -201,24 +212,8 @@ public static class ExploreSceneBuilder
         questsPanelRT.offsetMax = new Vector2(0, -140);
         questsPanel.GetComponent<Image>().color = new Color(0.08f, 0.08f, 0.12f, 1f);
 
-        // Tabs strip (controller fills with SegmentedTabs at runtime)
-        var questTabsContainer = new GameObject("QuestTabsContainer", typeof(RectTransform));
-        questTabsContainer.transform.SetParent(questsPanel.transform, false);
-        var questTabsRT = questTabsContainer.GetComponent<RectTransform>();
-        questTabsRT.anchorMin = new Vector2(0, 1);
-        questTabsRT.anchorMax = new Vector2(1, 1);
-        questTabsRT.pivot = new Vector2(0.5f, 1);
-        questTabsRT.anchoredPosition = Vector2.zero;
-        questTabsRT.sizeDelta = new Vector2(-32, 120);
-        var questTabsVL = questTabsContainer.AddComponent<VerticalLayoutGroup>();
-        questTabsVL.childControlWidth = true;
-        questTabsVL.childControlHeight = true;
-        questTabsVL.childForceExpandWidth = true;
-        questTabsVL.childForceExpandHeight = true;
-
-        // Two scrollable content roots below the tabs
+        // Single scrollable content root (sectioned by the controller)
         var questsContentRoot = BuildQuestContentRoot(questsPanel, "QuestsContent");
-        var destinationsContentRoot = BuildQuestContentRoot(questsPanel, "DestinationsContent");
 
         // ============================================================
         // === LOOT PANEL (screen index 2) ===
@@ -1032,9 +1027,7 @@ public static class ExploreSceneBuilder
 
         // QuestsScreenController on QuestsPanel
         var questsScreenCtrl = questsPanel.AddComponent<Starquill.UI.QuestsScreenController>();
-        SetPrivateField(questsScreenCtrl, "tabsContainer", questTabsContainer.transform);
-        SetPrivateField(questsScreenCtrl, "questsContent", questsContentRoot.transform);
-        SetPrivateField(questsScreenCtrl, "destinationsContent", destinationsContentRoot.transform);
+        SetPrivateField(questsScreenCtrl, "content", questsContentRoot.transform);
         SetPrivateField(questsScreenCtrl, "screenManager", screenManager);
 
         // LootScreenController on LootPanel
@@ -1081,7 +1074,7 @@ public static class ExploreSceneBuilder
         scrollRT.anchorMin = new Vector2(0, 0);
         scrollRT.anchorMax = new Vector2(1, 1);
         scrollRT.offsetMin = new Vector2(16, 16);
-        scrollRT.offsetMax = new Vector2(-16, -136);
+        scrollRT.offsetMax = new Vector2(-16, -16);
 
         var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
         viewport.transform.SetParent(scroll.transform, false);

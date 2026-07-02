@@ -1,7 +1,10 @@
 # Sprint 10: Quests Screen UI — Design
 
 **Date:** 2026-07-01
-**Status:** Validated with user section-by-section (offer style: banner + sheet; screen shape: segmented tabs with Destinations future-slot).
+**Status:** Validated with user section-by-section, then REVISED per user review (2026-07-01 evening):
+1. Quest banner moved to the TOP of the explore screen (open sky area), not above the verb bar.
+2. The dual-mode **path indicator bar** from the original design (Sprint 4 open questions, never built) is now implemented: always visible below the TopBar — explore mode shows travel progress toward a GUARANTEED quest discovery (arrival forces an offer if the 3% roll never fired; `travelWavesToDiscovery = 20` knob, progress persisted in save); quest mode shows wave progress. The banner's embedded wave fill was removed in its favor.
+3. Quests screen: segmented tabs replaced by ONE scroll view with section headers (QUEST / DESTINATIONS) — quests alone don't warrant a full tab.
 **Source:** `docs/roadmap.md` Sprint 10; Sprint 9 backend (`QuestLog`, GameManager quest API/events); UiTheme/UiFactory/BottomSheet kit.
 
 ## Requirement carried in from user

@@ -40,6 +40,7 @@ namespace Starquill.Data
         public float questRetreatGoldPenalty = 0.50f;
         public float exploreKillsPerMinute = 6f;
         public float questDiscoveryRate = 0.03f;
+        public int travelWavesToDiscovery = 20;
         public float fragmentDropRate = 0.01f;
 
         [Header("Loot")]

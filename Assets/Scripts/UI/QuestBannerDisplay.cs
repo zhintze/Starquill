@@ -14,7 +14,6 @@ namespace Starquill.UI
     public class QuestBannerDisplay : MonoBehaviour
     {
         private UiFactory.BannerHandle banner;
-        private UiFactory.ProgressBarHandle waveBar;
         private bool subscribed;
 
         private IEnumerator Start()
@@ -23,16 +22,6 @@ namespace Starquill.UI
                 actionLabel: "Retreat",
                 onAction: HandleActionTapped,
                 onTapped: HandleBannerTapped);
-
-            // Thin wave-progress fill along the banner's bottom edge
-            waveBar = UiFactory.ProgressBar(banner.Root.transform, UiTheme.AccentGreen, 10f);
-            Destroy(waveBar.Root.GetComponent<UnityEngine.UI.LayoutElement>());
-            var barRT = waveBar.Root.GetComponent<RectTransform>();
-            barRT.anchorMin = new Vector2(0, 0);
-            barRT.anchorMax = new Vector2(1, 0);
-            barRT.pivot = new Vector2(0.5f, 0);
-            barRT.sizeDelta = new Vector2(0, 10);
-            barRT.anchoredPosition = Vector2.zero;
 
             yield return null; // wait for GameManager.Start()
 
@@ -94,9 +83,6 @@ namespace Starquill.UI
                 _ => UiTheme.AccentGreen
             });
 
-            waveBar.Root.SetActive(active);
-            if (active)
-                waveBar.SetFraction(QuestPresenter.WaveFraction(log.ActiveSpec, log.ActiveWaveIndex));
         }
 
         private void HandleBannerTapped()

@@ -7,19 +7,16 @@ using Starquill.Quests;
 
 namespace Starquill.UI
 {
-    /// Quests screen (nav index 1): [Quests | Destinations] tabs.
-    /// Quests tab: current-quest card + zone ladder. Destinations tab:
-    /// live fragment progress + locked future-slot cards for the
-    /// encounter/location/dungeon systems (dungeon-key design doc).
+    /// Quests screen (nav index 1): one scroll view with section headers —
+    /// QUEST (current-quest card + zone ladder) then DESTINATIONS (fragment
+    /// progress + locked future-slot cards for the encounter/location/dungeon
+    /// systems from the dungeon-key design doc).
     public class QuestsScreenController : MonoBehaviour
     {
-        [SerializeField] private Transform tabsContainer;
-        [SerializeField] private Transform questsContent;
-        [SerializeField] private Transform destinationsContent;
+        [SerializeField] private Transform content;
         [SerializeField] private ScreenManager screenManager;
 
         private bool initialized;
-        private int activeTab;
 
         private IEnumerator Start()
         {
@@ -33,18 +30,6 @@ namespace Starquill.UI
             if (initialized) return;
             initialized = true;
 
-            if (tabsContainer != null)
-            {
-                UiFactory.SegmentedTabs(tabsContainer,
-                    new[] { "Quests", "Destinations" }, idx =>
-                    {
-                        activeTab = idx;
-                        if (questsContent != null) questsContent.gameObject.SetActive(idx == 0);
-                        if (destinationsContent != null) destinationsContent.gameObject.SetActive(idx == 1);
-                        Refresh();
-                    });
-            }
-
             if (screenManager != null)
                 screenManager.OnScreenChanged += HandleScreenChanged;
 
@@ -55,8 +40,6 @@ namespace Starquill.UI
                 gm.OnQuestRetreated += Refresh;
                 gm.OnQuestCompleted += (s, g, l) => Refresh();
             }
-
-            BuildDestinations();
         }
 
         private void HandleScreenChanged(int index)
@@ -66,17 +49,9 @@ namespace Starquill.UI
 
         public void Refresh()
         {
-            if (activeTab == 0) BuildQuestsTab();
-            else RefreshFragmentBar();
-        }
-
-        // ---------- Quests tab ----------
-
-        private void BuildQuestsTab()
-        {
-            if (questsContent == null) return;
-            for (int i = questsContent.childCount - 1; i >= 0; i--)
-                Destroy(questsContent.GetChild(i).gameObject);
+            if (content == null) return;
+            for (int i = content.childCount - 1; i >= 0; i--)
+                Destroy(content.GetChild(i).gameObject);
 
             var gm = GameManager.Instance;
             if (gm == null) return;
@@ -84,22 +59,64 @@ namespace Starquill.UI
             var log = gm.QuestLog;
             var zone = gm.QuestZones.GetZone(log.ZoneIndex);
 
-            BuildCurrentQuestCard(gm, log, zone);
+            // ===== QUEST section =====
+            SectionHeader("QUEST");
+            BuildCurrentQuestCard(gm, log);
 
-            // Zone header
-            var header = UiFactory.Text(questsContent,
+            var zoneHeader = UiFactory.Text(content,
                 $"{zone?.Name ?? "Unknown"}  " + UiFactory.ColorTag($"Zone {log.ZoneIndex + 1}", UiTheme.TextDim),
-                UiFactory.TextStyle.Heading);
-            header.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontHeading + 24f;
+                UiFactory.TextStyle.Body);
+            zoneHeader.fontStyle = FontStyles.Bold;
+            zoneHeader.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontBody + 16f;
 
-            UiFactory.LadderRow(questsContent,
+            UiFactory.LadderRow(content,
                 QuestPresenter.LadderStates(log.NextQuestIndex, log.Phase), 72f);
+
+            // ===== DESTINATIONS section =====
+            SectionHeader("DESTINATIONS");
+
+            var gmFrag = gm.Exploration.FragmentProgress;
+            const float target = 100f;
+            var fragLabel = UiFactory.Text(content,
+                $"Fragments  {gmFrag:F0}/{target:F0} " +
+                UiFactory.ColorTag("· gathered while exploring", UiTheme.TextDim),
+                UiFactory.TextStyle.Caption);
+            fragLabel.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontCaption + 12f;
+            var fragBar = UiFactory.ProgressBar(content, new Color(0.2f, 0.8f, 0.7f), 28f);
+            fragBar.SetFraction(gmFrag / target);
+
+            LockedCard("Encounters", "Spend keys on targeted loot hunts.");
+            LockedCard("Locations", "Discovered places, open briefly. Grind fast.");
+            LockedCard("Dungeons", "Extended multi-zone challenges with curated loot.");
         }
 
-        private void BuildCurrentQuestCard(GameManager gm, QuestLog log, QuestZone zone)
+        private void SectionHeader(string title)
+        {
+            var header = new GameObject($"Section_{title}", typeof(RectTransform));
+            header.transform.SetParent(content, false);
+            header.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontHeading + 28f;
+
+            var tmp = UiFactory.Text(header.transform, title, UiFactory.TextStyle.Heading);
+            tmp.color = UiTheme.TextSecondary;
+            var rt = tmp.rectTransform;
+            UiFactory.StretchFill(rt);
+            rt.offsetMin = new Vector2(0, 0);
+            tmp.alignment = TextAlignmentOptions.BottomLeft;
+
+            var rule = new GameObject("Rule", typeof(RectTransform), typeof(Image));
+            rule.transform.SetParent(header.transform, false);
+            var ruleRT = rule.GetComponent<RectTransform>();
+            ruleRT.anchorMin = new Vector2(0, 0);
+            ruleRT.anchorMax = new Vector2(1, 0);
+            ruleRT.pivot = new Vector2(0.5f, 0);
+            ruleRT.sizeDelta = new Vector2(0, 3);
+            rule.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
+        }
+
+        private void BuildCurrentQuestCard(GameManager gm, QuestLog log)
         {
             var card = new GameObject("CurrentQuest", typeof(RectTransform), typeof(Image));
-            card.transform.SetParent(questsContent, false);
+            card.transform.SetParent(content, false);
             card.GetComponent<Image>().color = UiTheme.Card;
             var layout = card.AddComponent<VerticalLayoutGroup>();
             layout.spacing = UiTheme.Space2;
@@ -158,54 +175,19 @@ namespace Starquill.UI
                 {
                     Title(card.transform, "Exploring…", UiTheme.TextPrimary);
                     Caption(card.transform,
-                        "The party is searching for the next quest. Discoveries happen while clearing waves.");
+                        "The party is searching for the next quest. The path bar fills toward a guaranteed discovery.");
                     break;
                 }
             }
         }
 
-        // ---------- Destinations tab ----------
-
-        private UiFactory.ProgressBarHandle fragmentBar;
-        private TMP_Text fragmentLabel;
-
-        private void BuildDestinations()
-        {
-            if (destinationsContent == null) return;
-
-            var header = UiFactory.Text(destinationsContent, "Fragments", UiFactory.TextStyle.Heading);
-            header.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontHeading + 16f;
-
-            fragmentLabel = UiFactory.Text(destinationsContent, "", UiFactory.TextStyle.CaptionDim);
-            fragmentLabel.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontCaption + 10f;
-
-            fragmentBar = UiFactory.ProgressBar(destinationsContent, new Color(0.2f, 0.8f, 0.7f), 32f);
-
-            LockedCard("Encounters", "Spend keys on targeted loot hunts.");
-            LockedCard("Locations", "Discovered places, open briefly. Grind fast.");
-            LockedCard("Dungeons", "Extended multi-zone challenges with curated loot.");
-
-            RefreshFragmentBar();
-            destinationsContent.gameObject.SetActive(false);
-        }
-
-        private void RefreshFragmentBar()
-        {
-            var gm = GameManager.Instance;
-            if (gm == null || fragmentLabel == null) return;
-            float progress = gm.Exploration.FragmentProgress;
-            const float target = 100f;
-            fragmentLabel.text = $"{progress:F0}/{target:F0} · fragments gather while exploring";
-            fragmentBar.SetFraction(progress / target);
-        }
-
         private void LockedCard(string title, string teaser)
         {
             var card = new GameObject($"Locked_{title}", typeof(RectTransform), typeof(Image));
-            card.transform.SetParent(destinationsContent, false);
+            card.transform.SetParent(content, false);
             card.GetComponent<Image>().color = new Color(UiTheme.Card.r, UiTheme.Card.g, UiTheme.Card.b, 0.6f);
             var le = card.AddComponent<LayoutElement>();
-            le.preferredHeight = 170f;
+            le.preferredHeight = 150f;
             le.flexibleWidth = 1;
 
             var titleTmp = UiFactory.Text(card.transform, title, UiFactory.TextStyle.Body);

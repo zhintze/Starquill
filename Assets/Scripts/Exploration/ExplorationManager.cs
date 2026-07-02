@@ -10,6 +10,11 @@ namespace Starquill.Exploration
         public int QuestLevel { get; set; } = 1;
         public float FragmentProgress { get; private set; }
 
+        /// 0-1 travel toward a guaranteed quest discovery (the path indicator
+        /// bar). Advances per explore wave; arrival forces a discovery if the
+        /// random roll never fired. Resets on any discovery.
+        public float TravelProgress { get; private set; }
+
         private readonly EconomyConfig config;
         private readonly Random rng;
 
@@ -28,8 +33,19 @@ namespace Starquill.Exploration
             CurrentWave++;
             OnWaveCleared?.Invoke();
 
-            if (State == ExplorationState.Exploring && rng.NextDouble() < config.questDiscoveryRate)
-                OnQuestDiscovered?.Invoke();
+            if (State == ExplorationState.Exploring)
+            {
+                int wavesToDiscovery = Math.Max(1, config.travelWavesToDiscovery);
+                TravelProgress += 1f / wavesToDiscovery;
+
+                bool randomDiscovery = rng.NextDouble() < config.questDiscoveryRate;
+                bool arrived = TravelProgress >= 1f;
+                if (randomDiscovery || arrived)
+                {
+                    TravelProgress = 0f;
+                    OnQuestDiscovered?.Invoke();
+                }
+            }
 
             if (rng.NextDouble() < config.fragmentDropRate)
             {
@@ -37,6 +53,13 @@ namespace Starquill.Exploration
                 FragmentProgress += fragment;
                 OnFragmentDropped?.Invoke(fragment);
             }
+        }
+
+        /// Save restore.
+        public void RestoreProgress(float travelProgress, float fragmentProgress)
+        {
+            TravelProgress = Math.Clamp(travelProgress, 0f, 1f);
+            FragmentProgress = Math.Max(0f, fragmentProgress);
         }
 
         public void EnterQuest() { State = ExplorationState.InQuest; }

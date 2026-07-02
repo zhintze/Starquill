@@ -131,6 +131,7 @@ namespace Starquill.Managers
             }
             questLog.Restore(save.questZoneIndex, save.questNextIndex, savedPhase,
                 save.questActiveWave, save.questGoldEarned, restoredSpec);
+            exploration.RestoreProgress(save.travelProgress, save.fragmentProgress);
             if (savedPhase == QuestPhase.Active)
                 exploration.EnterQuest();
 
@@ -431,6 +432,8 @@ namespace Starquill.Managers
             saveManager.CurrentSave.questPhase = (int)savePhase;
             saveManager.CurrentSave.questActiveWave = questLog.ActiveWaveIndex;
             saveManager.CurrentSave.questGoldEarned = questLog.GoldEarnedInQuest;
+            saveManager.CurrentSave.travelProgress = exploration.TravelProgress;
+            saveManager.CurrentSave.fragmentProgress = exploration.FragmentProgress;
             saveManager.Save();
         }
 
