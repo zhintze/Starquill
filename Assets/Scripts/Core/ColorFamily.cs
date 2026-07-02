@@ -1,20 +1,26 @@
 namespace Starquill.Core
 {
+    /// Ordinals are save-format contract (SerializedKey stores the int):
+    /// append only, never reorder. White/Black were split out of Neutral
+    /// after D1 shipped, hence their position at the end.
     public enum ColorFamily
     {
-        Red, Orange, Brown, Yellow, Green, Blue, Purple, Neutral
+        Red, Orange, Brown, Yellow, Green, Blue, Purple, Neutral, White, Black
     }
 
-    /// Pure RGB -> family bucketing (design D1: 8 HSV buckets over the
-    /// "main" palette). Ranges are starting values; tune against the real
-    /// palette during the balance pass, keeping Classify total.
+    /// Pure RGB -> family bucketing over the "main" palette (design D1,
+    /// revised to 10 buckets: Black = near-black incl. dark tinted shades,
+    /// White = whites/silvers, Neutral = true grays). Ranges are starting
+    /// values; tune during the balance pass, keeping Classify total.
     public static class ColorFamilyClassifier
     {
         public static ColorFamily Classify(float r, float g, float b)
         {
             RgbToHsv(r, g, b, out float h, out float s, out float v);
 
-            if (s < 0.15f || v < 0.12f) return ColorFamily.Neutral;
+            if (v < 0.20f) return ColorFamily.Black;
+            if (s < 0.15f)
+                return v >= 0.75f ? ColorFamily.White : ColorFamily.Neutral;
 
             float deg = h * 360f;
             if (deg < 15f || deg >= 345f) return ColorFamily.Red;

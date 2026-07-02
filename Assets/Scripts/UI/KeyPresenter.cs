@@ -79,6 +79,8 @@ namespace Starquill.UI
                 ColorFamily.Green => new Color(0.30f, 0.75f, 0.35f),
                 ColorFamily.Blue => new Color(0.30f, 0.52f, 0.90f),
                 ColorFamily.Purple => new Color(0.65f, 0.38f, 0.85f),
+                ColorFamily.White => new Color(0.92f, 0.92f, 0.92f),
+                ColorFamily.Black => new Color(0.16f, 0.16f, 0.18f),
                 _ => Gray // Neutral
             };
         }

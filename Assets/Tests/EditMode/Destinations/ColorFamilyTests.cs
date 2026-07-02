@@ -12,9 +12,11 @@ namespace Starquill.Tests.Destinations
         [TestCase(0.1f, 0.7f, 0.2f, ColorFamily.Green)]
         [TestCase(0.1f, 0.3f, 0.9f, ColorFamily.Blue)]
         [TestCase(0.6f, 0.1f, 0.8f, ColorFamily.Purple)]
-        [TestCase(0.5f, 0.5f, 0.5f, ColorFamily.Neutral)]    // gray: low saturation
-        [TestCase(0.05f, 0.05f, 0.05f, ColorFamily.Neutral)] // near-black: low value
-        [TestCase(1f, 1f, 1f, ColorFamily.Neutral)]          // white
+        [TestCase(0.5f, 0.5f, 0.5f, ColorFamily.Neutral)]    // true gray: low sat, mid value
+        [TestCase(0.05f, 0.05f, 0.05f, ColorFamily.Black)]   // near-black: low value
+        [TestCase(0.1f, 0.05f, 0.15f, ColorFamily.Black)]    // dark tinted shade still reads black
+        [TestCase(1f, 1f, 1f, ColorFamily.White)]            // white
+        [TestCase(0.8f, 0.8f, 0.82f, ColorFamily.White)]     // silver: low sat, high value
         public void Classify_KnownColors(float r, float g, float b, ColorFamily expected)
         {
             Assert.AreEqual(expected, ColorFamilyClassifier.Classify(r, g, b));

@@ -280,7 +280,7 @@ Same style as the existing EditMode suite:
 
 | # | Resolution |
 |---|---|
-| D1 | 8 HSV-bucketed color families (Red, Orange, Brown, Yellow, Green, Blue, Purple, Neutral), classified automatically at load |
+| D1 | HSV-bucketed color families classified automatically at load. Originally 8; revised post-D1 (2026-07-02, PM request) to 10: White and Black split out of Neutral (Black = v<0.20 incl. dark tinted shades; White = low-sat v>=0.75; Neutral = true grays) |
 | D2 | Base keys drop D1 85% / D2 13% / D3 2% at every quest level; **same-variant fusion is the upgrade path** (brown D1 + brown D1 → brown D2) |
 | D3 | **Steep risk/reward:** enemy mult +0.6/D; floors D1 Unc / D2 Rare / D3 Epic / D4 Epic + 2× Legendary weight / **D5+ Legendary** |
 | D4 | Max one modifier per kind per key; same-kind different-variant fusion is invalid; D cap 6 |
