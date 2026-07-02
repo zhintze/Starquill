@@ -182,7 +182,7 @@ namespace Starquill.UI
             fragmentBar = UiFactory.ProgressBar(destinationsContent, new Color(0.2f, 0.8f, 0.7f), 32f);
 
             LockedCard("Encounters", "Spend keys on targeted loot hunts.");
-            LockedCard("Locations", "Discovered places that stay open briefly — grind them while they last.");
+            LockedCard("Locations", "Discovered places, open briefly. Grind fast.");
             LockedCard("Dungeons", "Extended multi-zone challenges with curated loot.");
 
             RefreshFragmentBar();

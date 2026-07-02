@@ -1096,6 +1096,7 @@ public static class ExploreSceneBuilder
         rootRT.anchorMax = new Vector2(1, 1);
         rootRT.pivot = new Vector2(0.5f, 1);
         rootRT.anchoredPosition = Vector2.zero;
+        rootRT.sizeDelta = new Vector2(0, 0);
         var vl = root.AddComponent<VerticalLayoutGroup>();
         vl.spacing = 24;
         vl.padding = new RectOffset(0, 0, 8, 8);
