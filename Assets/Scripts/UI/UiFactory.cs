@@ -303,6 +303,174 @@ namespace Starquill.UI
             return obj;
         }
 
+        // ---------- Banner ----------
+
+        public struct BannerHandle
+        {
+            public GameObject Root;
+            private readonly TMP_Text text;
+            private readonly Image[] accents;
+            private readonly ButtonHandle? action;
+            private readonly UiPulse pulse;
+
+            public BannerHandle(GameObject root, TMP_Text text, Image[] accents,
+                ButtonHandle? action, UiPulse pulse)
+            {
+                Root = root; this.text = text; this.accents = accents;
+                this.action = action; this.pulse = pulse;
+            }
+
+            public void SetText(string value) { if (text != null) text.text = value; }
+
+            public void SetAccent(Color color)
+            {
+                foreach (var a in accents)
+                    if (a != null) a.color = color;
+            }
+
+            public void SetVisible(bool visible)
+            {
+                if (Root != null) Root.SetActive(visible);
+                if (!visible && pulse != null) pulse.SetPulsing(false);
+            }
+
+            public void SetPulsing(bool pulsing) { if (pulse != null) pulse.SetPulsing(pulsing); }
+
+            public void SetActionVisible(bool visible)
+            {
+                if (action.HasValue) action.Value.Root.SetActive(visible);
+            }
+        }
+
+        /// Full-width notice strip: accent borders, Body text, optional
+        /// compact action button, tap callback on the strip itself.
+        /// Used by quest discovery/retry/wave HUD; reusable for offline
+        /// earnings and shop notices.
+        public static BannerHandle Banner(Transform parent, string actionLabel = null,
+            Action onAction = null, Action onTapped = null)
+        {
+            var root = new GameObject("Banner", typeof(RectTransform), typeof(Image), typeof(Button), typeof(CanvasGroup));
+            root.transform.SetParent(parent, false);
+            StretchFill(root.GetComponent<RectTransform>());
+            root.GetComponent<Image>().color = UiTheme.Card;
+            if (onTapped != null)
+                root.GetComponent<Button>().onClick.AddListener(() => onTapped());
+
+            var accents = new Image[2];
+            for (int i = 0; i < 2; i++)
+            {
+                var edge = new GameObject(i == 0 ? "AccentTop" : "AccentBottom",
+                    typeof(RectTransform), typeof(Image));
+                edge.transform.SetParent(root.transform, false);
+                var rt = edge.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0, i == 0 ? 1 : 0);
+                rt.anchorMax = new Vector2(1, i == 0 ? 1 : 0);
+                rt.pivot = new Vector2(0.5f, i == 0 ? 1 : 0);
+                rt.sizeDelta = new Vector2(0, 4);
+                accents[i] = edge.GetComponent<Image>();
+                accents[i].color = UiTheme.AccentGreen;
+            }
+
+            bool hasAction = actionLabel != null;
+            var tmp = Text(root.transform, "", TextStyle.Body);
+            var textRT = tmp.rectTransform;
+            textRT.anchorMin = new Vector2(0, 0);
+            textRT.anchorMax = new Vector2(hasAction ? 0.72f : 1f, 1);
+            textRT.offsetMin = new Vector2(UiTheme.Space3, 0);
+            textRT.offsetMax = Vector2.zero;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+            tmp.overflowMode = TextOverflowModes.Ellipsis;
+
+            ButtonHandle? action = null;
+            if (hasAction)
+            {
+                var handle = Button(root.transform, actionLabel, ButtonKind.Secondary, onAction);
+                UnityEngine.Object.Destroy(handle.Root.GetComponent<LayoutElement>());
+                var btnRT = handle.Root.GetComponent<RectTransform>();
+                btnRT.anchorMin = new Vector2(0.74f, 0.12f);
+                btnRT.anchorMax = new Vector2(1f, 0.88f);
+                btnRT.offsetMin = Vector2.zero;
+                btnRT.offsetMax = new Vector2(-UiTheme.Space2, 0);
+                handle.Label.fontSize = UiTheme.FontCaption;
+                action = handle;
+            }
+
+            var pulse = root.AddComponent<UiPulse>();
+            return new BannerHandle(root, tmp, accents, action, pulse);
+        }
+
+        // ---------- Ladder ----------
+
+        /// Row of progression nodes (quest ladder). Node visuals are Images
+        /// only (glyph rule): Done = accent fill, Current = fill + ring,
+        /// Ahead = dim, Boss = gold diamond, BossCurrent = gold diamond + ring.
+        public static GameObject LadderRow(Transform parent, LadderNodeState[] states,
+            float nodeSize = 64f)
+        {
+            var row = new GameObject("Ladder", typeof(RectTransform));
+            row.transform.SetParent(parent, false);
+            var layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = UiTheme.Space1;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            var le = row.AddComponent<LayoutElement>();
+            le.preferredHeight = nodeSize + UiTheme.FontCaption + UiTheme.Space2;
+
+            for (int i = 0; i < states.Length; i++)
+            {
+                var slot = new GameObject($"Node_{i}", typeof(RectTransform));
+                slot.transform.SetParent(row.transform, false);
+                slot.GetComponent<RectTransform>().sizeDelta =
+                    new Vector2(nodeSize, nodeSize + UiTheme.FontCaption + 6f);
+
+                bool boss = states[i] == LadderNodeState.Boss || states[i] == LadderNodeState.BossCurrent;
+                bool current = states[i] == LadderNodeState.Current || states[i] == LadderNodeState.BossCurrent;
+                bool done = states[i] == LadderNodeState.Done;
+
+                var node = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+                node.transform.SetParent(slot.transform, false);
+                var nodeRT = node.GetComponent<RectTransform>();
+                nodeRT.anchorMin = new Vector2(0.5f, 1);
+                nodeRT.anchorMax = new Vector2(0.5f, 1);
+                nodeRT.pivot = new Vector2(0.5f, 1);
+                float inner = boss ? nodeSize * 0.72f : nodeSize * 0.8f;
+                nodeRT.sizeDelta = new Vector2(inner, inner);
+                if (boss) nodeRT.localRotation = Quaternion.Euler(0, 0, 45f);
+                node.GetComponent<Image>().color =
+                    boss ? (done ? UiTheme.BestGold : new Color(UiTheme.BestGold.r, UiTheme.BestGold.g, UiTheme.BestGold.b, current ? 1f : 0.45f))
+                    : done ? UiTheme.AccentGreen
+                    : current ? UiTheme.AccentGreen
+                    : new Color(1f, 1f, 1f, 0.25f);
+
+                if (current)
+                {
+                    var ring = new GameObject("Ring", typeof(RectTransform), typeof(Image));
+                    ring.transform.SetParent(slot.transform, false);
+                    var ringRT = ring.GetComponent<RectTransform>();
+                    ringRT.anchorMin = new Vector2(0.5f, 1);
+                    ringRT.anchorMax = new Vector2(0.5f, 1);
+                    ringRT.pivot = new Vector2(0.5f, 1);
+                    ringRT.sizeDelta = new Vector2(nodeSize, 6);
+                    ringRT.anchoredPosition = new Vector2(0, -(inner + 8f));
+                    ring.GetComponent<Image>().color = UiTheme.TextPrimary;
+                }
+
+                // Tier markers under elite/hard nodes
+                string marker = i == 3 || i == 7 ? "E" : (i == 8 || i == 9 ? "H" : null);
+                if (marker != null)
+                {
+                    var tmp = Text(slot.transform, marker, TextStyle.CaptionDim, TextAlignmentOptions.Center);
+                    var tmpRT = tmp.rectTransform;
+                    tmpRT.anchorMin = new Vector2(0, 0);
+                    tmpRT.anchorMax = new Vector2(1, 0);
+                    tmpRT.pivot = new Vector2(0.5f, 0);
+                    tmpRT.sizeDelta = new Vector2(0, UiTheme.FontCaption + 4f);
+                }
+            }
+            return row;
+        }
+
         // ---------- Helpers ----------
 
         public static void StretchFill(RectTransform rt)
