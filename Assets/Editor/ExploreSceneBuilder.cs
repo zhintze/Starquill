@@ -175,9 +175,20 @@ public static class ExploreSceneBuilder
         lootFeedRT.anchorMin = new Vector2(0, 0);
         lootFeedRT.anchorMax = new Vector2(1, 0);
         lootFeedRT.pivot = new Vector2(0.5f, 0);
-        lootFeedRT.anchoredPosition = new Vector2(0, 208); // just above VerbBar (200) + gap
+        lootFeedRT.anchoredPosition = new Vector2(0, 318); // above VerbBar (200) + quest banner (100) + gaps
         lootFeedRT.sizeDelta = new Vector2(-32, 220);      // 3 rows of 72px
         lootFeed.AddComponent<Starquill.UI.LootToastFeed>();
+
+        // --- QuestBannerDisplay (between VerbBar and toast feed) ---
+        var questBanner = new GameObject("QuestBanner", typeof(RectTransform));
+        questBanner.transform.SetParent(explorePanel.transform, false);
+        var questBannerRT = questBanner.GetComponent<RectTransform>();
+        questBannerRT.anchorMin = new Vector2(0, 0);
+        questBannerRT.anchorMax = new Vector2(1, 0);
+        questBannerRT.pivot = new Vector2(0.5f, 0);
+        questBannerRT.anchoredPosition = new Vector2(0, 208);
+        questBannerRT.sizeDelta = new Vector2(-32, 100);
+        questBanner.AddComponent<Starquill.UI.QuestBannerDisplay>();
 
         // ============================================================
         // === QUESTS PLACEHOLDER (screen index 1) ===
