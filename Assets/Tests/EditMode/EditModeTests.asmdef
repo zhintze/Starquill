@@ -8,6 +8,7 @@
         "Starquill.Characters",
         "Starquill.Equipment",
         "Starquill.Exploration",
+        "Starquill.Quests",
         "Starquill.Managers",
         "Starquill.Display",
         "Starquill.UI"

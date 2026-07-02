@@ -1,0 +1,9 @@
+{
+    "name": "Starquill.Quests",
+    "rootNamespace": "Starquill.Quests",
+    "references": ["Starquill.Core", "Starquill.Data"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true
+}

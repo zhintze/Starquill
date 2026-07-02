@@ -1,0 +1,32 @@
+[
+  {
+    "id": "verdant-hollow",
+    "name": "Verdant Hollow",
+    "dominantTypes": ["STR", "CON"],
+    "introDialogue": [
+      "The hollow's beasts have grown bold. Someone should thin them out.",
+      "Trappers speak of tracks bigger than any deer. Much bigger.",
+      "The old warden left a bounty board. Most notes just say 'please hurry.'"
+    ],
+    "completionDialogue": [
+      "The hollow breathes easier tonight. The beasts remember fear.",
+      "A trapper tips his hat. 'Didn't think you'd come back whole.'",
+      "The bounty board thins. New notes mention ruins to the east..."
+    ]
+  },
+  {
+    "id": "gloomspire-ruins",
+    "name": "Gloomspire Ruins",
+    "dominantTypes": ["INT", "WIS"],
+    "introDialogue": [
+      "The ruins hum with leftover arithmetic. The wards want feeding.",
+      "Scholars paid good coin to map the spire. None came back to collect.",
+      "Something in the gloom recites theorems backward. It knows you're here."
+    ],
+    "completionDialogue": [
+      "The hum quiets. The spire's lesson, for now, is concluded.",
+      "You pocket a scholar's coin. He won't be needing the change.",
+      "The gloom recedes one floor. Above, something larger turns a page."
+    ]
+  }
+]
