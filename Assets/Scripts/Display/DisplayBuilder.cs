@@ -6,6 +6,14 @@ namespace Starquill.Display
 {
     public class DisplayBuilder
     {
+        /// CCW degrees applied to off-hand (non-shield) weapons. Tunable so
+        /// the landing spot can be dialed against real art.
+        public static float OffhandWeaponRotation = 60f;
+
+        /// Canvas-pixel nudge applied after the rotation to seat the weapon
+        /// in the hand.
+        public static Vector2 OffhandWeaponOffset = new(10f, 4f);
+
         private static readonly HashSet<string> HairFields = new() { "hair", "facialHair" };
         private static readonly HashSet<string> EyesFields = new() { "eyes" };
         private static readonly HashSet<string> FacialDetailFields = new() { "facialDetail" };
@@ -168,10 +176,11 @@ namespace Starquill.Display
                     }
                     else
                     {
-                        // Weapon art is authored at the main hand. Mirroring
-                        // the canvas puts it exactly at the other hand — no
-                        // rotation or offset math needed.
-                        piece.FlipH = true;
+                        // Rotate about the canvas center: preserves the art's
+                        // handedness (a flip mirrors it) and carries the
+                        // weapon from the main hand across to the other hand.
+                        piece.Rotation = OffhandWeaponRotation;
+                        piece.Offset = OffhandWeaponOffset;
                     }
                 }
 
