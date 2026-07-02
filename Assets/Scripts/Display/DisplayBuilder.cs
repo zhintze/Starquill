@@ -152,9 +152,10 @@ namespace Starquill.Display
                 bool offhandWeapon = item.IsOffhand && isWeapon;
                 bool isShield = item.ItemType == "w08" || item.ItemType == "w09";
 
-                // Off-hand weapons draw behind the body (held in the far
-                // hand); weapon layers are 164+, body layers ~16-102.
-                int sortLayer = offhandWeapon && !isShield ? layer - 160 : layer;
+                // Off-hand weapons draw just under the main hand's layers so
+                // the pair reads as two held weapons. Sorting them behind the
+                // body was tried and rejected: torso pixels swallow the weapon.
+                int sortLayer = offhandWeapon && !isShield ? layer - 1 : layer;
 
                 var piece = new DisplayPiece(sortLayer, path, tint);
 
