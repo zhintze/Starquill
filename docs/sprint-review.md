@@ -485,3 +485,16 @@ Design: `docs/plans/2026-07-01-mobile-ui-redesign-design.md` · Plan: `...-plan.
 - Save: quest phase/indices persist; specs regenerate deterministically on load
 - Deleted unused QuestZoneDefinition ScriptableObject
 - Design/plan: `docs/plans/2026-07-01-sprint9-quest-backend-{design,plan}.md`
+
+---
+
+## Sprint 10: Quests Screen UI
+
+**Date:** 2026-07-01 | **Status:** Implemented; flows verified in play mode (banner, sheets, quests screen both tabs); user Test Runner pass pending (~15 new QuestPresenter tests)
+
+- `QuestPresenter`: pure formatting layer (banner text per phase, wave fraction, rewards preview, ladder node states, dialogue selection) — fully unit-tested
+- `UiFactory` grows two app-wide primitives: `Banner` (accent-edged notice strip with pulse + action slot; future offline/shop notices reuse it) and `LadderRow` (progression nodes: done/current/ahead/boss with tier markers)
+- Explore screen: `QuestBannerDisplay` — pulsing discovery notice / retry notice / in-quest wave HUD with progress fill + Retreat (confirmation sheet)
+- Sheets: `QuestOfferSheet` (offer/retry/retreat-confirm modes; zone dialogue, tier chip, rewards preview) and `QuestCompletionSheet` (dialogue, gold, reward ItemCards tap-through, zone-cleared notice)
+- Quests screen replaces the placeholder: [Quests | Destinations] tabs — current-quest card per phase + zone ladder; Destinations ships as a live future-slot (fragment progress bar + locked Encounters/Locations/Dungeons cards teasing the dungeon-key system)
+- Design/plan: `docs/plans/2026-07-01-sprint10-quests-ui-{design,plan}.md`

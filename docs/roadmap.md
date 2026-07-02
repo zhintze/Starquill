@@ -38,7 +38,7 @@ Each sprint follows spec-driven development: design doc → implementation plan 
 
 ---
 
-## Sprint 10: Quests Screen UI
+## Sprint 10: Quests Screen UI — IMPLEMENTED 2026-07-01 (Test Runner pass pending)
 
 **Goal:** the player-facing quest loop.
 
