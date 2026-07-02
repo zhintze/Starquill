@@ -91,7 +91,7 @@ The 2026-07-01 mobile UI redesign established the design system and fixed densit
 | ~~Character level-up~~ | RESOLVED 2026-07-01: in MVP — XP wiring added to Sprint 11 scope (system was half-built: UI/data existed with no XP source) | — |
 | ~~Monetization~~ | RESOLVED 2026-07-01: rewarded ads ship in MVP — wiring added to Sprint 11 scope, interstitials in Sprint 12 | — |
 | Cloud save / analytics / Remote Config | Sprint 12 or post-MVP | Post-MVP |
-| Full-inventory quest rewards | Current stopgap converts overflow rewards to gold — explicitly NOT the intended behavior (neither discarding nor auto-gold is acceptable). Candidates: overflow stash / reward mailbox, pre-completion "make room" prompt, inventory capacity growth | Revisit by Sprint 11 (shop may add capacity upgrades) or Sprint 12 |
+| ~~Full-inventory quest rewards~~ | RESOLVED 2026-07-02: reward mailbox — overflow rewards persist in a saved mailbox, surfaced on the Loot screen, collected as space frees | — |
 
 ## Post-MVP Backlog (existing designs)
 
