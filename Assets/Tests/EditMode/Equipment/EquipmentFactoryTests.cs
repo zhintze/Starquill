@@ -171,5 +171,31 @@ namespace Starquill.Tests.Equipment
             var name = EquipmentFactory.GenerateDisplayName(Rarity.Rare, "shirt");
             Assert.IsTrue(name.Contains("Rare"));
         }
+
+        [Test]
+        public void RollRarityWithFloor_NullFloor_MatchesPlainRoll()
+        {
+            var a = EquipmentFactory.RollRarityWithFloor(5, null, new System.Random(7));
+            var b = EquipmentFactory.RollRarity(5, new System.Random(7));
+            Assert.AreEqual(b, a);
+        }
+
+        [Test]
+        public void RollRarityWithFloor_NeverBelowFloor()
+        {
+            for (int seed = 0; seed < 100; seed++)
+            {
+                var r = EquipmentFactory.RollRarityWithFloor(1, Rarity.Rare, new System.Random(seed));
+                Assert.GreaterOrEqual((int)r, (int)Rarity.Rare, $"seed {seed}");
+            }
+        }
+
+        [Test]
+        public void RollRarityWithFloor_LegendaryFloor_AlwaysLegendary()
+        {
+            for (int seed = 0; seed < 20; seed++)
+                Assert.AreEqual(Rarity.Legendary,
+                    EquipmentFactory.RollRarityWithFloor(1, Rarity.Legendary, new System.Random(seed)));
+        }
     }
 }

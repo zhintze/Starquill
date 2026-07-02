@@ -306,6 +306,16 @@ namespace Starquill.Equipment
             return Rarity.Legendary;
         }
 
+        /// RollRarity with a minimum: results below the floor are raised to it.
+        /// Used by quest rewards (elite/hard/boss guaranteed-quality drops).
+        public static Rarity RollRarityWithFloor(int questLevel, Rarity? floor, System.Random rng)
+        {
+            var rolled = RollRarity(questLevel, rng);
+            if (floor.HasValue && (int)rolled < (int)floor.Value)
+                return floor.Value;
+            return rolled;
+        }
+
         public static string GenerateDisplayName(Rarity rarity, string baseDescription)
         {
             string rarityPrefix = rarity switch
