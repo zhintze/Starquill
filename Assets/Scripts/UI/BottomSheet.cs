@@ -26,10 +26,14 @@ namespace Starquill.UI
             root.transform.SetAsLastSibling();
 
             // Render above everything, including panels with their own sorting
-            // overrides (the equipment drawer uses sortingOrder 10).
+            // overrides (the equipment drawer uses sortingOrder 10). Each open
+            // sheet sorts above the ones already up: with equal orders Unity's
+            // tie-break is unreliable, and a detail sheet opened from a
+            // completion sheet could draw underneath it.
+            int openSheets = FindObjectsByType<BottomSheet>(FindObjectsSortMode.None).Length;
             var canvas = root.AddComponent<Canvas>();
             canvas.overrideSorting = true;
-            canvas.sortingOrder = 100;
+            canvas.sortingOrder = 100 + openSheets;
             root.AddComponent<GraphicRaycaster>();
 
             var sheet = root.AddComponent<BottomSheet>();
