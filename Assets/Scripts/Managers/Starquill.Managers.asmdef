@@ -10,6 +10,7 @@
         "Starquill.Exploration",
         "Starquill.Display",
         "Starquill.Quests",
+        "Starquill.Destinations",
         "Starquill.Services"
     ],
     "includePlatforms": [],

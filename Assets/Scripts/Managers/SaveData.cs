@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Starquill.Characters;
 using Starquill.Core;
 using Starquill.Data;
+using Starquill.Destinations;
 using Starquill.Equipment;
 using UnityEngine;
 
@@ -36,10 +37,39 @@ namespace Starquill.Managers
         public bool removeAdsOwned;
         public List<SerializedEquipment> rewardMailbox = new();
 
+        // Keys + dungeons (active runs are deliberately not persisted)
+        public List<SerializedKey> keys = new();
+        public int dungeonRunCounter;
+
         public bool NeedsRosterInitialization()
         {
             return roster == null || roster.Count == 0;
         }
+    }
+
+    [Serializable]
+    public class SerializedKey
+    {
+        public int colorFamily = -1;  // -1 = none, else (int)ColorFamily
+        public int slot = -1;         // -1 = none, else (int)KeySlot
+        public int archetypeId = -1;
+        public int difficulty = 1;
+
+        public static SerializedKey FromInstance(KeyInstance k) => new()
+        {
+            colorFamily = k.ColorFamily.HasValue ? (int)k.ColorFamily.Value : -1,
+            slot = k.Slot.HasValue ? (int)k.Slot.Value : -1,
+            archetypeId = k.ArchetypeId,
+            difficulty = k.Difficulty
+        };
+
+        public KeyInstance ToInstance() => new()
+        {
+            ColorFamily = colorFamily >= 0 ? (ColorFamily?)colorFamily : null,
+            Slot = slot >= 0 ? (KeySlot?)slot : null,
+            ArchetypeId = archetypeId,
+            Difficulty = difficulty
+        };
     }
 
     [Serializable]
