@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
-using Starquill.UI;
+using Starquill.Display;
 
 namespace Starquill.Tests.EditMode.UI
 {

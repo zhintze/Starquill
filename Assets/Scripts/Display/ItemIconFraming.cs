@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Starquill.UI
+namespace Starquill.Display
 {
     /// Per-category icon crop rects for equipment sprites.
     ///

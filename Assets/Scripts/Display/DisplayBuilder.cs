@@ -149,23 +149,61 @@ namespace Starquill.Display
                         tint = vc;
                 }
 
-                var piece = new DisplayPiece(layer, path, tint);
+                bool offhandWeapon = item.IsOffhand && isWeapon;
+                bool isShield = item.ItemType == "w08" || item.ItemType == "w09";
 
-                if (item.IsOffhand && isWeapon)
+                // Off-hand weapons draw behind the body (held in the far
+                // hand); weapon layers are 164+, body layers ~16-102.
+                int sortLayer = offhandWeapon && !isShield ? layer - 160 : layer;
+
+                var piece = new DisplayPiece(sortLayer, path, tint);
+
+                if (offhandWeapon)
                 {
-                    bool isShield = item.ItemType == "w08" || item.ItemType == "w09";
                     piece.IsOffhandWeapon = true;
                     if (isShield)
+                    {
                         piece.Offset = new Vector2(42, 0);
+                    }
                     else
                     {
+                        // Sprites rotate around the canvas center, but the
+                        // weapon is drawn off-center at the hand. Compensate
+                        // so the rotation pivots on the weapon itself, or
+                        // long weapons fling off-canvas / behind the head.
                         piece.Rotation = -40f;
-                        piece.Offset = new Vector2(-21, 15);
+                        piece.Offset = new Vector2(-21, 15)
+                            + WeaponPivotCompensation(item.ItemType, -40f);
                     }
                 }
 
                 pieces.Add(piece);
             }
+        }
+
+        /// Offset (in canvas pixels) that keeps a rotation visually pivoting
+        /// on the weapon's own pixel centroid (from ItemIconFraming) instead
+        /// of the canvas center the transform actually rotates around.
+        /// For pivot P (relative to canvas center) and rotation R:
+        /// the rotated transform moves P to R·P, so shifting by P − R·P
+        /// puts the weapon body back where it was drawn.
+        public static Vector2 WeaponPivotCompensation(string itemType, float rotationDegrees)
+        {
+            const float canvasPixels = 200f;
+            var frame = ItemIconFraming.GetFrame(itemType);
+            // frame is a bottom-left-origin uvRect; its center = weapon centroid
+            var pivot = new Vector2(
+                (frame.center.x - 0.5f) * canvasPixels,
+                (frame.center.y - 0.5f) * canvasPixels);
+
+            float rad = rotationDegrees * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(rad);
+            float sin = Mathf.Sin(rad);
+            var rotated = new Vector2(
+                pivot.x * cos - pivot.y * sin,
+                pivot.x * sin + pivot.y * cos);
+
+            return pivot - rotated;
         }
 
         public static List<DisplayPiece> FilterHiddenLayers(List<DisplayPiece> pieces, HashSet<int> hiddenLayers)
