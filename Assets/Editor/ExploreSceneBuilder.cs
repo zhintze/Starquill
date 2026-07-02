@@ -634,10 +634,27 @@ public static class ExploreSceneBuilder
         drawerVL.childForceExpandWidth = true;
         drawerVL.childForceExpandHeight = false;
 
-        // Drawer summary label
-        var drawerSummaryLabel = CreateTMPLabel("DrawerSummary", equipDrawerPanel.transform,
+        // Drawer header row: summary label + compact Back button
+        var drawerHeaderRow = new GameObject("DrawerHeader", typeof(RectTransform));
+        drawerHeaderRow.transform.SetParent(equipDrawerPanel.transform, false);
+        drawerHeaderRow.AddComponent<LayoutElement>().preferredHeight = 80;
+        var drawerHeaderHL = drawerHeaderRow.AddComponent<HorizontalLayoutGroup>();
+        drawerHeaderHL.spacing = 16;
+        drawerHeaderHL.childControlWidth = true;
+        drawerHeaderHL.childControlHeight = true;
+        drawerHeaderHL.childForceExpandWidth = false;
+        drawerHeaderHL.childForceExpandHeight = true;
+
+        var drawerSummaryLabel = CreateTMPLabel("DrawerSummary", drawerHeaderRow.transform,
             "0 items for slot", 28, new Color(0.6f, 0.6f, 0.65f), TextAlignmentOptions.MidlineLeft);
-        drawerSummaryLabel.AddComponent<LayoutElement>().preferredHeight = 44;
+        drawerSummaryLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+        var backBtnObj = new GameObject("BackButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        backBtnObj.transform.SetParent(drawerHeaderRow.transform, false);
+        backBtnObj.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.35f);
+        backBtnObj.AddComponent<LayoutElement>().preferredWidth = 220;
+        var backBtnLabel = CreateTMPLabel("Label", backBtnObj.transform, "Back", 30, Color.white, TextAlignmentOptions.Center);
+        StretchFill(backBtnLabel);
 
         // Drawer item list (scrollable with proper viewport)
         var drawerListScroll = new GameObject("DrawerListScroll", typeof(RectTransform), typeof(ScrollRect));
@@ -678,23 +695,6 @@ public static class ExploreSceneBuilder
         drawerListScrollRect.vertical = true;
         drawerListScrollRect.scrollSensitivity = 30;
         drawerListScrollRect.movementType = ScrollRect.MovementType.Clamped;
-
-        // Drawer button bar
-        var drawerBtnBar = new GameObject("DrawerBtnBar", typeof(RectTransform));
-        drawerBtnBar.transform.SetParent(equipDrawerPanel.transform, false);
-        drawerBtnBar.AddComponent<LayoutElement>().preferredHeight = 120;
-        var drawerBtnHL = drawerBtnBar.AddComponent<HorizontalLayoutGroup>();
-        drawerBtnHL.spacing = 10;
-        drawerBtnHL.childControlWidth = true;
-        drawerBtnHL.childControlHeight = true;
-        drawerBtnHL.childForceExpandWidth = true;
-        drawerBtnHL.childForceExpandHeight = true;
-
-        var backBtnObj = new GameObject("BackButton", typeof(RectTransform), typeof(Image), typeof(Button));
-        backBtnObj.transform.SetParent(drawerBtnBar.transform, false);
-        backBtnObj.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.35f);
-        var backBtnLabel = CreateTMPLabel("Label", backBtnObj.transform, "Back", 34, Color.white, TextAlignmentOptions.Center);
-        StretchFill(backBtnLabel);
 
         // Actions Content (sub-tab 2)
         var actionsContent = CreatePanel("ActionsContent", contentArea.transform);

@@ -48,10 +48,9 @@ namespace Starquill.UI
             var comparisonLayout = comparisonHost.AddComponent<VerticalLayoutGroup>();
             comparisonLayout.spacing = UiTheme.Space1;
             comparisonLayout.childControlWidth = true;
-            comparisonLayout.childControlHeight = false;
+            comparisonLayout.childControlHeight = true;
             comparisonLayout.childForceExpandWidth = true;
-            var comparisonFitter = comparisonHost.AddComponent<ContentSizeFitter>();
-            comparisonFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            comparisonLayout.childForceExpandHeight = false;
 
             void RebuildComparison(int idx)
             {
@@ -173,12 +172,15 @@ namespace Starquill.UI
             // --- Actions ---
             var actionRow = new GameObject("Actions", typeof(RectTransform));
             actionRow.transform.SetParent(content, false);
-            actionRow.AddComponent<LayoutElement>().preferredHeight = UiTheme.ButtonPrimaryHeight;
+            var actionLE = actionRow.AddComponent<LayoutElement>();
+            actionLE.preferredHeight = UiTheme.ButtonPrimaryHeight;
+            actionLE.flexibleHeight = 0;
             var actionLayout = actionRow.AddComponent<HorizontalLayoutGroup>();
             actionLayout.spacing = UiTheme.Space2;
             actionLayout.childControlWidth = true;
             actionLayout.childControlHeight = true;
             actionLayout.childForceExpandWidth = true;
+            actionLayout.childForceExpandHeight = false;
 
             var equipHandle = UiFactory.Button(actionRow.transform, "EQUIP", UiFactory.ButtonKind.Primary, () =>
             {

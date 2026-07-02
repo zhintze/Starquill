@@ -25,6 +25,13 @@ namespace Starquill.UI
             UiFactory.StretchFill(rootRT);
             root.transform.SetAsLastSibling();
 
+            // Render above everything, including panels with their own sorting
+            // overrides (the equipment drawer uses sortingOrder 10).
+            var canvas = root.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 100;
+            root.AddComponent<GraphicRaycaster>();
+
             var sheet = root.AddComponent<BottomSheet>();
 
             // Scrim
@@ -64,10 +71,12 @@ namespace Starquill.UI
             contentRT.offsetMin = new Vector2(UiTheme.Space3, UiTheme.Space3);
             contentRT.offsetMax = new Vector2(-UiTheme.Space3, -(UiTheme.Space2 + 20f));
 
+            // childControlHeight MUST be true so children's LayoutElement
+            // preferred heights drive the stack (false = overlapping rows).
             var layout = content.AddComponent<VerticalLayoutGroup>();
             layout.spacing = UiTheme.Space2;
             layout.childControlWidth = true;
-            layout.childControlHeight = false;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 

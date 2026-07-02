@@ -70,7 +70,12 @@ namespace Starquill.Display
 
         private static void PickModularNums(SpeciesInstanceData instance, SpeciesDisplayData species, DisplayDataRegistry registry, System.Random rng)
         {
-            var fields = new[] { species.Eyes, species.Nose, species.Mouth, species.Ears,
+            // Every part field that may reference a modular group (e.g. the
+            // skeleton's head "s01") must roll an image num here, or the part
+            // is silently skipped at display time.
+            var fields = new[] { species.Head, species.Body, species.Legs,
+                                 species.BackArm, species.FrontArm,
+                                 species.Eyes, species.Nose, species.Mouth, species.Ears,
                                  species.FacialHair, species.FacialDetail };
             foreach (var token in fields)
             {
@@ -78,6 +83,17 @@ namespace Starquill.Display
                 var parsed = ImageToken.Parse(token);
                 if (parsed.Kind == ImageTokenKind.ModularGroup && !instance.ModularImageNums.ContainsKey(parsed.GroupType))
                     instance.ModularImageNums[parsed.GroupType] = registry.PickModularImageNum(parsed.GroupType, rng);
+            }
+
+            if (species.OtherBodyParts != null)
+            {
+                foreach (var token in species.OtherBodyParts)
+                {
+                    if (string.IsNullOrEmpty(token)) continue;
+                    var parsed = ImageToken.Parse(token);
+                    if (parsed.Kind == ImageTokenKind.ModularGroup && !instance.ModularImageNums.ContainsKey(parsed.GroupType))
+                        instance.ModularImageNums[parsed.GroupType] = registry.PickModularImageNum(parsed.GroupType, rng);
+                }
             }
 
             if (species.Hair != null && species.Hair.Length > 0)

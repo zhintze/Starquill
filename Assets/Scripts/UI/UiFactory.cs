@@ -104,6 +104,7 @@ namespace Starquill.UI
             le.preferredHeight = height;
             le.minHeight = UiTheme.TouchMin;
             le.flexibleWidth = 1;
+            le.flexibleHeight = 0;
 
             obj.GetComponent<Image>().color = kind switch
             {
