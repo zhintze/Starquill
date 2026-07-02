@@ -398,6 +398,20 @@ namespace Starquill.Equipment
                 for (int i = 0; i < lv.Length; i++)
                     lv[i] = 1;
             }
+            else if (lv != null && weaponEntry != null && weaponEntry.AmountPerLayer.Length > 0)
+            {
+                // Migrate saves that predate weapon data corrections: clamp
+                // variants (and array length) to the current per-layer counts
+                // so stale rolls never request missing sprites.
+                int len = Math.Min(lv.Length, weaponEntry.AmountPerLayer.Length);
+                var clamped = new int[weaponEntry.AmountPerLayer.Length];
+                for (int i = 0; i < clamped.Length; i++)
+                {
+                    int v = i < len ? lv[i] : 1;
+                    clamped[i] = Math.Clamp(v, 1, Math.Max(1, weaponEntry.AmountPerLayer[i]));
+                }
+                lv = clamped;
+            }
 
             return new EquipmentInstance(
                 data.itemType, data.itemNum, (EquipmentSlot)data.slot, (Rarity)data.rarity,

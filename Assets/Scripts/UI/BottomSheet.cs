@@ -63,13 +63,32 @@ namespace Starquill.UI
             handle.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.25f);
             handle.GetComponent<Button>().onClick.AddListener(sheet.Close);
 
+            // Back button: same size and placement convention as the loot
+            // header's Optimize All (top-right, 320x90).
+            var back = new GameObject("BackButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            back.transform.SetParent(panel.transform, false);
+            var backRT = back.GetComponent<RectTransform>();
+            backRT.anchorMin = new Vector2(1, 1);
+            backRT.anchorMax = new Vector2(1, 1);
+            backRT.pivot = new Vector2(1, 1);
+            backRT.anchoredPosition = new Vector2(-UiTheme.Space3, -UiTheme.Space2);
+            backRT.sizeDelta = new Vector2(320, 90);
+            back.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.38f);
+            back.GetComponent<Button>().onClick.AddListener(sheet.Close);
+            var backLabel = UiFactory.Text(back.transform, "Back",
+                UiFactory.TextStyle.Body, TMPro.TextAlignmentOptions.Center);
+            backLabel.fontSize = 30;
+            backLabel.fontStyle = TMPro.FontStyles.Bold;
+            UiFactory.StretchFill(backLabel.rectTransform);
+
             // Content container
             var content = new GameObject("Content", typeof(RectTransform));
             content.transform.SetParent(panel.transform, false);
             var contentRT = content.GetComponent<RectTransform>();
             UiFactory.StretchFill(contentRT);
             contentRT.offsetMin = new Vector2(UiTheme.Space3, UiTheme.Space3);
-            contentRT.offsetMax = new Vector2(-UiTheme.Space3, -(UiTheme.Space2 + 20f));
+            // top inset clears the drag handle + Back button row
+            contentRT.offsetMax = new Vector2(-UiTheme.Space3, -(UiTheme.Space2 + 90f + UiTheme.Space1));
 
             // childControlHeight MUST be true so children's LayoutElement
             // preferred heights drive the stack (false = overlapping rows).

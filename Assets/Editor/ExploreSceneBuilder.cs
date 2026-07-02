@@ -637,7 +637,7 @@ public static class ExploreSceneBuilder
         // Drawer header row: summary label + compact Back button
         var drawerHeaderRow = new GameObject("DrawerHeader", typeof(RectTransform));
         drawerHeaderRow.transform.SetParent(equipDrawerPanel.transform, false);
-        drawerHeaderRow.AddComponent<LayoutElement>().preferredHeight = 80;
+        drawerHeaderRow.AddComponent<LayoutElement>().preferredHeight = 90;
         var drawerHeaderHL = drawerHeaderRow.AddComponent<HorizontalLayoutGroup>();
         drawerHeaderHL.spacing = 16;
         drawerHeaderHL.childControlWidth = true;
@@ -652,7 +652,7 @@ public static class ExploreSceneBuilder
         var backBtnObj = new GameObject("BackButton", typeof(RectTransform), typeof(Image), typeof(Button));
         backBtnObj.transform.SetParent(drawerHeaderRow.transform, false);
         backBtnObj.GetComponent<Image>().color = new Color(0.3f, 0.3f, 0.35f);
-        backBtnObj.AddComponent<LayoutElement>().preferredWidth = 220;
+        backBtnObj.AddComponent<LayoutElement>().preferredWidth = 320;
         var backBtnLabel = CreateTMPLabel("Label", backBtnObj.transform, "Back", 30, Color.white, TextAlignmentOptions.Center);
         StretchFill(backBtnLabel);
 
