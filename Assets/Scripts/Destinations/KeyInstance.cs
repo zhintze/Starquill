@@ -20,7 +20,8 @@ namespace Starquill.Destinations
         public int ModifierCount =>
             (ColorFamily.HasValue ? 1 : 0) + (Slot.HasValue ? 1 : 0) + (ArchetypeId >= 0 ? 1 : 0);
 
-        private static string SlotWord(KeySlot slot) => slot switch
+        /// Public: the UI (modifier chips) reuses the same slot wording.
+        public static string SlotWord(KeySlot slot) => slot switch
         {
             KeySlot.Head => "Helm",
             KeySlot.Torso => "Armor",

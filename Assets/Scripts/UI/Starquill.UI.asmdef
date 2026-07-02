@@ -12,7 +12,8 @@
         "Starquill.Exploration",
         "Unity.TextMeshPro",
         "Starquill.Quests",
-        "Starquill.Services"
+        "Starquill.Services",
+        "Starquill.Destinations"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

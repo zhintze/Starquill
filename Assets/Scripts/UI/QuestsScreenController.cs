@@ -4,13 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using Starquill.Managers;
 using Starquill.Quests;
+using Starquill.Destinations;
 
 namespace Starquill.UI
 {
     /// Quests screen (nav index 1): one scroll view with section headers —
     /// QUEST (current-quest card + zone ladder) then DESTINATIONS (fragment
-    /// progress + locked future-slot cards for the encounter/location/dungeon
-    /// systems from the dungeon-key design doc).
+    /// progress + the live key pouch, plus a locked card for the location
+    /// system from the dungeon-key design doc).
     public class QuestsScreenController : MonoBehaviour
     {
         [SerializeField] private Transform content;
@@ -39,6 +40,7 @@ namespace Starquill.UI
                 gm.OnQuestOffered += _ => Refresh();
                 gm.OnQuestRetreated += Refresh;
                 gm.OnQuestCompleted += (s, g, l) => Refresh();
+                gm.OnKeysChanged += HandleKeysChanged;
             }
         }
 
@@ -46,6 +48,8 @@ namespace Starquill.UI
         {
             if (index == 1) Refresh();
         }
+
+        private void HandleKeysChanged() => Refresh();
 
         public void Refresh()
         {
@@ -85,9 +89,84 @@ namespace Starquill.UI
             var fragBar = UiFactory.ProgressBar(content, new Color(0.2f, 0.8f, 0.7f), 28f);
             fragBar.SetFraction(gmFrag / target);
 
-            LockedCard("Encounters", "Spend keys on targeted loot hunts.");
+            BuildKeyPouch(gm);
             LockedCard("Locations", "Discovered places, open briefly. Grind fast.");
-            LockedCard("Dungeons", "Extended multi-zone challenges with curated loot.");
+        }
+
+        private void BuildKeyPouch(GameManager gm)
+        {
+            var pouch = gm.KeyPouch;
+            int softCap = gm.economyConfig != null ? gm.economyConfig.keySoftCap : 30;
+
+            var header = UiFactory.Text(content,
+                "KEYS  " + UiFactory.ColorTag($"{pouch.Keys.Count}/{softCap}", UiTheme.TextDim),
+                UiFactory.TextStyle.Body);
+            header.fontStyle = FontStyles.Bold;
+            header.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontBody + 16f;
+
+            if (pouch.Keys.Count == 0)
+            {
+                var empty = UiFactory.Text(content,
+                    "Keys drop while exploring. Spend them on dungeons.",
+                    UiFactory.TextStyle.CaptionDim);
+                empty.gameObject.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontCaption + 16f;
+                return;
+            }
+
+            foreach (var key in pouch.Keys)
+                BuildKeyCard(gm, key);
+        }
+
+        private void BuildKeyCard(GameManager gm, KeyInstance key)
+        {
+            var card = new GameObject($"Key_{key.DisplayName}",
+                typeof(RectTransform), typeof(Image), typeof(Button));
+            card.transform.SetParent(content, false);
+            card.GetComponent<Image>().color = UiTheme.Card;
+            var le = card.AddComponent<LayoutElement>();
+            le.preferredHeight = 160f;
+            le.flexibleWidth = 1;
+
+            // Accent stripe: the key's color family at a glance
+            var stripe = new GameObject("Accent", typeof(RectTransform), typeof(Image));
+            stripe.transform.SetParent(card.transform, false);
+            var stripeRT = stripe.GetComponent<RectTransform>();
+            stripeRT.anchorMin = new Vector2(0, 0);
+            stripeRT.anchorMax = new Vector2(0, 1);
+            stripeRT.pivot = new Vector2(0, 0.5f);
+            stripeRT.sizeDelta = new Vector2(16f, 0);
+            stripe.GetComponent<Image>().color = KeyPresenter.AccentColor(key);
+
+            float textLeft = 16f + UiTheme.Space3;
+
+            var title = UiFactory.Text(card.transform, KeyPresenter.Title(key), UiFactory.TextStyle.Body);
+            title.fontStyle = FontStyles.Bold;
+            var titleRT = title.rectTransform;
+            titleRT.anchorMin = new Vector2(0, 0.5f);
+            titleRT.anchorMax = new Vector2(0.68f, 1f);
+            titleRT.offsetMin = new Vector2(textLeft, 0);
+            titleRT.offsetMax = Vector2.zero;
+
+            var sub = UiFactory.Text(card.transform,
+                KeyPresenter.SubLine(key, gm.economyConfig), UiFactory.TextStyle.CaptionDim);
+            var subRT = sub.rectTransform;
+            subRT.anchorMin = new Vector2(0, 0);
+            subRT.anchorMax = new Vector2(1, 0.5f);
+            subRT.offsetMin = new Vector2(textLeft, UiTheme.Space1);
+            subRT.offsetMax = new Vector2(-UiTheme.Space3, 0);
+
+            int maxD = gm.economyConfig != null ? gm.economyConfig.keyMaxDifficulty : 6;
+            var pips = UiFactory.PipRow(card.transform,
+                KeyPresenter.DifficultyPips(key), maxD, 24f);
+            var pipsRT = pips.GetComponent<RectTransform>();
+            pipsRT.anchorMin = new Vector2(1, 0.75f);
+            pipsRT.anchorMax = new Vector2(1, 0.75f);
+            pipsRT.pivot = new Vector2(1, 0.5f);
+            pipsRT.anchoredPosition = new Vector2(-UiTheme.Space3, 0);
+            pipsRT.sizeDelta = new Vector2(maxD * 32f, 32f);
+
+            card.GetComponent<Button>().onClick.AddListener(() =>
+                KeyDetailSheet.Show(transform.root, key));
         }
 
         private void SectionHeader(string title)
@@ -250,6 +329,9 @@ namespace Starquill.UI
         {
             if (screenManager != null)
                 screenManager.OnScreenChanged -= HandleScreenChanged;
+            var gm = GameManager.Instance;
+            if (gm != null)
+                gm.OnKeysChanged -= HandleKeysChanged;
         }
     }
 }
