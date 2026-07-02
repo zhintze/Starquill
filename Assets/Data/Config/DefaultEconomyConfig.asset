@@ -16,8 +16,8 @@ MonoBehaviour:
   hpGrowthRate: 0.12
   baseGold: 5
   goldGrowthRate: 0.1
-  baseCost: 10
-  costGrowthRate: 0.15
+  baseCost: 50
+  costGrowthRate: 0.25
   offlineEfficiency: 0.5
   maxOfflineSeconds: 28800
   offlineFragmentRate: 0.25
@@ -32,5 +32,25 @@ MonoBehaviour:
   questRetreatGoldPenalty: 0.5
   exploreKillsPerMinute: 6
   questDiscoveryRate: 0.03
+  travelWavesToDiscovery: 20
   fragmentDropRate: 0.01
+  baseDropRate: 0.15
+  boostAutoFireCostPerLevel: 500
+  boostSpeedUpCostPerLevel: 300
+  boostDurationSeconds: 300
+  chestIntervalSeconds: 14400
+  chestGoldKillMultiple: 25
+  charXpBase: 3
+  benchXpShare: 0.5
+  trainingDamagePerLevel: 0.09
+  trainingCatchUpDiscount: 0.5
+  charLevelDamageBonus: 0.015
+  gearBudgetPerLevel: 0.03
+  boostAutoFireIncomeMinutes: 5
+  boostSpeedUpIncomeMinutes: 3
+  abilityBaseXPRate: 1
+  abilityBaseXPThreshold: 100
+  abilityXPGrowthRate: 1.8
+  abilityBaseLevelUpCost: 100
+  abilityCostGrowthRate: 2
   prestigeMultiplierBase: 1

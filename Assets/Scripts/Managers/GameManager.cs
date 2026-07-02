@@ -247,10 +247,12 @@ namespace Starquill.Managers
 
         public double BoostCost(BoostType type)
         {
-            float perLevel = type == BoostType.AutoFireVerbs
-                ? economyConfig.boostAutoFireCostPerLevel
-                : economyConfig.boostSpeedUpCostPerLevel;
-            return perLevel * questLevel;
+            // Priced as minutes of current income so cost tracks the gold curve.
+            float minutes = type == BoostType.AutoFireVerbs
+                ? economyConfig.boostAutoFireIncomeMinutes
+                : economyConfig.boostSpeedUpIncomeMinutes;
+            return economyConfig.GoldPerKill(questLevel)
+                * economyConfig.exploreKillsPerMinute * minutes;
         }
 
         public bool BuyBoost(BoostType type)
@@ -281,8 +283,8 @@ namespace Starquill.Managers
             {
                 var rarity = EquipmentFactory.RollRarityWithFloor(questLevel, Rarity.Uncommon, rng);
                 var item = rng.NextDouble() < 0.7
-                    ? equipmentFactory.CreateRandom(RandomArmorPrefix(rng), rarity, rng)
-                    : equipmentFactory.CreateRandomWeapon(rarity, rng);
+                    ? equipmentFactory.CreateRandom(RandomArmorPrefix(rng), rarity, rng, questLevel)
+                    : equipmentFactory.CreateRandomWeapon(rarity, rng, questLevel: questLevel);
                 if (item == null) continue;
                 if (lootInventory.AddItem(item))
                 {
@@ -326,6 +328,50 @@ namespace Starquill.Managers
             });
         }
 
+        private float[] BuildPartyDamageMultipliers()
+        {
+            var members = party.Members;
+            var mults = new float[members.Count];
+            for (int i = 0; i < members.Count; i++)
+            {
+                var m = members[i];
+                mults[i] = m == null ? 1f
+                    : Mathf.Pow(1f + economyConfig.trainingDamagePerLevel, m.trainingLevel)
+                      * Mathf.Pow(1f + economyConfig.charLevelDamageBonus, m.level);
+            }
+            return mults;
+        }
+
+        public int HighestTrainingLevel()
+        {
+            int max = 0;
+            foreach (var c in roster.Characters)
+                if (c.trainingLevel > max) max = c.trainingLevel;
+            return max;
+        }
+
+        public double TrainingCost(CharacterInstance character)
+        {
+            double cost = economyConfig.UpgradeCost(character.trainingLevel);
+            if (character.trainingLevel < HighestTrainingLevel())
+                cost *= economyConfig.trainingCatchUpDiscount;
+            return cost;
+        }
+
+        public bool TrainCharacter(int rosterIndex)
+        {
+            if (roster == null || rosterIndex < 0 || rosterIndex >= roster.Characters.Count) return false;
+            var character = roster.Characters[rosterIndex];
+            double cost = TrainingCost(character);
+            if (gold < cost) return false;
+            gold -= cost;
+            character.trainingLevel++;
+            OnGoldChanged?.Invoke(gold);
+            OnRosterChanged?.Invoke();
+            SaveState();
+            return true;
+        }
+
         private void GrantPartyXp(int kills, int bonusPerMember = 0)
         {
             if (kills <= 0 && bonusPerMember <= 0) return;
@@ -359,7 +405,8 @@ namespace Starquill.Managers
 
             var result = combatProcessor.ProcessTick(
                 currentEnemies, party.GetAllStats(), null,
-                questLevel, economyConfig.prestigeMultiplierBase);
+                questLevel, economyConfig.prestigeMultiplierBase,
+                memberDamageMultipliers: BuildPartyDamageMultipliers());
 
             if (result.GoldEarned > 0)
             {
@@ -400,7 +447,8 @@ namespace Starquill.Managers
 
             var result = combatProcessor.ProcessTick(
                 currentEnemies, party.GetAllStats(), activated,
-                questLevel, economyConfig.prestigeMultiplierBase);
+                questLevel, economyConfig.prestigeMultiplierBase,
+                memberDamageMultipliers: BuildPartyDamageMultipliers());
 
             if (result.GoldEarned > 0)
             {
@@ -562,8 +610,8 @@ namespace Starquill.Managers
                 var floor = i < reward.LootRolls ? reward.RarityFloor : null;
                 var rarity = EquipmentFactory.RollRarityWithFloor(questLevel, floor, rewardRng);
                 var item = rewardRng.NextDouble() < 0.7
-                    ? equipmentFactory.CreateRandom(RandomArmorPrefix(rewardRng), rarity, rewardRng)
-                    : equipmentFactory.CreateRandomWeapon(rarity, rewardRng);
+                    ? equipmentFactory.CreateRandom(RandomArmorPrefix(rewardRng), rarity, rewardRng, questLevel)
+                    : equipmentFactory.CreateRandomWeapon(rarity, rewardRng, questLevel: questLevel);
                 if (item == null) continue;
                 if (lootInventory.AddItem(item))
                 {

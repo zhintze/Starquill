@@ -51,6 +51,7 @@ namespace Starquill.Managers
         public int level;
         public int xp;
         public int speciesKills;
+        public int trainingLevel;
         public int[] baseStats = new int[6];
         public int[] allocatedStats = new int[6];
         public List<string> equippedVerbIds = new();
@@ -66,6 +67,7 @@ namespace Starquill.Managers
                 level = c.level,
                 xp = c.xp,
                 speciesKills = c.speciesKills,
+                trainingLevel = c.trainingLevel,
                 baseStats = StatsToArray(c.baseStats),
                 allocatedStats = StatsToArray(c.allocatedStats)
             };
@@ -92,6 +94,7 @@ namespace Starquill.Managers
                 level = level,
                 xp = xp,
                 speciesKills = speciesKills,
+                trainingLevel = trainingLevel,
                 baseStats = ArrayToStats(baseStats),
                 allocatedStats = ArrayToStats(allocatedStats)
             };

@@ -114,6 +114,20 @@ namespace Starquill.Tests.Equipment
         }
 
         [Test]
+        public void GenerateStatPair_BudgetScalesWithQuestLevel()
+        {
+            // Rare base budget 11-14; at questLevel 50 with 1.5%/level: x1.75
+            for (int seed = 0; seed < 30; seed++)
+            {
+                var (_, pv, _, sv) = EquipmentFactory.GenerateStatPair("tr", Rarity.Rare,
+                    new System.Random(seed), questLevel: 50);
+                int total = pv + sv;
+                Assert.GreaterOrEqual(total, 19, $"Seed {seed}: {total}");
+                Assert.LessOrEqual(total, 25, $"Seed {seed}: {total}");
+            }
+        }
+
+        [Test]
         public void GenerateStatPair_StatsMustDiffer()
         {
             for (int seed = 0; seed < 100; seed++)

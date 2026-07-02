@@ -14,8 +14,10 @@ namespace Starquill.Data
         public float goldGrowthRate = 0.10f;
 
         [Header("Upgrade Costs")]
-        public float baseCost = 10f;
-        public float costGrowthRate = 0.15f;
+        // Training ladder cost curve (sim-tuned 2026-07-02: wall ~Q75 at
+        // ~2 weeks casual; see tools/balance_sim.py)
+        public float baseCost = 50f;
+        public float costGrowthRate = 0.25f;
 
         [Header("Offline")]
         public float offlineEfficiency = 0.50f;
@@ -54,6 +56,14 @@ namespace Starquill.Data
         public float chestGoldKillMultiple = 25f;
         public int charXpBase = 3;
         public float benchXpShare = 0.5f;
+
+        [Header("Training & Scaling")]
+        public float trainingDamagePerLevel = 0.05f;
+        public float trainingCatchUpDiscount = 0.5f;
+        public float charLevelDamageBonus = 0.015f;
+        public float gearBudgetPerLevel = 0.015f;
+        public float boostAutoFireIncomeMinutes = 5f;
+        public float boostSpeedUpIncomeMinutes = 3f;
 
         [Header("Ability Leveling")]
         public float abilityBaseXPRate = 1f;

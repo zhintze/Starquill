@@ -22,6 +22,9 @@ namespace Starquill.Characters
         public List<VerbDefinition> equippedVerbs = new();
         public Stats allocatedStats = new();
 
+        /// Gold-funded exponential power ladder (see balance-analysis R1).
+        public int trainingLevel;
+
         // Fractional stat accumulation for weighted distribution
         private float[] statAccumulator = new float[6];
 

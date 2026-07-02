@@ -34,12 +34,12 @@ namespace Starquill.Equipment
             EquipmentInstance item;
             if (rng.NextDouble() < 0.30)
             {
-                item = factory.CreateRandomWeapon(rarity, rng);
+                item = factory.CreateRandomWeapon(rarity, rng, questLevel: questLevel);
             }
             else
             {
                 string prefix = ArmorPrefixes[rng.Next(ArmorPrefixes.Length)];
-                item = factory.CreateRandom(prefix, rarity, rng);
+                item = factory.CreateRandom(prefix, rarity, rng, questLevel);
             }
 
             // Register the drop with pity tracker

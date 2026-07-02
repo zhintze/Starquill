@@ -20,17 +20,23 @@ namespace Starquill.Combat
 
         public CombatTickResult ProcessTick(
             List<EnemyState> enemies, Stats[] partyStats, DrawnVerb activatedVerb,
-            int questLevel, float prestigeMultiplier = 1f, float boostMultiplier = 1f)
+            int questLevel, float prestigeMultiplier = 1f, float boostMultiplier = 1f,
+            float[] memberDamageMultipliers = null)
         {
             var result = new CombatTickResult();
+            // Designed CHA identity: +2% gold per point of party CHA.
+            float chaBonus = partyStats.Sum(s => s.CHA) * 0.02f;
             var aliveEnemies = enemies.Where(e => e.IsAlive).ToList();
             if (aliveEnemies.Count == 0) { result.WaveCleared = true; return result; }
 
-            // Auto-attack
-            foreach (var stats in partyStats)
+            // Auto-attack (scaled by each member's training/level multiplier)
+            for (int m = 0; m < partyStats.Length; m++)
             {
+                var stats = partyStats[m];
                 var highestStat = stats.HighestStat();
-                float autoAtk = stats.GetStat(highestStat) * economyConfig.autoAttackDPSFraction;
+                float memberMult = memberDamageMultipliers != null && m < memberDamageMultipliers.Length
+                    ? memberDamageMultipliers[m] : 1f;
+                float autoAtk = stats.GetStat(highestStat) * economyConfig.autoAttackDPSFraction * memberMult;
                 var target = aliveEnemies[rng.Next(aliveEnemies.Count)];
                 if (target.HasStatus(StatusEffectType.Expose)) autoAtk *= 1.25f;
                 target.TakeDamage(autoAtk);
@@ -39,7 +45,13 @@ namespace Starquill.Combat
 
             // Verb resolution
             if (activatedVerb != null)
-                ResolveVerb(activatedVerb, aliveEnemies, partyStats, result, prestigeMultiplier, boostMultiplier);
+            {
+                float ownerMult = memberDamageMultipliers != null
+                    && activatedVerb.OwnerIndex < memberDamageMultipliers.Length
+                    ? memberDamageMultipliers[activatedVerb.OwnerIndex] : 1f;
+                ResolveVerb(activatedVerb, aliveEnemies, partyStats, result,
+                    prestigeMultiplier, boostMultiplier * ownerMult);
+            }
 
             // Tick statuses
             foreach (var enemy in enemies) enemy.TickStatuses();
@@ -52,7 +64,8 @@ namespace Starquill.Combat
             foreach (var enemy in aliveEnemies.Where(e => !e.IsAlive))
             {
                 result.EnemiesKilled++;
-                result.GoldEarned += economyConfig.GoldPerKill(questLevel, prestigeMult: prestigeMultiplier, boostMult: boostMultiplier);
+                result.GoldEarned += economyConfig.GoldPerKill(questLevel, chaBonus,
+                    prestigeMultiplier, boostMultiplier);
             }
 
             result.WaveCleared = enemies.All(e => !e.IsAlive);

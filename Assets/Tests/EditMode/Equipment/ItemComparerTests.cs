@@ -30,6 +30,22 @@ namespace Starquill.Tests.Equipment
         }
 
         [Test]
+        public void ScoreItem_IncludesAbilityPotency()
+        {
+            var item = new EquipmentInstance(
+                "hd01", 1, EquipmentSlot.Head, Rarity.Common,
+                Color.white, new Dictionary<int, Color>(),
+                StatType.STR, 8, StatType.DEX, 3,
+                new AwakenedAbility
+                {
+                    AbilityId = "t", BoostedStat = StatType.CON,
+                    BasePotency = 4f, PotencyPerLevel = 1f, Level = 1, MaxLevel = 3
+                },
+                new int[0], new int[0], new int[0], false, null, "Test");
+            Assert.AreEqual(15f, ItemComparer.ScoreItem(item), 0.01f); // 8+3+4
+        }
+
+        [Test]
         public void ScoreItem_NullReturnsZero()
         {
             Assert.AreEqual(0f, ItemComparer.ScoreItem(null), 0.01f);

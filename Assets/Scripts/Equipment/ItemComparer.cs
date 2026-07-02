@@ -18,7 +18,8 @@ namespace Starquill.Equipment
         public static float ScoreItem(EquipmentInstance item)
         {
             if (item == null) return 0f;
-            return item.PrimaryValue + item.SecondaryValue;
+            float ability = item.Ability != null ? item.Ability.CurrentPotency : 0f;
+            return item.PrimaryValue + item.SecondaryValue + ability;
         }
 
         public static StatDiff Compare(EquipmentInstance newItem, EquipmentInstance current)

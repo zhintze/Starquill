@@ -531,6 +531,18 @@ public static class ExploreSceneBuilder
             focusStatLabels[i] = statLabel.GetComponent<TMP_Text>();
         }
 
+        // Train button (gold-funded exponential ladder) at the column's foot
+        var trainBtnObj = new GameObject("TrainButton", typeof(RectTransform), typeof(Image), typeof(Button));
+        trainBtnObj.transform.SetParent(statBar.transform, false);
+        trainBtnObj.GetComponent<Image>().color = new Color(0.2f, 0.45f, 0.25f);
+        var trainBtnLE = trainBtnObj.AddComponent<LayoutElement>();
+        trainBtnLE.preferredHeight = 110;
+        trainBtnLE.flexibleHeight = 0;
+        var trainLabelObj = CreateTMPLabel("Label", trainBtnObj.transform, "Train 0", 26, Color.white, TextAlignmentOptions.Center);
+        StretchFill(trainLabelObj);
+        var trainLabelTmp = trainLabelObj.GetComponent<TMP_Text>();
+        trainLabelTmp.textWrappingMode = TextWrappingModes.Normal;
+
         // --- Sub-Tab Bar (80px, below stat bar) ---
         var subTabBar = CreatePanel("SubTabBar", partyPanel.transform);
         var subTabBarRT = subTabBar.GetComponent<RectTransform>();
@@ -1078,6 +1090,8 @@ public static class ExploreSceneBuilder
 
         // Wire ExploreSceneController reference on PartyScreenController (now that controller exists)
         SetPrivateField(partyScreenCtrl, "exploreController", controller);
+        SetPrivateField(partyScreenCtrl, "trainButton", trainBtnObj.GetComponent<Button>());
+        SetPrivateField(partyScreenCtrl, "trainLabel", trainLabelTmp);
 
         // Initially show only ExplorePanel (index 0), hide others
         screenManager.ShowScreen(0);

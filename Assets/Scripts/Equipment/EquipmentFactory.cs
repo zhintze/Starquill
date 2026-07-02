@@ -44,7 +44,8 @@ namespace Starquill.Equipment
             this.colors = colors;
         }
 
-        public EquipmentInstance CreateRandom(string prefix, Rarity rarity, System.Random rng)
+        public EquipmentInstance CreateRandom(string prefix, Rarity rarity, System.Random rng,
+            int questLevel = 1)
         {
             var entries = catalog.GetByPrefix(prefix);
             if (entries.Count == 0) return null;
@@ -62,7 +63,7 @@ namespace Starquill.Equipment
             }
 
             var (primaryStat, primaryVal, secondaryStat, secondaryVal) =
-                GenerateStatPair(prefix, rarity, rng);
+                GenerateStatPair(prefix, rarity, rng, questLevel);
 
             var abilityEntry = abilityTable.RollAbility(entry.ItemType, rng);
             var ability = abilityEntry != null
@@ -80,7 +81,7 @@ namespace Starquill.Equipment
         }
 
         public EquipmentInstance CreateRandomWeapon(Rarity rarity, System.Random rng,
-            string requiredHandType = null)
+            string requiredHandType = null, int questLevel = 1)
         {
             var weapons = catalog.WeaponEntries;
             if (weapons.Count == 0) return null;
@@ -126,7 +127,7 @@ namespace Starquill.Equipment
             var slot = EquipmentSlot.MainHand;
             string poolKey = IsShield(entry.ItemType) ? entry.ItemType : "w";
             var (primaryStat, primaryVal, secondaryStat, secondaryVal) =
-                GenerateStatPair(poolKey, rarity, rng);
+                GenerateStatPair(poolKey, rarity, rng, questLevel);
 
             var abilityEntry = abilityTable.RollAbility(entry.ItemType, rng);
             var ability = abilityEntry != null
@@ -147,26 +148,26 @@ namespace Starquill.Equipment
         {
             var loadout = new EquipmentInstance[11];
 
-            loadout[(int)EquipmentSlot.Torso] = CreateRandom("tr", RollRarity(questLevel, rng), rng);
-            loadout[(int)EquipmentSlot.Legs] = CreateRandom("lg", RollRarity(questLevel, rng), rng);
+            loadout[(int)EquipmentSlot.Torso] = CreateRandom("tr", RollRarity(questLevel, rng), rng, questLevel);
+            loadout[(int)EquipmentSlot.Legs] = CreateRandom("lg", RollRarity(questLevel, rng), rng, questLevel);
 
             if (rng.NextDouble() < 0.90)
-                loadout[(int)EquipmentSlot.Head] = CreateRandom("hd", RollRarity(questLevel, rng), rng);
+                loadout[(int)EquipmentSlot.Head] = CreateRandom("hd", RollRarity(questLevel, rng), rng, questLevel);
             if (rng.NextDouble() < 0.80)
-                loadout[(int)EquipmentSlot.Arms] = CreateRandom("ar", RollRarity(questLevel, rng), rng);
+                loadout[(int)EquipmentSlot.Arms] = CreateRandom("ar", RollRarity(questLevel, rng), rng, questLevel);
             if (rng.NextDouble() < 0.70)
-                loadout[(int)EquipmentSlot.Feet] = CreateRandom("fe", RollRarity(questLevel, rng), rng);
+                loadout[(int)EquipmentSlot.Feet] = CreateRandom("fe", RollRarity(questLevel, rng), rng, questLevel);
 
             if (rng.NextDouble() < 0.60)
             {
-                var weapon = CreateRandomWeapon(RollRarity(questLevel, rng), rng);
+                var weapon = CreateRandomWeapon(RollRarity(questLevel, rng), rng, questLevel: questLevel);
                 if (weapon != null)
                 {
                     loadout[(int)EquipmentSlot.MainHand] = weapon;
 
                     if (weapon.HandType == "one_handed" && rng.NextDouble() < 0.30)
                     {
-                        var offhand = CreateRandomWeapon(RollRarity(questLevel, rng), rng, "one_handed");
+                        var offhand = CreateRandomWeapon(RollRarity(questLevel, rng), rng, "one_handed", questLevel);
                         if (offhand != null)
                         {
                             loadout[(int)EquipmentSlot.OffHand] = new EquipmentInstance(
@@ -191,7 +192,7 @@ namespace Starquill.Equipment
             foreach (var slot in miscSlots)
             {
                 if (rng.NextDouble() < 0.30)
-                    loadout[(int)slot] = CreateRandom("mc", RollRarity(questLevel, rng), rng);
+                    loadout[(int)slot] = CreateRandom("mc", RollRarity(questLevel, rng), rng, questLevel);
             }
 
             return loadout;
@@ -232,7 +233,8 @@ namespace Starquill.Equipment
         }
 
         public static (StatType primary, int primaryVal, StatType secondary, int secondaryVal)
-            GenerateStatPair(string itemTypePrefix, Rarity rarity, System.Random rng)
+            GenerateStatPair(string itemTypePrefix, Rarity rarity, System.Random rng,
+                int questLevel = 1, float budgetPerLevel = 0.015f)
         {
             string poolKey = GetPoolKey(itemTypePrefix);
 
@@ -272,7 +274,9 @@ namespace Starquill.Equipment
                 _ => (4, 6)
             };
 
-            int budget = rng.Next(minBudget, maxBudget + 1);
+            // Budgets grow with quest level so loot keeps mattering (R2).
+            float scale = 1f + questLevel * budgetPerLevel;
+            int budget = (int)System.Math.Round(rng.Next(minBudget, maxBudget + 1) * scale);
 
             float primaryRatio = 0.65f + (float)(rng.NextDouble() * 0.10);
             int primaryVal = Math.Max(1, (int)Math.Round(budget * primaryRatio));

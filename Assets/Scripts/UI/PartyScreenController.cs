@@ -26,6 +26,8 @@ namespace Starquill.UI
         [SerializeField] private GameObject portraitStripObj;
         [SerializeField] private GameObject characterInfoObj;
         [SerializeField] private Button[] subTabButtons;
+        [SerializeField] private Button trainButton;
+        [SerializeField] private TMPro.TMP_Text trainLabel;
 
         private CharacterRoster roster;
         private DisplayDataRegistry registry;
@@ -60,6 +62,7 @@ namespace Starquill.UI
             if (rosterGrid != null) rosterGrid.OnCharacterTapped += SelectCharacter;
             if (portraitStrip != null) portraitStrip.OnPortraitTapped += HandlePortraitTapped;
             if (focusDisplay != null) focusDisplay.OnLevelUpPressed += HandleLevelUp;
+            if (trainButton != null) trainButton.onClick.AddListener(HandleTrain);
             if (equipmentSlots != null)
             {
                 equipmentSlots.OnSlotTapped += HandleEquipmentSlotTapped;
@@ -189,6 +192,24 @@ namespace Starquill.UI
             RefreshAll();
         }
 
+        private void RefreshTrainButton(CharacterInstance character)
+        {
+            var gm = GameManager.Instance;
+            if (trainButton == null || trainLabel == null || gm == null) return;
+
+            double cost = gm.TrainingCost(character);
+            trainLabel.text = $"Train {character.trainingLevel} · {NumberFormatter.FormatCompact(cost)}g";
+            trainButton.interactable = gm.gold >= cost;
+        }
+
+        private void HandleTrain()
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+            if (gm.TrainCharacter(SelectedRosterIndex))
+                RefreshAll();
+        }
+
         private void HandleLevelUp()
         {
             var character = SelectedCharacter;
@@ -223,6 +244,7 @@ namespace Starquill.UI
             if (character == null) return;
 
             if (focusDisplay != null) focusDisplay.ShowCharacter(character);
+            RefreshTrainButton(character);
             if (portraitStrip != null && roster != null && registry != null && builder != null)
                 portraitStrip.Refresh(roster, SelectedRosterIndex, registry, builder);
 
