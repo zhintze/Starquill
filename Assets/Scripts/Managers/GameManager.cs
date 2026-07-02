@@ -60,6 +60,7 @@ namespace Starquill.Managers
         public LootInventory LootInventory => lootInventory;
         public AbilityTable AbilityTable => abilityTable;
         public QuestLog QuestLog => questLog;
+        public QuestZoneTable QuestZones => questZones;
         public event Action<QuestSpec> OnQuestOffered;
         public event Action<QuestSpec, double, List<EquipmentInstance>> OnQuestCompleted;
         public event Action OnQuestRetreated;
@@ -350,6 +351,15 @@ namespace Starquill.Managers
         }
 
         public bool DismissRetreatedQuest() => questLog.Dismiss();
+
+        /// Preview of a quest's completion gold bonus — same formula
+        /// CompleteQuest uses, exposed so the offer sheet never drifts.
+        public double EstimateQuestGold(QuestSpec spec)
+        {
+            if (spec == null) return 0;
+            return economyConfig.GoldPerKill(questLevel, 0f, economyConfig.prestigeMultiplierBase)
+                * spec.TotalEnemies * spec.Reward.GoldMultiplier;
+        }
 
         private void CompleteQuest()
         {
