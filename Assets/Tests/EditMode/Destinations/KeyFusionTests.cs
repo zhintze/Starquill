@@ -53,6 +53,26 @@ namespace Starquill.Tests.Destinations
         }
 
         [Test]
+        public void Fuse_InvalidCombination_ReturnsNull()
+        {
+            Assert.IsNull(KeyFusion.Fuse(Color(ColorFamily.Brown), Color(ColorFamily.Red)));
+            Assert.IsNull(KeyFusion.Fuse(Color(ColorFamily.Brown), null));
+            Assert.IsNull(KeyFusion.Fuse(null, Color(ColorFamily.Brown)));
+            var key = Color(ColorFamily.Brown);
+            Assert.IsNull(KeyFusion.Fuse(key, key));
+        }
+
+        [Test]
+        public void Fuse_AdoptsModifiersFromSecondKey()
+        {
+            var result = KeyFusion.Fuse(Class(0), Color(ColorFamily.Red));
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.ArchetypeId);
+            Assert.AreEqual(ColorFamily.Red, result.ColorFamily);
+            Assert.AreEqual(2, result.Difficulty);
+        }
+
+        [Test]
         public void Cost_IsQuadraticInResultDifficulty()
         {
             // base 250, questLevel 40, D3 result -> 250*40*9 = 90,000 (design §2)

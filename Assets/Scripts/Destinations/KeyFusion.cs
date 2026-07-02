@@ -7,9 +7,16 @@ namespace Starquill.Destinations
     {
         public static bool CanFuse(KeyInstance a, KeyInstance b, int maxDifficulty)
         {
-            if (a == null || b == null || a == b) return false;
+            if (!IsValidCombination(a, b)) return false;
             if (a.Difficulty + b.Difficulty > maxDifficulty) return false;
+            return true;
+        }
 
+        /// Modifier-conflict rules shared by CanFuse and Fuse: inputs must be
+        /// non-null, distinct instances, with no same-kind different-variant clash.
+        private static bool IsValidCombination(KeyInstance a, KeyInstance b)
+        {
+            if (a == null || b == null || a == b) return false;
             if (a.ColorFamily.HasValue && b.ColorFamily.HasValue && a.ColorFamily != b.ColorFamily)
                 return false;
             if (a.Slot.HasValue && b.Slot.HasValue && a.Slot != b.Slot)
@@ -19,8 +26,13 @@ namespace Starquill.Destinations
             return true;
         }
 
+        /// Returns null on an invalid combination (null input, self-fuse, or a
+        /// same-kind different-variant conflict). The difficulty cap is NOT
+        /// checked here: it needs config the caller owns; enforce it via CanFuse.
         public static KeyInstance Fuse(KeyInstance a, KeyInstance b)
         {
+            if (!IsValidCombination(a, b)) return null;
+
             return new KeyInstance
             {
                 ColorFamily = a.ColorFamily ?? b.ColorFamily,
