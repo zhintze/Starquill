@@ -104,6 +104,10 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 
 `ExplorationManager` / `ExplorationState`: ambient explore mode driving wave spawning and quest-level scaling. Quest discovery/fragments are config knobs without consumers yet.
 
+## 7b. Quests (`Assets/Scripts/Quests/`, added Sprint 9)
+
+`QuestZoneTable` (loads `quest_zones.json`, 2 zones with dominant stat types + dialogue) → deterministic `QuestGenerator` (tier ladder 1-3 N / 4 E / 5-7 N / 8 E / 9-10 H / 11 Boss; typed waves, HP ramp, mini-boss/boss waves) → `QuestLog` state machine (Idle/Offered/Active/Retreated, guarded transitions, retreat = half-gold penalty, boss completion advances zone). GameManager orchestrates discovery offers, quest-wave spawning, rewards (tier gold multiplier + rarity-floor loot rolls, overflow converts to gold), questLevel progression (+1, boss +2), and save persistence (specs regenerate on load).
+
 ## 8. Managers (`Assets/Scripts/Managers/`)
 
 `GameManager` (scene singleton): owns Party, VerbPool, ExplorationManager, LootInventory, gold, questLevel.
@@ -135,7 +139,6 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 
 | System | Notes |
 |---|---|
-| Quest system backend | `Assets/Scripts/Quests/` is empty; `QuestZoneDefinition` + questDiscoveryRate exist unused |
 | Quests screen UI | accept / retreat / complete flow |
 | Shop screen + boosts | purchasable boosts, timed chest |
 | Offline earnings claim | `OfflineGold()` formula exists; no claim flow/modal |
