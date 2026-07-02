@@ -9,7 +9,7 @@ namespace Starquill.Destinations
     public static class DungeonGenerator
     {
         private const float MiniBossHpMult = 4f;
-        private const int MiniBossEvery = 5;               // every 5th wave
+        public const int MiniBossEvery = 5;                // every 5th wave
         private const double ClassThemedChance = 0.6;
 
         public static Rarity FloorForDifficulty(int d) => d switch

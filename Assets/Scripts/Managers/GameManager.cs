@@ -545,10 +545,11 @@ namespace Starquill.Managers
             if (exploration.State == ExplorationState.InDungeon && activeDungeon != null)
             {
                 activeDungeon.WaveCleared();
-                // MakeWave marks index i a mini-boss when (i+1) % 5 == 0; after
-                // WaveCleared() the count equals i+1, so % 5 == 0 flags a
-                // just-cleared boss wave (5, 10, ...).
-                bool miniBossCleared = activeDungeon.WavesCleared % 5 == 0;
+                // MakeWave marks index i a mini-boss when (i+1) % MiniBossEvery
+                // == 0; after WaveCleared() the count equals i+1, so this flags
+                // a just-cleared boss wave (5, 10, ...).
+                bool miniBossCleared =
+                    activeDungeon.WavesCleared % DungeonGenerator.MiniBossEvery == 0;
                 if (miniBossCleared) GrantMiniBossDrop();
                 if (!activeDungeon.IsOver) SpawnWave();
                 return;
@@ -1066,16 +1067,17 @@ namespace Starquill.Managers
         private void OnApplicationPause(bool paused)
         {
             if (!paused) return;
-            // Bank an active run before saving: cleared waves pay out, the run
-            // is never resumed with a stale clock (design §3).
+            // Bank an active run before saving: cleared waves pay out, and a
+            // pause followed by process death can't forfeit a spent key
+            // (design §3). EndDungeon saves internally.
             if (activeDungeon != null) EndDungeon();
-            SaveState();
+            else SaveState();
         }
 
         private void OnApplicationQuit()
         {
             if (activeDungeon != null) EndDungeon();
-            SaveState();
+            else SaveState();
         }
     }
 }
