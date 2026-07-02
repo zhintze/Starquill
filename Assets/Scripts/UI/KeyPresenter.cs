@@ -6,6 +6,18 @@ using UnityEngine;
 
 namespace Starquill.UI
 {
+    /// What a candidate fusion would produce. Valid ignores affordability:
+    /// gold gating is the view's concern (CONFIRM disabled, not hidden).
+    public struct KeyFusionPreview
+    {
+        public bool Valid;
+        public string ResultTitle;
+        public int ResultDifficulty;
+        public double Cost;
+        public string CostText;
+        public string InvalidReason;
+    }
+
     /// Pure formatting for key/dungeon UI (mirrors QuestPresenter): the
     /// unit-testable layer between the Destinations backend and the pouch
     /// cards / detail / fusion sheets. No scene or UnityEngine.UI dependency.
@@ -68,6 +80,40 @@ namespace Starquill.UI
         {
             double value = KeyPouch.SellValue(key, questLevel, config.keySellBase);
             return $"SELL +{value.ToString("N0", CultureInfo.InvariantCulture)}g";
+        }
+
+        /// Wraps KeyFusion.Fuse/CanFuse/Cost into one view-ready preview.
+        public static KeyFusionPreview FusionPreview(KeyInstance a, KeyInstance b,
+            int questLevel, EconomyConfig config)
+        {
+            var fused = KeyFusion.Fuse(a, b);
+            if (fused == null)
+            {
+                return new KeyFusionPreview
+                {
+                    Valid = false,
+                    InvalidReason = "Same kind, different variant"
+                };
+            }
+            if (fused.Difficulty > config.keyMaxDifficulty)
+            {
+                return new KeyFusionPreview
+                {
+                    Valid = false,
+                    InvalidReason = $"Result would exceed difficulty {config.keyMaxDifficulty}"
+                };
+            }
+
+            double cost = KeyFusion.Cost(config.fusionBaseCost, questLevel, fused.Difficulty);
+            return new KeyFusionPreview
+            {
+                Valid = true,
+                ResultTitle = fused.DisplayName,
+                ResultDifficulty = fused.Difficulty,
+                Cost = cost,
+                CostText = cost.ToString("N0", CultureInfo.InvariantCulture) + "g",
+                InvalidReason = ""
+            };
         }
     }
 }

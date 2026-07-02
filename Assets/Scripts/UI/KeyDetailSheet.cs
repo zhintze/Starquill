@@ -98,9 +98,8 @@ namespace Starquill.UI
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            // Fusion flow lands in the next task; the button is a stub until then.
-            var fuse = UiFactory.Button(actionRow.transform, "FUSE", UiFactory.ButtonKind.Secondary, null);
-            fuse.SetEnabled(false);
+            UiFactory.Button(actionRow.transform, "FUSE", UiFactory.ButtonKind.Secondary, () =>
+                KeyFusionSheet.Show(canvasRoot, key, onFused: () => getSheet()?.Close()));
 
             UiFactory.Button(actionRow.transform,
                 KeyPresenter.SellText(key, gm.questLevel, config),

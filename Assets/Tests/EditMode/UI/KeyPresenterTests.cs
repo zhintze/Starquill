@@ -88,5 +88,52 @@ namespace Starquill.Tests.EditMode.UI
             var key = new KeyInstance { Difficulty = 5 };
             Assert.AreEqual("SELL +1,250g", KeyPresenter.SellText(key, 10, config));
         }
+
+        [Test]
+        public void FusionPreview_ValidPair_TitleAndCost()
+        {
+            var a = new KeyInstance { ColorFamily = ColorFamily.Red, Difficulty = 1 };
+            var b = new KeyInstance { Slot = KeySlot.Weapon, Difficulty = 2 };
+            var p = KeyPresenter.FusionPreview(a, b, questLevel: 4, config);
+            Assert.IsTrue(p.Valid);
+            Assert.AreEqual("Red Weapon Key", p.ResultTitle);
+            Assert.AreEqual(3, p.ResultDifficulty);
+            // 250 base x questLevel 4 x D3^2 = 9,000
+            Assert.AreEqual("9,000g", p.CostText);
+            Assert.AreEqual("", p.InvalidReason);
+        }
+
+        [Test]
+        public void FusionPreview_ModifierConflict_Invalid()
+        {
+            var a = new KeyInstance { ColorFamily = ColorFamily.Red };
+            var b = new KeyInstance { ColorFamily = ColorFamily.Blue };
+            var p = KeyPresenter.FusionPreview(a, b, 1, config);
+            Assert.IsFalse(p.Valid);
+            Assert.AreEqual("Same kind, different variant", p.InvalidReason);
+        }
+
+        [Test]
+        public void FusionPreview_DifficultyCap_Invalid()
+        {
+            var a = new KeyInstance { Difficulty = 3 };
+            var b = new KeyInstance { Difficulty = 4 };
+            var p = KeyPresenter.FusionPreview(a, b, 1, config);
+            Assert.IsFalse(p.Valid);
+            Assert.AreEqual("Result would exceed difficulty 6", p.InvalidReason);
+        }
+
+        [Test]
+        public void FusionPreview_Unaffordable_StillPreviewable()
+        {
+            // Affordability is the view's concern: a huge quest level keeps
+            // the preview valid regardless of the player's gold.
+            var a = new KeyInstance { ColorFamily = ColorFamily.Green, Difficulty = 3 };
+            var b = new KeyInstance { ColorFamily = ColorFamily.Green, Difficulty = 3 };
+            var p = KeyPresenter.FusionPreview(a, b, questLevel: 1000, config);
+            Assert.IsTrue(p.Valid);
+            Assert.Greater(p.Cost, 1_000_000d);
+            Assert.AreEqual("9,000,000g", p.CostText);
+        }
     }
 }

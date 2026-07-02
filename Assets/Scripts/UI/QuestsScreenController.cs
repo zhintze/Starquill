@@ -8,7 +8,7 @@ using Starquill.Destinations;
 
 namespace Starquill.UI
 {
-    /// Quests screen (nav index 1): one scroll view with section headers —
+    /// Quests screen (nav index 1): one scroll view with section headers:
     /// QUEST (current-quest card + zone ladder) then DESTINATIONS (fragment
     /// progress + the live key pouch, plus a locked card for the location
     /// system from the dungeon-key design doc).
