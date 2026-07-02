@@ -47,6 +47,7 @@ namespace Starquill.UI
         private void Start()
         {
             SetupPlaceholderParallax();
+            CreateDungeonHud();
 
             if (damageNumbers != null)
                 spawnerRT = (RectTransform)damageNumbers.transform;
@@ -74,6 +75,27 @@ namespace Starquill.UI
                 SetupPlaceholderParty();
                 SetupPlaceholderUI();
             }
+        }
+
+        /// Runtime-built (no scene rebuild needed): sits in the quest banner's
+        /// column, one slot below it, so an in-run strip never overlaps a
+        /// retreated-quest retry notice. DungeonHudDisplay hides itself
+        /// whenever no dungeon is active.
+        private void CreateDungeonHud()
+        {
+            var banner = GetComponentInChildren<QuestBannerDisplay>(true);
+            var parent = banner != null ? banner.transform.parent : transform;
+
+            var hud = new GameObject("DungeonHud", typeof(RectTransform));
+            hud.transform.SetParent(parent, false);
+            var rt = (RectTransform)hud.transform;
+            rt.anchorMin = new Vector2(0, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(0.5f, 1);
+            // QuestBanner occupies -72..-172; leave a Space1 gap below it.
+            rt.anchoredPosition = new Vector2(0, -180f);
+            rt.sizeDelta = new Vector2(-32f, 120f);
+            hud.AddComponent<DungeonHudDisplay>();
         }
 
         private IEnumerator DeferredInitialSync()
