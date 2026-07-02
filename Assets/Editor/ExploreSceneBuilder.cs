@@ -384,9 +384,9 @@ public static class ExploreSceneBuilder
         // Portrait Strip (left, 120px wide)
         var portraitStrip = CreatePanel("PortraitStrip", focusArea.transform);
         var portraitStripRT = portraitStrip.GetComponent<RectTransform>();
-        portraitStripRT.anchorMin = new Vector2(0, 0);
-        portraitStripRT.anchorMax = new Vector2(0, 1);
-        portraitStripRT.pivot = new Vector2(0, 0.5f);
+        portraitStripRT.anchorMin = new Vector2(1, 0);
+        portraitStripRT.anchorMax = new Vector2(1, 1);
+        portraitStripRT.pivot = new Vector2(1, 0.5f);
         portraitStripRT.anchoredPosition = Vector2.zero;
         portraitStripRT.sizeDelta = new Vector2(120, 0);
         portraitStrip.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.14f, 0.9f);
@@ -412,8 +412,8 @@ public static class ExploreSceneBuilder
             var slot = new GameObject($"PortraitSlot_{i}", typeof(RectTransform), typeof(Button));
             slot.transform.SetParent(portraitStrip.transform, false);
             var slotRT = slot.GetComponent<RectTransform>();
-            slotRT.sizeDelta = new Vector2(110, 140);
-            slot.AddComponent<LayoutElement>().preferredHeight = 140;
+            slotRT.sizeDelta = new Vector2(110, 125);
+            slot.AddComponent<LayoutElement>().preferredHeight = 125;
 
             // Highlight ring (background)
             var ring = CreateImage($"Ring_{i}", slot.transform, new Color(0.3f, 0.3f, 0.3f));
@@ -461,8 +461,8 @@ public static class ExploreSceneBuilder
         var paperDollAreaRT = paperDollArea.GetComponent<RectTransform>();
         paperDollAreaRT.anchorMin = new Vector2(0, 0);
         paperDollAreaRT.anchorMax = new Vector2(1, 1);
-        paperDollAreaRT.offsetMin = new Vector2(120, 0); // right of portrait strip
-        paperDollAreaRT.offsetMax = new Vector2(-200, 0); // left of character info
+        paperDollAreaRT.offsetMin = new Vector2(190, 0); // right of stat column
+        paperDollAreaRT.offsetMax = new Vector2(-130, 0); // left of portrait strip
         paperDollArea.GetComponent<Image>().color = Color.clear;
 
         var paperDollImage = CreateRawImage("PaperDollImage", paperDollArea.transform);
@@ -477,23 +477,23 @@ public static class ExploreSceneBuilder
         charInfoRT.anchorMax = new Vector2(1, 1);
         charInfoRT.pivot = new Vector2(1, 0.5f);
         charInfoRT.anchoredPosition = Vector2.zero;
-        charInfoRT.sizeDelta = new Vector2(200, 0);
-        charInfo.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.14f, 0.6f);
+        charInfoRT.sizeDelta = new Vector2(0, 0);
+        charInfo.GetComponent<Image>().color = Color.clear;
 
-        // --- Stat Bar (60px, below focus area) ---
-        var statBar = CreatePanel("StatBar", partyPanel.transform);
+        // --- Stat Column (left side of focus area, under the name) ---
+        var statBar = CreatePanel("StatColumn", focusArea.transform);
         var statBarRT = statBar.GetComponent<RectTransform>();
-        statBarRT.anchorMin = new Vector2(0, 1);
-        statBarRT.anchorMax = new Vector2(1, 1);
-        statBarRT.pivot = new Vector2(0.5f, 1);
-        statBarRT.anchoredPosition = new Vector2(0, -680); // 120 (header) + 560 (focus)
-        statBarRT.sizeDelta = new Vector2(0, 90);
+        statBarRT.anchorMin = new Vector2(0, 0);
+        statBarRT.anchorMax = new Vector2(0, 1);
+        statBarRT.pivot = new Vector2(0, 0.5f);
+        statBarRT.anchoredPosition = Vector2.zero;
+        statBarRT.sizeDelta = new Vector2(180, 0);
         statBar.GetComponent<Image>().color = new Color(0.1f, 0.1f, 0.15f, 0.8f);
 
-        var statHL = statBar.AddComponent<HorizontalLayoutGroup>();
-        statHL.spacing = 5;
-        statHL.padding = new RectOffset(15, 15, 5, 5);
-        statHL.childAlignment = TextAnchor.MiddleCenter;
+        var statHL = statBar.AddComponent<VerticalLayoutGroup>();
+        statHL.spacing = 6;
+        statHL.padding = new RectOffset(16, 8, 16, 16);
+        statHL.childAlignment = TextAnchor.MiddleLeft;
         statHL.childControlWidth = true;
         statHL.childControlHeight = true;
         statHL.childForceExpandWidth = true;
@@ -503,7 +503,7 @@ public static class ExploreSceneBuilder
         var focusStatLabels = new TMP_Text[6];
         for (int i = 0; i < 6; i++)
         {
-            var statLabel = CreateTMPLabel($"Stat_{statNames[i]}", statBar.transform, $"{statNames[i]} 10", 32, Color.white, TextAlignmentOptions.Center);
+            var statLabel = CreateTMPLabel($"Stat_{statNames[i]}", statBar.transform, $"{statNames[i]} 10", 32, Color.white, TextAlignmentOptions.MidlineLeft);
             statLabel.AddComponent<LayoutElement>().flexibleWidth = 1;
             focusStatLabels[i] = statLabel.GetComponent<TMP_Text>();
         }
@@ -514,7 +514,7 @@ public static class ExploreSceneBuilder
         subTabBarRT.anchorMin = new Vector2(0, 1);
         subTabBarRT.anchorMax = new Vector2(1, 1);
         subTabBarRT.pivot = new Vector2(0.5f, 1);
-        subTabBarRT.anchoredPosition = new Vector2(0, -770); // 680 + 90 (stat bar)
+        subTabBarRT.anchoredPosition = new Vector2(0, -680); // 120 (header) + 560 (focus)
         subTabBarRT.sizeDelta = new Vector2(0, 120);
         subTabBar.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.18f, 0.9f);
 
@@ -545,7 +545,7 @@ public static class ExploreSceneBuilder
         contentRT.anchorMin = new Vector2(0, 0);
         contentRT.anchorMax = new Vector2(1, 1);
         contentRT.offsetMin = new Vector2(0, 0); // bottom of panel
-        contentRT.offsetMax = new Vector2(0, -890); // 810 + 80 (sub-tab bar)
+        contentRT.offsetMax = new Vector2(0, -800); // 680 + 120 (sub-tab bar)
         contentArea.GetComponent<Image>().color = Color.clear;
 
         // Roster Content (sub-tab 0)
