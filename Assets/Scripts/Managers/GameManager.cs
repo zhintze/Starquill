@@ -611,6 +611,9 @@ namespace Starquill.Managers
 
         public bool RetryQuest()
         {
+            // A retry mid-dungeon would stomp InDungeon and strand the quest
+            // when the dungeon timer expires; finish the run first.
+            if (exploration.State == ExplorationState.InDungeon) return false;
             if (!questLog.Retry()) return false;
             exploration.EnterQuest();
             SpawnWave();
