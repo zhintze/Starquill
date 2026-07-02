@@ -60,6 +60,8 @@ Each sprint follows spec-driven development: design doc → implementation plan 
 - Timed exploration chest (4-hour cycle)
 - Offline earnings: elapsed-time calculation on resume (`OfflineGold()` formula already implemented), claim modal
 - Boost effects wired into the combat tick and verb systems
+- **Character XP wiring (PM ruling 2026-07-01):** grant character XP per kill/quest so the existing level-up + stat allocation system goes live (UI and data already built, currently dormant)
+- **Rewarded ads (PM ruling 2026-07-01: ads ship in MVP):** 2x offline earnings and chest-double rewarded placements land with these surfaces; Remove Ads IAP via installed com.unity.purchasing 5.4.0; interstitials-at-quest-complete deferred to Sprint 12 polish
 
 **Note:** `com.unity.purchasing` 5.4.0 is installed and unused. Whether real IAP/rewarded ads ship in MVP is an open decision (below); this sprint builds the shop against gold only.
 
@@ -86,8 +88,8 @@ The 2026-07-01 mobile UI redesign established the design system and fixed densit
 
 | Decision | Options | Current lean |
 |---|---|---|
-| Character level-up / stat allocation | In original MVP scope, never built. Add as Sprint 11.5, fold into Sprint 12, or cut to post-MVP | Post-MVP: equipment + abilities already provide progression; adding a second progression system before ship risks the timeline |
-| Monetization wiring (rewarded ads, IAP) | Ship MVP gold-only, or wire ads/IAP in Sprint 11-12 | Gold-only MVP; monetization as first post-MVP sprint once retention is observed |
+| ~~Character level-up~~ | RESOLVED 2026-07-01: in MVP — XP wiring added to Sprint 11 scope (system was half-built: UI/data existed with no XP source) | — |
+| ~~Monetization~~ | RESOLVED 2026-07-01: rewarded ads ship in MVP — wiring added to Sprint 11 scope, interstitials in Sprint 12 | — |
 | Cloud save / analytics / Remote Config | Sprint 12 or post-MVP | Post-MVP |
 | Full-inventory quest rewards | Current stopgap converts overflow rewards to gold — explicitly NOT the intended behavior (neither discarding nor auto-gold is acceptable). Candidates: overflow stash / reward mailbox, pre-completion "make room" prompt, inventory capacity growth | Revisit by Sprint 11 (shop may add capacity upgrades) or Sprint 12 |
 
