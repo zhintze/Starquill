@@ -139,6 +139,7 @@ namespace Starquill.UI
             gm.OnWaveStarted += HandleWaveStarted;
             gm.OnWaveCleared += HandleWaveCleared;
             gm.OnVerbActivated += HandleVerbActivated;
+            gm.OnDungeonEnded += HandleDungeonEnded;
 
             if (verbBar != null)
                 verbBar.OnCardTapped += HandleVerbCardTapped;
@@ -151,9 +152,16 @@ namespace Starquill.UI
             gm.OnWaveStarted -= HandleWaveStarted;
             gm.OnWaveCleared -= HandleWaveCleared;
             gm.OnVerbActivated -= HandleVerbActivated;
+            gm.OnDungeonEnded -= HandleDungeonEnded;
 
             if (verbBar != null)
                 verbBar.OnCardTapped -= HandleVerbCardTapped;
+        }
+
+        private void HandleDungeonEnded(Starquill.Destinations.DungeonRun run,
+            List<EquipmentInstance> rewards, double goldBonus)
+        {
+            DungeonCompletionSheet.Show(transform.root, run, rewards, goldBonus);
         }
 
         public void SetMuted(bool muted)
