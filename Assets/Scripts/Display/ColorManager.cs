@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Starquill.Core;
 using UnityEngine;
 
 namespace Starquill.Display
@@ -6,11 +7,13 @@ namespace Starquill.Display
     public class ColorManager
     {
         private Dictionary<string, Color[]> palettes = new();
+        private readonly Dictionary<string, Dictionary<ColorFamily, Color[]>> familyIndex = new();
         private static readonly Color[] FallbackPalette = { Color.white };
 
         public void LoadFromJson(string json)
         {
             palettes.Clear();
+            familyIndex.Clear();
             var dict = ParsePaletteJson(json);
             foreach (var kvp in dict)
             {
@@ -49,6 +52,35 @@ namespace Starquill.Display
         {
             var palette = GetPalette(paletteName);
             return palette[rng.Next(palette.Length)];
+        }
+
+        public Color GetRandomColor(string paletteName, System.Random rng, ColorFamily? family)
+        {
+            if (!family.HasValue) return GetRandomColor(paletteName, rng);
+
+            if (!familyIndex.TryGetValue(paletteName, out var byFamily))
+            {
+                byFamily = BuildFamilyIndex(GetPalette(paletteName));
+                familyIndex[paletteName] = byFamily;
+            }
+
+            if (byFamily.TryGetValue(family.Value, out var members) && members.Length > 0)
+                return members[rng.Next(members.Length)];
+            return GetRandomColor(paletteName, rng); // family empty in this palette
+        }
+
+        private static Dictionary<ColorFamily, Color[]> BuildFamilyIndex(Color[] palette)
+        {
+            var lists = new Dictionary<ColorFamily, List<Color>>();
+            foreach (var c in palette)
+            {
+                var f = ColorFamilyClassifier.Classify(c.r, c.g, c.b);
+                if (!lists.TryGetValue(f, out var list)) { list = new List<Color>(); lists[f] = list; }
+                list.Add(c);
+            }
+            var result = new Dictionary<ColorFamily, Color[]>();
+            foreach (var kvp in lists) result[kvp.Key] = kvp.Value.ToArray();
+            return result;
         }
 
         public Color[] ResolveColorField(string[] field)
