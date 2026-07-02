@@ -29,6 +29,12 @@ namespace Starquill.Managers
         public int questActiveWave;
         public double questGoldEarned;
 
+        // Shop / boosts / monetization
+        public double boostAutoFireExpiry;
+        public double boostSpeedUpExpiry;
+        public double chestReadyAtTimestamp;
+        public bool removeAdsOwned;
+
         public bool NeedsRosterInitialization()
         {
             return roster == null || roster.Count == 0;

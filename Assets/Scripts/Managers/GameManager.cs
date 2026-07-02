@@ -9,6 +9,7 @@ using Starquill.Display;
 using Starquill.Equipment;
 using Starquill.Exploration;
 using Starquill.Quests;
+using Starquill.Services;
 
 namespace Starquill.Managers
 {
@@ -46,6 +47,9 @@ namespace Starquill.Managers
         private AbilityTable abilityTable;
         private QuestZoneTable questZones;
         private readonly QuestLog questLog = new();
+        private readonly BoostManager boosts = new();
+        private IAdService adService;
+        private IIapService iapService;
         private List<EnemyState> currentEnemies = new();
         private float tickTimer;
         private float currentTime;
@@ -61,6 +65,15 @@ namespace Starquill.Managers
         public AbilityTable AbilityTable => abilityTable;
         public QuestLog QuestLog => questLog;
         public QuestZoneTable QuestZones => questZones;
+        public BoostManager Boosts => boosts;
+        public IAdService Ads => adService;
+        public bool RemoveAdsOwned { get; private set; }
+        public float PendingOfflineSeconds { get; private set; }
+        public double PendingOfflineGold { get; private set; }
+        public event Action OnBoostsChanged;
+        public event Action<double, List<EquipmentInstance>> OnChestClaimed;
+
+        public static double UnixNow => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         public event Action<QuestSpec> OnQuestOffered;
         public event Action<QuestSpec, double, List<EquipmentInstance>> OnQuestCompleted;
         public event Action OnQuestRetreated;
@@ -109,6 +122,9 @@ namespace Starquill.Managers
 
             lootInventory = new LootInventory(50);
             lootDropper = new LootDropper(equipmentFactory, economyConfig, pityTracker);
+
+            adService = AdServiceFactory.Create();
+            iapService = new MockIapService(); // real store wiring: Sprint 12 device pass
         }
 
         private void Start()
@@ -132,6 +148,21 @@ namespace Starquill.Managers
             questLog.Restore(save.questZoneIndex, save.questNextIndex, savedPhase,
                 save.questActiveWave, save.questGoldEarned, restoredSpec);
             exploration.RestoreProgress(save.travelProgress, save.fragmentProgress);
+
+            boosts.RestoreExpiry(BoostType.AutoFireVerbs, save.boostAutoFireExpiry);
+            boosts.RestoreExpiry(BoostType.VerbSpeedUp, save.boostSpeedUpExpiry);
+            RemoveAdsOwned = save.removeAdsOwned;
+            chestReadyAt = save.chestReadyAtTimestamp > 0
+                ? save.chestReadyAtTimestamp
+                : UnixNow + economyConfig.chestIntervalSeconds;
+
+            float offlineSeconds = saveManager.GetOfflineSeconds();
+            double offlineGold = OfflineEarningsCalculator.Gold(offlineSeconds, questLevel, economyConfig);
+            if (offlineGold > 0)
+            {
+                PendingOfflineSeconds = offlineSeconds;
+                PendingOfflineGold = offlineGold;
+            }
             if (savedPhase == QuestPhase.Active)
                 exploration.EnterQuest();
 
@@ -169,6 +200,129 @@ namespace Starquill.Managers
                 tickTimer -= 1f;
                 ProcessTick();
             }
+
+            TickBoostEffects();
+        }
+
+        private double chestReadyAt;
+        private bool speedUpApplied;
+
+        private void TickBoostEffects()
+        {
+            double now = UnixNow;
+
+            bool speedUp = boosts.IsActive(BoostType.VerbSpeedUp, now);
+            if (speedUp != speedUpApplied)
+            {
+                verbPool.SetRotationTime(speedUp ? economyConfig.verbDrawCooldown * 0.5f
+                                                 : economyConfig.verbDrawCooldown);
+                speedUpApplied = speedUp;
+            }
+
+            if (boosts.IsActive(BoostType.AutoFireVerbs, now) && !VerbsLocked)
+            {
+                var slots = verbPool.DrawnSlots;
+                for (int i = 0; i < slots.Count; i++)
+                {
+                    if (slots[i] != null && currentTime - slots[i].DrawTime >= 2f)
+                    {
+                        OnVerbTapped(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public double BoostCost(BoostType type)
+        {
+            float perLevel = type == BoostType.AutoFireVerbs
+                ? economyConfig.boostAutoFireCostPerLevel
+                : economyConfig.boostSpeedUpCostPerLevel;
+            return perLevel * questLevel;
+        }
+
+        public bool BuyBoost(BoostType type)
+        {
+            double cost = BoostCost(type);
+            if (gold < cost) return false;
+            gold -= cost;
+            boosts.Activate(type, economyConfig.boostDurationSeconds, UnixNow);
+            OnGoldChanged?.Invoke(gold);
+            OnBoostsChanged?.Invoke();
+            SaveState();
+            return true;
+        }
+
+        public double ChestReadyAt => chestReadyAt;
+        public bool ChestReady => UnixNow >= chestReadyAt;
+
+        public bool ClaimChest(bool doubled)
+        {
+            if (!ChestReady) return false;
+
+            var (chestGold, itemRolls) = OfflineEarningsCalculator.ChestReward(questLevel, economyConfig, doubled);
+            gold += chestGold;
+
+            var items = new List<EquipmentInstance>();
+            var rng = new System.Random();
+            for (int i = 0; i < itemRolls; i++)
+            {
+                var rarity = EquipmentFactory.RollRarityWithFloor(questLevel, Rarity.Uncommon, rng);
+                var item = rng.NextDouble() < 0.7
+                    ? equipmentFactory.CreateRandom(RandomArmorPrefix(rng), rarity, rng)
+                    : equipmentFactory.CreateRandomWeapon(rarity, rng);
+                if (item == null) continue;
+                if (lootInventory.AddItem(item))
+                {
+                    items.Add(item);
+                    OnLootDropped?.Invoke(item);
+                }
+                else
+                {
+                    gold += SellCalculator.GetSellValue(item, questLevel); // overflow stopgap
+                }
+            }
+
+            chestReadyAt = UnixNow + economyConfig.chestIntervalSeconds;
+            OnGoldChanged?.Invoke(gold);
+            OnChestClaimed?.Invoke(chestGold, items);
+            SaveState();
+            return true;
+        }
+
+        public void ClaimOfflineEarnings(bool doubled)
+        {
+            if (PendingOfflineGold <= 0) return;
+            gold += PendingOfflineGold * (doubled ? 2 : 1);
+            PendingOfflineGold = 0;
+            PendingOfflineSeconds = 0;
+            OnGoldChanged?.Invoke(gold);
+            SaveState();
+        }
+
+        public void PurchaseRemoveAds(Action<bool> onResult)
+        {
+            iapService.PurchaseRemoveAds(success =>
+            {
+                if (success)
+                {
+                    RemoveAdsOwned = true;
+                    SaveState();
+                }
+                onResult?.Invoke(success);
+            });
+        }
+
+        private void GrantPartyXp(int kills, int bonusPerMember = 0)
+        {
+            if (kills <= 0 && bonusPerMember <= 0) return;
+            int perKill = economyConfig.charXpBase + questLevel;
+            foreach (var member in party.Members)
+            {
+                if (member == null) continue;
+                member.xp += kills * perKill + bonusPerMember;
+            }
+            if (kills > 0 || bonusPerMember > 0) OnRosterChanged?.Invoke();
         }
 
         private void ProcessTick()
@@ -188,6 +342,7 @@ namespace Starquill.Managers
             }
 
             ProcessLootDrops(result.EnemiesKilled);
+            GrantPartyXp(result.EnemiesKilled);
 
             TickAbilityXP();
 
@@ -228,6 +383,7 @@ namespace Starquill.Managers
             }
 
             ProcessLootDrops(result.EnemiesKilled);
+            GrantPartyXp(result.EnemiesKilled);
 
             OnVerbActivated?.Invoke(slotIndex, result);
 
@@ -396,6 +552,9 @@ namespace Starquill.Managers
             }
             gold = goldBefore + goldBonus;
 
+            int xpBonus = 10 * questLevel * (spec.Tier == QuestTier.Boss ? 2 : 1);
+            GrantPartyXp(0, xpBonus);
+
             questLevel += spec.Tier == QuestTier.Boss ? 2 : 1;
 
             questLog.Complete();
@@ -434,6 +593,10 @@ namespace Starquill.Managers
             saveManager.CurrentSave.questGoldEarned = questLog.GoldEarnedInQuest;
             saveManager.CurrentSave.travelProgress = exploration.TravelProgress;
             saveManager.CurrentSave.fragmentProgress = exploration.FragmentProgress;
+            saveManager.CurrentSave.boostAutoFireExpiry = boosts.GetExpiry(BoostType.AutoFireVerbs);
+            saveManager.CurrentSave.boostSpeedUpExpiry = boosts.GetExpiry(BoostType.VerbSpeedUp);
+            saveManager.CurrentSave.chestReadyAtTimestamp = chestReadyAt;
+            saveManager.CurrentSave.removeAdsOwned = RemoveAdsOwned;
             saveManager.Save();
         }
 

@@ -16,7 +16,7 @@ namespace Starquill.Combat
         private readonly List<DrawnVerb> drawnSlots = new();
         private readonly List<DrawnVerb> onCooldown = new();
         private readonly int maxSlots;
-        private readonly float rotationTime;
+        private float rotationTime;
         private readonly System.Random rng;
 
         public IReadOnlyList<DrawnVerb> DrawnSlots => drawnSlots;
@@ -31,6 +31,9 @@ namespace Starquill.Combat
             this.rotationTime = rotationTime;
             this.rng = seed.HasValue ? new System.Random(seed.Value) : new System.Random();
         }
+
+        /// Verb Speed-Up boost swaps rotation cadence at runtime.
+        public void SetRotationTime(float seconds) => rotationTime = seconds;
 
         public void AddVerbs(int ownerIndex, IEnumerable<VerbDefinition> verbs)
         {
