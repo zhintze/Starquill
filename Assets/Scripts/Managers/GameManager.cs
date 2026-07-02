@@ -5,6 +5,7 @@ using Starquill.Characters;
 using Starquill.Combat;
 using Starquill.Core;
 using Starquill.Data;
+using Starquill.Destinations;
 using Starquill.Display;
 using Starquill.Equipment;
 using Starquill.Exploration;
@@ -48,6 +49,9 @@ namespace Starquill.Managers
         private QuestZoneTable questZones;
         private readonly QuestLog questLog = new();
         private readonly BoostManager boosts = new();
+        private readonly KeyPouch keyPouch = new();
+        private DungeonRun activeDungeon;
+        private int dungeonRunCounter;
         private IAdService adService;
         private IIapService iapService;
         private List<EnemyState> currentEnemies = new();
@@ -66,6 +70,8 @@ namespace Starquill.Managers
         public QuestLog QuestLog => questLog;
         public QuestZoneTable QuestZones => questZones;
         public BoostManager Boosts => boosts;
+        public KeyPouch KeyPouch => keyPouch;
+        public DungeonRun ActiveDungeon => activeDungeon;
         public IAdService Ads => adService;
         public bool RemoveAdsOwned { get; private set; }
         public float PendingOfflineSeconds { get; private set; }
@@ -81,6 +87,9 @@ namespace Starquill.Managers
         public event Action<QuestSpec, double, List<EquipmentInstance>> OnQuestCompleted;
         public event Action OnQuestRetreated;
         public event Action<EquipmentInstance> OnLootDropped;
+        public event Action OnKeysChanged;
+        public event Action<DungeonSpec> OnDungeonStarted;
+        public event Action<DungeonRun, List<EquipmentInstance>, double> OnDungeonEnded;
 
         private void Awake()
         {
@@ -192,6 +201,14 @@ namespace Starquill.Managers
                 }
             }
 
+            keyPouch.OnChanged += () => OnKeysChanged?.Invoke();
+            if (save.keys != null)
+            {
+                foreach (var sk in save.keys)
+                    if (sk != null) keyPouch.Add(sk.ToInstance());
+            }
+            dungeonRunCounter = save.dungeonRunCounter;
+
             BuildPartyFromRoster();
             SpawnWave();
             RebuildVerbPool();
@@ -211,6 +228,12 @@ namespace Starquill.Managers
             {
                 tickTimer -= 1f;
                 ProcessTick();
+            }
+
+            if (activeDungeon != null)
+            {
+                activeDungeon.Tick(Time.deltaTime);
+                if (activeDungeon.IsOver) EndDungeon();
             }
 
             TickBoostEffects();
@@ -519,6 +542,18 @@ namespace Starquill.Managers
 
         private void HandleWaveCleared()
         {
+            if (exploration.State == ExplorationState.InDungeon && activeDungeon != null)
+            {
+                activeDungeon.WaveCleared();
+                // MakeWave marks index i a mini-boss when (i+1) % 5 == 0; after
+                // WaveCleared() the count equals i+1, so % 5 == 0 flags a
+                // just-cleared boss wave (5, 10, ...).
+                bool miniBossCleared = activeDungeon.WavesCleared % 5 == 0;
+                if (miniBossCleared) GrantMiniBossDrop();
+                if (!activeDungeon.IsOver) SpawnWave();
+                return;
+            }
+
             if (exploration.State == ExplorationState.InQuest && questLog.Phase == QuestPhase.Active)
             {
                 if (questLog.IsOnLastWave)
@@ -627,6 +662,16 @@ namespace Starquill.Managers
                     OnMailboxChanged?.Invoke();
                 }
             }
+
+            for (int i = 0; i < reward.KeyDrops; i++)
+            {
+                var key = KeyRoller.Roll(rewardRng);
+                key.Difficulty = Math.Max(key.Difficulty, reward.KeyDifficulty);
+                keyPouch.Add(key);
+            }
+            if (reward.ExtraKeyChance > 0 && rewardRng.NextDouble() < reward.ExtraKeyChance)
+                keyPouch.Add(KeyRoller.Roll(rewardRng));
+
             gold = goldBefore + goldBonus;
 
             int xpBonus = 10 * questLevel * (spec.Tier == QuestTier.Boss ? 2 : 1);
@@ -678,6 +723,116 @@ namespace Starquill.Managers
             return prefixes[rng.Next(prefixes.Length)];
         }
 
+        public bool StartDungeon(KeyInstance key)
+        {
+            if (activeDungeon != null) return false;
+            if (exploration.State != ExplorationState.Exploring) return false;
+            if (questLog.Phase == QuestPhase.Offered) return false;
+            if (!keyPouch.Remove(key)) return false;
+
+            var spec = DungeonGenerator.Generate(key, dungeonRunCounter++, questLevel,
+                economyConfig.dungeonDurationBase, economyConfig.dungeonDurationPerD,
+                economyConfig.dungeonEnemyMultPerD, economyConfig.dungeonParSecondsPerWave);
+            activeDungeon = new DungeonRun(spec);
+            exploration.EnterDungeon();
+            SpawnWave();
+            OnDungeonStarted?.Invoke(spec);
+            SaveState();
+            return true;
+        }
+
+        private void EndDungeon()
+        {
+            var run = activeDungeon;
+            activeDungeon = null;
+
+            var rng = new System.Random(UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+            var rolled = DungeonRewardRoller.Roll(run, equipmentFactory, economyConfig,
+                questLevel, rng, out double goldBonus);
+            var rewards = new List<EquipmentInstance>();
+            foreach (var item in rolled)
+            {
+                if (lootInventory.AddItem(item))
+                {
+                    rewards.Add(item);
+                    OnLootDropped?.Invoke(item);
+                }
+                else
+                {
+                    // Inventory full: rewards wait in the mailbox (never lost).
+                    rewardMailbox.Add(item);
+                    OnMailboxChanged?.Invoke();
+                }
+            }
+            gold += goldBonus;
+
+            exploration.DungeonEnded();
+            OnGoldChanged?.Invoke(gold);
+            OnDungeonEnded?.Invoke(run, rewards, goldBonus);
+            SaveState();
+            SpawnWave();
+        }
+
+        /// A just-cleared mini-boss pays out one floored, key-modified roll
+        /// immediately (design §3).
+        private void GrantMiniBossDrop()
+        {
+            var rng = new System.Random(UnityEngine.Random.Range(int.MinValue, int.MaxValue));
+            var item = DungeonRewardRoller.RollOne(activeDungeon.Spec, equipmentFactory, questLevel, rng);
+            if (item == null) return;
+            if (lootInventory.AddItem(item))
+            {
+                OnLootDropped?.Invoke(item);
+            }
+            else
+            {
+                rewardMailbox.Add(item);
+                OnMailboxChanged?.Invoke();
+            }
+        }
+
+        /// Fusion cost preview: valid for any pair since difficulty always
+        /// sums (KeyFusion.Fuse contract).
+        public double KeyFusionCost(KeyInstance a, KeyInstance b)
+        {
+            if (a == null || b == null) return 0;
+            return KeyFusion.Cost(economyConfig.fusionBaseCost, questLevel,
+                a.Difficulty + b.Difficulty);
+        }
+
+        public bool FuseKeys(KeyInstance a, KeyInstance b)
+        {
+            // Validate rules and affordability BEFORE consuming anything:
+            // no failure path may lose a key or gold.
+            if (!KeyFusion.CanFuse(a, b, economyConfig.keyMaxDifficulty)) return false;
+            double cost = KeyFusionCost(a, b);
+            if (gold < cost) return false;
+
+            var fused = KeyFusion.Fuse(a, b);
+            if (fused == null) return false;
+
+            if (!keyPouch.Remove(a)) return false;
+            if (!keyPouch.Remove(b))
+            {
+                keyPouch.Add(a); // restore: the pair must be consumed atomically
+                return false;
+            }
+
+            keyPouch.Add(fused);
+            gold -= cost;
+            OnGoldChanged?.Invoke(gold);
+            SaveState();
+            return true;
+        }
+
+        public void SellKey(KeyInstance key)
+        {
+            if (key == null || !keyPouch.Remove(key)) return;
+            gold += KeyPouch.SellValue(key, questLevel, economyConfig.keySellBase);
+            OnGoldChanged?.Invoke(gold);
+            SaveState();
+        }
+
         private void SaveState()
         {
             if (saveManager == null || roster == null || lootInventory == null) return;
@@ -707,12 +862,45 @@ namespace Starquill.Managers
             saveManager.CurrentSave.rewardMailbox.Clear();
             foreach (var item in rewardMailbox)
                 saveManager.CurrentSave.rewardMailbox.Add(SerializedEquipment.FromInstance(item));
+            saveManager.CurrentSave.keys.Clear();
+            foreach (var key in keyPouch.Keys)
+                saveManager.CurrentSave.keys.Add(SerializedKey.FromInstance(key));
+            saveManager.CurrentSave.dungeonRunCounter = dungeonRunCounter;
             saveManager.Save();
         }
 
         private void SpawnWave()
         {
             currentEnemies.Clear();
+
+            // Dungeon waves are deterministic from (spec, cleared count); the
+            // per-wave HP ramp is applied here, not in the generator.
+            if (exploration.State == ExplorationState.InDungeon && activeDungeon != null)
+            {
+                var spec = activeDungeon.Spec;
+                var dungeonWave = DungeonGenerator.MakeWave(spec, activeDungeon.WavesCleared);
+                float ramp = 1f + economyConfig.dungeonWaveHpRamp * activeDungeon.WavesCleared;
+                for (int i = 0; i < dungeonWave.EnemyCount; i++)
+                {
+                    var waveType = i < dungeonWave.EnemyTypes.Length
+                        ? dungeonWave.EnemyTypes[i]
+                        : dungeonWave.EnemyTypes[0];
+                    // Mirrors the quest boss convention (adds at half multiplier);
+                    // dungeon mini-bosses spawn alone, so this rarely triggers.
+                    float mult = dungeonWave.IsBossWave && i > 0
+                        ? dungeonWave.HpMultiplier * 0.5f
+                        : dungeonWave.HpMultiplier;
+                    float dungeonHp = economyConfig.EnemyHP(questLevel) * mult
+                        * spec.EnemyHpMultiplier * ramp;
+                    string dungeonPrefix = dungeonWave.IsBossWave && i == 0
+                        ? "dungeon_boss" : "dungeon_enemy";
+                    currentEnemies.Add(new EnemyState($"{dungeonPrefix}_{i}", waveType,
+                        dungeonHp, dungeonHp * 0.05f));
+                }
+
+                OnWaveStarted?.Invoke(currentEnemies);
+                return;
+            }
 
             // Quest waves come from the generated spec (typed, HP-scaled).
             if (exploration.State == ExplorationState.InQuest
@@ -766,12 +954,23 @@ namespace Starquill.Managers
 
         private void ProcessLootDrops(int killCount)
         {
+            var mods = activeDungeon != null
+                ? DungeonRewardRoller.ModifiersFor(activeDungeon.Spec.Key) : null;
             for (int k = 0; k < killCount; k++)
             {
                 var rng = new System.Random(UnityEngine.Random.Range(int.MinValue, int.MaxValue));
-                var drop = lootDropper.TryDrop(questLevel, rng);
+                var drop = lootDropper.TryDrop(questLevel, rng, mods);
                 if (drop != null && lootInventory.AddItem(drop))
                     OnLootDropped?.Invoke(drop);
+
+                // Keys drop from active kills only, never inside dungeons (design §2).
+                if (exploration.State != ExplorationState.InDungeon)
+                {
+                    float rate = economyConfig.keyDropRate
+                        * (keyPouch.IsOverSoftCap(economyConfig.keySoftCap) ? 0.5f : 1f);
+                    if (rng.NextDouble() < rate)
+                        keyPouch.Add(KeyRoller.Roll(rng));
+                }
             }
         }
 
@@ -863,11 +1062,16 @@ namespace Starquill.Managers
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused) SaveState();
+            if (!paused) return;
+            // Bank an active run before saving: cleared waves pay out, the run
+            // is never resumed with a stale clock (design §3).
+            if (activeDungeon != null) EndDungeon();
+            SaveState();
         }
 
         private void OnApplicationQuit()
         {
+            if (activeDungeon != null) EndDungeon();
             SaveState();
         }
     }
