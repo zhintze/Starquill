@@ -9,6 +9,7 @@
         "Starquill.Equipment",
         "Starquill.Exploration",
         "Starquill.Quests",
+        "Starquill.Destinations",
         "Starquill.Managers",
         "Starquill.Display",
         "Starquill.UI"
