@@ -114,21 +114,7 @@ namespace Starquill.UI
             if (!registry.Species.TryGetValue(character.speciesId, out var speciesData)) return;
             var instance = character.GetOrCreateAppearance(speciesData, registry);
 
-            var equipList = new List<EquipmentDisplayInfo>();
-            foreach (var eq in character.equipment)
-            {
-                if (eq == null) continue;
-                equipList.Add(new EquipmentDisplayInfo
-                {
-                    ItemType = eq.ItemType,
-                    ItemNum = eq.ItemNum,
-                    BaseColor = eq.BaseColor,
-                    VarianceColors = eq.VarianceColors as Dictionary<int, Color>
-                        ?? new Dictionary<int, Color>(eq.VarianceColors),
-                    IsOffhand = eq.Slot == EquipmentSlot.OffHand,
-                    LayerVariants = eq.LayerVariants
-                });
-            }
+            var equipList = EquipmentDisplayMapper.ToDisplayList(character.equipment);
 
             if (characterDisplay == null)
             {

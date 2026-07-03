@@ -348,25 +348,7 @@ namespace Starquill.UI
                 else
                     instance = SpeciesInstanceData.CreateFrom(speciesData, registry);
 
-                var equipDisplayList = new List<EquipmentDisplayInfo>();
-                if (equipment != null)
-                {
-                    foreach (var eq in equipment)
-                    {
-                        if (eq == null) continue;
-                        var info = new EquipmentDisplayInfo
-                        {
-                            ItemType = eq.ItemType,
-                            ItemNum = eq.ItemNum,
-                            BaseColor = eq.BaseColor,
-                            VarianceColors = eq.VarianceColors as Dictionary<int, Color>
-                                ?? new Dictionary<int, Color>(eq.VarianceColors),
-                            IsOffhand = eq.Slot == EquipmentSlot.OffHand,
-                            LayerVariants = eq.LayerVariants
-                        };
-                        equipDisplayList.Add(info);
-                    }
-                }
+                var equipDisplayList = EquipmentDisplayMapper.ToDisplayList(equipment);
 
                 var pieces = builder.Build(instance, speciesData, equipDisplayList);
 

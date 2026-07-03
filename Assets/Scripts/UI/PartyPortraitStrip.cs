@@ -87,20 +87,7 @@ namespace Starquill.UI
             renderers[index].SetHeadCrop(speciesData.HeadYOffset, speciesData.HeadZoom);
 
             var instance = character.GetOrCreateAppearance(speciesData, registry);
-            var equipList = new List<EquipmentDisplayInfo>();
-            foreach (var eq in character.equipment)
-            {
-                if (eq == null) continue;
-                equipList.Add(new EquipmentDisplayInfo
-                {
-                    ItemType = eq.ItemType, ItemNum = eq.ItemNum,
-                    BaseColor = eq.BaseColor,
-                    VarianceColors = eq.VarianceColors as Dictionary<int, Color>
-                        ?? new Dictionary<int, Color>(eq.VarianceColors),
-                    IsOffhand = eq.Slot == EquipmentSlot.OffHand,
-                    LayerVariants = eq.LayerVariants
-                });
-            }
+            var equipList = EquipmentDisplayMapper.ToDisplayList(character.equipment);
 
             renderers[index].RebuildFromData(instance, speciesData, equipList, builder);
             portraits[index].texture = renderers[index].Texture;
