@@ -537,3 +537,13 @@ Design: `docs/plans/2026-07-01-mobile-ui-redesign-design.md` · Plan: `...-plan.
 - UI: key pouch on the Quests screen, KeyDetailSheet, KeyFusionSheet (live gold gate), DungeonHudDisplay, DungeonCompletionSheet; smoke run surfaced and fixed a BottomSheet z-order bug affecting all stacked sheets
 - Color family iteration (PM-directed, same day): 8 → 11 families (White/Black split from Neutral; perceptual warm band: Brown = dark/muted 15-70°; saturated darks keep hue; Pastel = unsorted pale pool, not mintable). `tools/color_pools.py`: local interactive review server; manual overrides in `color_family_overrides.json` applied by ColorManager over the classifier (see `tools/README.md`)
 - Docs baseline re-established: completed plan docs archived to `docs/plans/archive/`, implemented-systems + roadmap refreshed
+
+## Tavern (PM feature request)
+
+**Date:** 2026-07-02 | **Status:** Implemented, play-verified end-to-end; Test Runner batch pending with the color/tavern additions
+
+- Shop gains a TAVERN section (between Boosts and Chest): 6 generated recruits per 6-hour wall-clock rotation, generated at active-party average level with quest-scaled gear via CharacterFactory + organic LevelUp allocation, priced ~25 minutes of income (`tavernCostMinutes` knob, ±15% variety)
+- Stock is persisted in the save at generation (TavernStock + SerializedCharacter round-trip incl. gear and verbs): never re-rolls mid-slot; purchased recruits show dimmed "Recruited" until rotation
+- Presentation: two-line rows (name / race · level) with bare-headed roster-style head portraits; TavernRecruitSheet shows the full-body doll (also bare-headed), total stats, verbs, price. Bare-head is display-only via shared `EquipmentDisplayMapper` (deduped five pre-existing equipment-mapping call sites)
+- Purchase is atomic; recruits auto-fill an open active-party slot (BuildPartyFromRoster + RebuildVerbPool) or bench when the party is full; roster cap 20 refuses without charging
+- Smoke-found fixes: stale recruit sheet closing on rotation, idempotent BottomSheet.Close, honest refusal reasons

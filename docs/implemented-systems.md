@@ -131,7 +131,7 @@ Design system: `UiTheme` tokens (type floor 28px, touch >= 120px) + `UiFactory` 
 - **Party screen:** `PartyScreenController` (stat column + Train button left, doll center, portrait strip right), `RosterGridDisplay`, `CharacterFocusDisplay`, `EquipmentSlotsDisplay`, `EquipmentDrawer`, `ActionLoadoutDisplay`
 - **Loot screen:** `LootScreenController` (sort tabs, mailbox notice card), `ItemDisplayData`, `ComparisonData`, `ItemIconFraming`
 - **Quests screen:** `QuestsScreenController` (QUEST section: current-quest card + zone ladder; DESTINATIONS section: key pouch + fragment bar + Locations tease), `QuestPresenter`, `KeyPresenter` (pure presenters, unit-tested)
-- **Shop screen:** `ShopScreenController` + `ShopPresenter` (BOOSTS / CHEST / PREMIUM)
+- **Shop screen:** `ShopScreenController` + `ShopPresenter` + `TavernPresenter` (BOOSTS / TAVERN / CHEST / PREMIUM). Tavern: 6 generated recruits on a 6h wall-clock rotation (`TavernStock` in Characters, persisted in save so stock never re-rolls mid-slot; price ≈ `tavernCostMinutes` of income), two-line rows with bare-headed roster-style portraits (`EquipmentDisplayMapper.ToDisplayList(bareHead)` — display-only, shared by all portrait call sites), `TavernRecruitSheet` full-body doll + total stats + verbs before buying; recruits auto-join an open active-party slot, else bench (roster cap 20)
 - **Infrastructure:** `ScreenManager` + `BottomNavDisplay`, `NumberFormatter`, `StatTypeColors`, `SafeAreaAdapter`
 - Canvas + TextMeshPro, CanvasScaler 1080x1920 match height. Surfaces are still flat placeholder blocks: art direction lands in Full UI Pass 2 (Sprint 12).
 
