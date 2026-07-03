@@ -52,6 +52,8 @@ namespace Starquill.Managers
         private readonly KeyPouch keyPouch = new();
         private DungeonRun activeDungeon;
         private int dungeonRunCounter;
+        private TavernStock tavern;
+        private long tavernSlotId = -1;
         private IAdService adService;
         private IIapService iapService;
         private List<EnemyState> currentEnemies = new();
@@ -78,6 +80,10 @@ namespace Starquill.Managers
         public double PendingOfflineGold { get; private set; }
         private readonly List<EquipmentInstance> rewardMailbox = new();
         public IReadOnlyList<EquipmentInstance> RewardMailbox => rewardMailbox;
+        public TavernStock Tavern => tavern;
+        public double TavernSlotEndsAt =>
+            TavernStock.SlotEndsAtUnix(tavernSlotId, economyConfig.tavernRotationHours);
+        public event Action OnTavernChanged;
         public event Action OnMailboxChanged;
         public event Action OnBoostsChanged;
         public event Action<double, List<EquipmentInstance>> OnChestClaimed;
@@ -208,6 +214,9 @@ namespace Starquill.Managers
                     if (sk != null) keyPouch.Add(sk.ToInstance());
             }
             dungeonRunCounter = save.dungeonRunCounter;
+
+            RestoreTavernFromSave(save);
+            RefreshTavernIfRotated();
 
             BuildPartyFromRoster();
             SpawnWave();
@@ -442,6 +451,7 @@ namespace Starquill.Managers
             GrantPartyXp(result.EnemiesKilled);
 
             TickAbilityXP();
+            RefreshTavernIfRotated();
 
             OnCombatTick?.Invoke(result);
 
@@ -721,6 +731,100 @@ namespace Starquill.Managers
             return collected;
         }
 
+        // ---------- Tavern ----------
+
+        /// Recruit price anchor: minutes of current gold income, so the
+        /// tavern tracks the same curve as boosts.
+        private double TavernBasePrice()
+        {
+            return economyConfig.GoldPerKill(questLevel, 0f, economyConfig.prestigeMultiplierBase)
+                * economyConfig.exploreKillsPerMinute * economyConfig.tavernCostMinutes;
+        }
+
+        /// Recruits arrive at the active party's average level (min 1).
+        private int TavernTargetLevel()
+        {
+            if (roster == null) return 1;
+            int sum = 0, members = 0;
+            foreach (var c in roster.GetActiveParty())
+            {
+                if (c == null) continue;
+                sum += c.level;
+                members++;
+            }
+            return members == 0 ? 1 : Math.Max(1, (int)Math.Round((double)sum / members));
+        }
+
+        /// Rolls new stock when the 6-hour slot has changed. Cheap long
+        /// compare otherwise, so it is safe to call every tick.
+        public void RefreshTavernIfRotated()
+        {
+            long slot = TavernStock.SlotId(UnixNow, economyConfig.tavernRotationHours);
+            if (slot == tavernSlotId) return;
+
+            var speciesKeys = new List<string>(DisplayDataRegistry.Instance.Species.Keys);
+            tavern = TavernStock.Generate(characterFactory, speciesKeys,
+                economyConfig.tavernSize, TavernTargetLevel(), questLevel,
+                TavernBasePrice(), new System.Random());
+            tavernSlotId = slot;
+            OnTavernChanged?.Invoke();
+            SaveState();
+        }
+
+        /// Atomic purchase: gold is deducted only after the recruit joins
+        /// the roster; a full roster refuses without charging.
+        public bool RecruitFromTavern(int index)
+        {
+            if (tavern == null || index < 0 || index >= tavern.Recruits.Count) return false;
+            if (tavern.Purchased[index]) return false;
+            double price = tavern.Prices[index];
+            if (gold < price) return false;
+            if (!roster.AddCharacter(tavern.Recruits[index])) return false;
+
+            gold -= price;
+            tavern.Purchased[index] = true;
+            OnGoldChanged?.Invoke(gold);
+            OnRosterChanged?.Invoke();
+            OnTavernChanged?.Invoke();
+            SaveState();
+            return true;
+        }
+
+        /// Restores persisted stock so a rotation never re-rolls mid-slot.
+        /// A stale slot id is left for RefreshTavernIfRotated to replace.
+        private void RestoreTavernFromSave(SaveData save)
+        {
+            if (save.tavernSlotId < 0 || save.tavernStock == null || save.tavernStock.Count == 0)
+                return;
+
+            int count = save.tavernStock.Count;
+            tavern = new TavernStock
+            {
+                Recruits = new List<CharacterInstance>(count),
+                Prices = save.tavernPrices != null && save.tavernPrices.Length == count
+                    ? save.tavernPrices : new double[count],
+                Purchased = save.tavernPurchased != null && save.tavernPurchased.Length == count
+                    ? save.tavernPurchased : new bool[count]
+            };
+
+            foreach (var sc in save.tavernStock)
+            {
+                var recruit = sc.ToInstance();
+                for (int i = 0; i < sc.equipment.Length && i < recruit.equipment.Length; i++)
+                {
+                    if (sc.equipment[i] != null && !string.IsNullOrEmpty(sc.equipment[i].itemType))
+                        recruit.equipment[i] = equipmentFactory.Reconstruct(sc.equipment[i]);
+                }
+                foreach (var verbId in sc.equippedVerbIds)
+                {
+                    var verb = CharacterFactory.CreateVerbById(verbId);
+                    if (verb != null) recruit.equippedVerbs.Add(verb);
+                }
+                tavern.Recruits.Add(recruit);
+            }
+            tavernSlotId = save.tavernSlotId;
+        }
+
         private static string RandomArmorPrefix(System.Random rng)
         {
             var prefixes = new[] { "hd", "tr", "ar", "lg", "fe", "mc" };
@@ -872,6 +976,15 @@ namespace Starquill.Managers
             foreach (var key in keyPouch.Keys)
                 saveManager.CurrentSave.keys.Add(SerializedKey.FromInstance(key));
             saveManager.CurrentSave.dungeonRunCounter = dungeonRunCounter;
+            saveManager.CurrentSave.tavernSlotId = tavernSlotId;
+            saveManager.CurrentSave.tavernStock.Clear();
+            if (tavern != null)
+            {
+                foreach (var c in tavern.Recruits)
+                    saveManager.CurrentSave.tavernStock.Add(SerializedCharacter.FromInstance(c));
+                saveManager.CurrentSave.tavernPrices = (double[])tavern.Prices.Clone();
+                saveManager.CurrentSave.tavernPurchased = (bool[])tavern.Purchased.Clone();
+            }
             saveManager.Save();
         }
 

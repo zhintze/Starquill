@@ -41,6 +41,12 @@ namespace Starquill.Managers
         public List<SerializedKey> keys = new();
         public int dungeonRunCounter;
 
+        // Tavern (stock persists so a rotation never re-rolls mid-slot)
+        public long tavernSlotId = -1;
+        public List<SerializedCharacter> tavernStock = new();
+        public double[] tavernPrices;
+        public bool[] tavernPurchased;
+
         public bool NeedsRosterInitialization()
         {
             return roster == null || roster.Count == 0;
