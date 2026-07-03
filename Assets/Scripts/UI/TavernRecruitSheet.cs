@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -37,7 +36,9 @@ namespace Starquill.UI
             // --- Header: portrait + identity ---
             var header = new GameObject("Header", typeof(RectTransform));
             header.transform.SetParent(content, false);
-            header.AddComponent<LayoutElement>().preferredHeight = 220f;
+            var headerLE = header.AddComponent<LayoutElement>();
+            headerLE.preferredHeight = 300f;
+            headerLE.flexibleHeight = 0;
 
             var portrait = new GameObject("Portrait", typeof(RectTransform), typeof(RawImage));
             portrait.transform.SetParent(header.transform, false);
@@ -45,14 +46,14 @@ namespace Starquill.UI
             portraitRT.anchorMin = new Vector2(0, 0.5f);
             portraitRT.anchorMax = new Vector2(0, 0.5f);
             portraitRT.pivot = new Vector2(0, 0.5f);
-            portraitRT.sizeDelta = new Vector2(220f, 220f);
+            portraitRT.sizeDelta = new Vector2(300f, 300f);
             RenderPortrait(recruit, portrait.GetComponent<RawImage>(), content);
 
             var name = UiFactory.Text(header.transform, recruit.displayName, UiFactory.TextStyle.Heading);
             var nameRT = name.rectTransform;
             nameRT.anchorMin = new Vector2(0, 0.5f);
             nameRT.anchorMax = new Vector2(1, 1);
-            nameRT.offsetMin = new Vector2(220f + UiTheme.Space3, 0);
+            nameRT.offsetMin = new Vector2(300f + UiTheme.Space3, 0);
             nameRT.offsetMax = Vector2.zero;
 
             var subtitle = UiFactory.Text(header.transform,
@@ -61,7 +62,7 @@ namespace Starquill.UI
             var subRT = subtitle.rectTransform;
             subRT.anchorMin = new Vector2(0, 0);
             subRT.anchorMax = new Vector2(1, 0.5f);
-            subRT.offsetMin = new Vector2(220f + UiTheme.Space3, 0);
+            subRT.offsetMin = new Vector2(300f + UiTheme.Space3, 0);
             subRT.offsetMax = Vector2.zero;
             subtitle.alignment = TextAlignmentOptions.TopLeft;
 
@@ -77,7 +78,9 @@ namespace Starquill.UI
             {
                 var statRow = new GameObject($"StatRow_{row}", typeof(RectTransform));
                 statRow.transform.SetParent(content, false);
-                statRow.AddComponent<LayoutElement>().preferredHeight = UiTheme.FontBody + 10f;
+                var rowLE = statRow.AddComponent<LayoutElement>();
+                rowLE.preferredHeight = UiTheme.FontBody + 10f;
+                rowLE.flexibleHeight = 0;
                 var layout = statRow.AddComponent<HorizontalLayoutGroup>();
                 layout.spacing = UiTheme.Space2;
                 layout.childControlWidth = true;
@@ -135,9 +138,10 @@ namespace Starquill.UI
                     $"Need {NumberFormatter.FormatCompact(price)}g");
         }
 
-        /// Head-crop portrait via the shared compositing pipeline. The
-        /// renderer lives under the sheet root, so closing the sheet
-        /// destroys it (and releases its RenderTexture).
+        /// Full-body paper doll via the shared compositing pipeline,
+        /// rendered bare-headed (mapper drops the Head slot; the recruit
+        /// keeps its gear). The renderer lives under the sheet root, so
+        /// closing the sheet destroys it (and releases its RenderTexture).
         private static void RenderPortrait(CharacterInstance recruit, RawImage target, Transform content)
         {
             var registry = DisplayDataRegistry.Instance;
@@ -148,25 +152,12 @@ namespace Starquill.UI
             var sheetRoot = content.GetComponentInParent<BottomSheet>();
             obj.transform.SetParent(sheetRoot != null ? sheetRoot.transform : content, false);
             var renderer = obj.AddComponent<CharacterPortraitRenderer>();
-            renderer.Initialize(new ImageResolver(), 220);
-            renderer.SetHeadCrop(speciesData.HeadYOffset, speciesData.HeadZoom);
+            renderer.Initialize(new ImageResolver(), 300);
+            // Full-body framing: centered, ortho 1 (mirrors CharacterDisplay).
+            renderer.SetHeadCrop(0f, 1f);
 
             var instance = recruit.GetOrCreateAppearance(speciesData, registry);
-            var equipList = new List<EquipmentDisplayInfo>();
-            foreach (var eq in recruit.equipment)
-            {
-                if (eq == null) continue;
-                equipList.Add(new EquipmentDisplayInfo
-                {
-                    ItemType = eq.ItemType,
-                    ItemNum = eq.ItemNum,
-                    BaseColor = eq.BaseColor,
-                    VarianceColors = eq.VarianceColors as Dictionary<int, Color>
-                        ?? new Dictionary<int, Color>(eq.VarianceColors),
-                    IsOffhand = eq.Slot == EquipmentSlot.OffHand,
-                    LayerVariants = eq.LayerVariants
-                });
-            }
+            var equipList = EquipmentDisplayMapper.ToDisplayList(recruit.equipment, bareHead: true);
 
             renderer.RebuildFromData(instance, speciesData, equipList, new DisplayBuilder(registry));
             target.texture = renderer.Texture;

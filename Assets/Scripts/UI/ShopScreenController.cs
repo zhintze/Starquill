@@ -1,8 +1,12 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Starquill.Characters;
 using Starquill.Combat;
+using Starquill.Display;
+using Starquill.Equipment;
 using Starquill.Managers;
 using Starquill.Services;
 
@@ -18,6 +22,13 @@ namespace Starquill.UI
         private bool initialized;
         private bool visible;
         private float repaintTimer;
+
+        // Tavern portrait renderers persist on this controller (content is
+        // torn down every repaint); indexed parallel to the tavern rows.
+        private DisplayDataRegistry tavernRegistry;
+        private DisplayBuilder tavernBuilder;
+        private readonly List<CharacterPortraitRenderer> tavernRenderers = new();
+        private readonly List<string> tavernRenderedIds = new();
 
         private IEnumerator Start()
         {
@@ -179,13 +190,27 @@ namespace Starquill.UI
                 if (!purchased)
                     btn.onClick.AddListener(() => TavernRecruitSheet.Show(transform.root, index));
 
+                // Head portrait (roster style), rendered bare-headed so the
+                // face is visible; dimmed once recruited.
+                var portraitObj = new GameObject("Portrait", typeof(RectTransform), typeof(RawImage));
+                portraitObj.transform.SetParent(row.transform, false);
+                var portraitRT = portraitObj.GetComponent<RectTransform>();
+                portraitRT.anchorMin = new Vector2(0, 0.5f);
+                portraitRT.anchorMax = new Vector2(0, 0.5f);
+                portraitRT.pivot = new Vector2(0, 0.5f);
+                portraitRT.anchoredPosition = new Vector2(8f, 0);
+                portraitRT.sizeDelta = new Vector2(104f, 104f);
+                var portraitImg = portraitObj.GetComponent<RawImage>();
+                portraitImg.texture = TavernPortrait(index, tavern.Recruits[i]);
+                portraitImg.color = purchased ? new Color(0.5f, 0.5f, 0.55f) : Color.white;
+
                 var title = UiFactory.Text(row.transform,
                     TavernPresenter.RowTitle(tavern.Recruits[i]), UiFactory.TextStyle.Body);
                 title.color = purchased ? UiTheme.TextDim : UiTheme.TextPrimary;
                 var titleRT = title.rectTransform;
                 titleRT.anchorMin = new Vector2(0, 0);
                 titleRT.anchorMax = new Vector2(0.68f, 1);
-                titleRT.offsetMin = new Vector2(UiTheme.Space2, 0);
+                titleRT.offsetMin = new Vector2(112f + UiTheme.Space2, 0);
                 titleRT.offsetMax = Vector2.zero;
                 title.textWrappingMode = TextWrappingModes.NoWrap;
                 title.overflowMode = TextOverflowModes.Ellipsis;
@@ -200,6 +225,45 @@ namespace Starquill.UI
                 priceRT.offsetMin = Vector2.zero;
                 priceRT.offsetMax = new Vector2(-UiTheme.Space2, 0);
             }
+        }
+
+        /// Bare-headed head-crop portrait for a tavern row. Renderers (and
+        /// their RenderTextures) are pooled per index and only re-render
+        /// when the recruit occupying the index changes (rotation), not on
+        /// the once-a-second repaint.
+        private Texture TavernPortrait(int index, CharacterInstance recruit)
+        {
+            if (tavernRegistry == null)
+            {
+                tavernRegistry = DisplayDataRegistry.Instance;
+                if (tavernRegistry.Species.Count == 0) tavernRegistry.LoadAll();
+                tavernBuilder = new DisplayBuilder(tavernRegistry);
+            }
+            if (!tavernRegistry.Species.TryGetValue(recruit.speciesId, out var speciesData))
+                return null;
+
+            while (tavernRenderers.Count <= index)
+            {
+                var obj = new GameObject($"TavernPortrait_{tavernRenderers.Count}");
+                obj.transform.SetParent(transform);
+                var r = obj.AddComponent<CharacterPortraitRenderer>();
+                r.Initialize(new ImageResolver(), 150);
+                tavernRenderers.Add(r);
+                tavernRenderedIds.Add(null);
+            }
+
+            string key = string.IsNullOrEmpty(recruit.id) ? recruit.displayName : recruit.id;
+            if (tavernRenderedIds[index] != key)
+            {
+                var renderer = tavernRenderers[index];
+                renderer.SetHeadCrop(speciesData.HeadYOffset, speciesData.HeadZoom);
+                var instance = recruit.GetOrCreateAppearance(speciesData, tavernRegistry);
+                renderer.RebuildFromData(instance, speciesData,
+                    EquipmentDisplayMapper.ToDisplayList(recruit.equipment, bareHead: true),
+                    tavernBuilder);
+                tavernRenderedIds[index] = key;
+            }
+            return tavernRenderers[index].Texture;
         }
 
         private void ChestCard(GameManager gm, double now)
@@ -270,6 +334,11 @@ namespace Starquill.UI
         {
             if (screenManager != null)
                 screenManager.OnScreenChanged -= HandleScreenChanged;
+
+            foreach (var r in tavernRenderers)
+                if (r != null) Destroy(r.gameObject);
+            tavernRenderers.Clear();
+            tavernRenderedIds.Clear();
         }
     }
 }
