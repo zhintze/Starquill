@@ -783,6 +783,20 @@ namespace Starquill.Managers
 
             gold -= price;
             tavern.Purchased[index] = true;
+
+            // Recruits join the active party when a slot is open; otherwise
+            // they wait on the bench.
+            for (int slot = 0; slot < roster.ActivePartyIndices.Length; slot++)
+            {
+                if (roster.ActivePartyIndices[slot] == -1)
+                {
+                    roster.SetPartyMember(slot, roster.Characters.Count - 1);
+                    BuildPartyFromRoster();
+                    RebuildVerbPool();
+                    break;
+                }
+            }
+
             OnGoldChanged?.Invoke(gold);
             OnRosterChanged?.Invoke();
             OnTavernChanged?.Invoke();

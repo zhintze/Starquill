@@ -18,6 +18,19 @@ namespace Starquill.UI
                 : $"{recruit.displayName} · {species} Lv {recruit.level}";
         }
 
+        /// Two-line tavern row: name on top, race + level beneath, so
+        /// neither truncates.
+        public static string RowName(CharacterInstance recruit) => recruit.displayName;
+
+        /// "Dwarf · Lv 7" ("Lv 3" when species unknown).
+        public static string RowSubtitle(CharacterInstance recruit)
+        {
+            string species = SpeciesLabel(recruit.speciesId);
+            return string.IsNullOrEmpty(species)
+                ? $"Lv {recruit.level}"
+                : $"{species} · Lv {recruit.level}";
+        }
+
         /// Species ids are lowercase keys ("dwarf"); display capitalized.
         public static string SpeciesLabel(string speciesId)
         {

@@ -25,6 +25,20 @@ namespace Starquill.Tests.EditMode.UI
         }
 
         [Test]
+        public void RowName_And_RowSubtitle_SplitTheTwoLines()
+        {
+            var r = Recruit("Bramblewick Thornfoot", "dwarf", 7);
+            Assert.AreEqual("Bramblewick Thornfoot", TavernPresenter.RowName(r));
+            Assert.AreEqual("Dwarf · Lv 7", TavernPresenter.RowSubtitle(r));
+        }
+
+        [Test]
+        public void RowSubtitle_HandlesMissingSpecies()
+        {
+            Assert.AreEqual("Lv 3", TavernPresenter.RowSubtitle(Recruit("Bram", "", 3)));
+        }
+
+        [Test]
         public void SpeciesLabel_CapitalizesFirstLetter()
         {
             Assert.AreEqual("Human", TavernPresenter.SpeciesLabel("human"));

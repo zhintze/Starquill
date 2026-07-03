@@ -204,16 +204,28 @@ namespace Starquill.UI
                 portraitImg.texture = TavernPortrait(index, tavern.Recruits[i]);
                 portraitImg.color = purchased ? new Color(0.5f, 0.5f, 0.55f) : Color.white;
 
-                var title = UiFactory.Text(row.transform,
-                    TavernPresenter.RowTitle(tavern.Recruits[i]), UiFactory.TextStyle.Body);
-                title.color = purchased ? UiTheme.TextDim : UiTheme.TextPrimary;
-                var titleRT = title.rectTransform;
-                titleRT.anchorMin = new Vector2(0, 0);
-                titleRT.anchorMax = new Vector2(0.68f, 1);
-                titleRT.offsetMin = new Vector2(112f + UiTheme.Space2, 0);
-                titleRT.offsetMax = Vector2.zero;
-                title.textWrappingMode = TextWrappingModes.NoWrap;
-                title.overflowMode = TextOverflowModes.Ellipsis;
+                // Two stacked lines so name and race/level never truncate.
+                var name = UiFactory.Text(row.transform,
+                    TavernPresenter.RowName(tavern.Recruits[i]), UiFactory.TextStyle.Body,
+                    TextAlignmentOptions.BottomLeft);
+                name.color = purchased ? UiTheme.TextDim : UiTheme.TextPrimary;
+                var nameRT = name.rectTransform;
+                nameRT.anchorMin = new Vector2(0, 0.5f);
+                nameRT.anchorMax = new Vector2(0.68f, 1);
+                nameRT.offsetMin = new Vector2(112f + UiTheme.Space2, 0);
+                nameRT.offsetMax = new Vector2(0, -6f);
+                name.textWrappingMode = TextWrappingModes.NoWrap;
+
+                var sub = UiFactory.Text(row.transform,
+                    TavernPresenter.RowSubtitle(tavern.Recruits[i]), UiFactory.TextStyle.Caption,
+                    TextAlignmentOptions.TopLeft);
+                sub.color = UiTheme.TextDim;
+                var subRT = sub.rectTransform;
+                subRT.anchorMin = new Vector2(0, 0);
+                subRT.anchorMax = new Vector2(0.68f, 0.5f);
+                subRT.offsetMin = new Vector2(112f + UiTheme.Space2, 6f);
+                subRT.offsetMax = Vector2.zero;
+                sub.textWrappingMode = TextWrappingModes.NoWrap;
 
                 var price = UiFactory.Text(row.transform,
                     purchased ? "Recruited" : TavernPresenter.PriceText(tavern.Prices[i]),
