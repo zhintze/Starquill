@@ -81,6 +81,11 @@ namespace Starquill.Data
         public int dungeonBonusRollCap = 3;
         public float dungeonParSecondsPerWave = 15f;
 
+        [Header("Tavern")]
+        public int tavernSize = 6;
+        public float tavernRotationHours = 6f;
+        public float tavernCostMinutes = 25f;   // recruit price in minutes of current gold income
+
         [Header("Ability Leveling")]
         public float abilityBaseXPRate = 1f;
         public float abilityBaseXPThreshold = 100f;
