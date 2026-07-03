@@ -280,7 +280,7 @@ Same style as the existing EditMode suite:
 
 | # | Resolution |
 |---|---|
-| D1 | HSV-bucketed color families classified automatically at load. Originally 8; revised post-D1 (2026-07-02, PM request) to 10: White and Black split out of Neutral (Black = v<0.20 incl. dark tinted shades; White = low-sat v>=0.75; Neutral = true grays) |
+| D1 | HSV-bucketed color families classified automatically at load. Originally 8; revised post-D1 (2026-07-02, PM-directed) to 11: White/Black split out of Neutral, warm band split perceptually (Brown = dark or muted warm across 15-70°; Orange/Yellow = vivid light only), saturated near-blacks keep their hue, and pale washed-out colors (S<0.35 at V>=0.70) pool in **Pastel** — an unsorted, NOT-mintable holding family until any sub-tint earns a real key promise |
 | D2 | Base keys drop D1 85% / D2 13% / D3 2% at every quest level; **same-variant fusion is the upgrade path** (brown D1 + brown D1 → brown D2) |
 | D3 | **Steep risk/reward:** enemy mult +0.6/D; floors D1 Unc / D2 Rare / D3 Epic / D4 Epic + 2× Legendary weight / **D5+ Legendary** |
 | D4 | Max one modifier per kind per key; same-kind different-variant fusion is invalid; D cap 6 |

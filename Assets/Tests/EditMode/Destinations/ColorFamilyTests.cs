@@ -20,6 +20,11 @@ namespace Starquill.Tests.Destinations
         [TestCase(0.15f, 0.14f, 0.13f, ColorFamily.Black)]   // dark AND drab reads black
         [TestCase(1f, 1f, 1f, ColorFamily.White)]            // white
         [TestCase(0.8f, 0.8f, 0.82f, ColorFamily.White)]     // silver: low sat, high value
+        // Pale washed-out colors pool in Pastel (PM exemplars, 2026-07-02):
+        [TestCase(0.847f, 0.769f, 0.714f, ColorFamily.Pastel)] // #D8C4B6 pale pinkish beige
+        [TestCase(0.780f, 0.651f, 0.545f, ColorFamily.Pastel)] // #C7A68B washed light tan
+        [TestCase(0.761f, 0.769f, 0.533f, ColorFamily.Pastel)] // #C2C488 pale olive-green
+        [TestCase(0.957f, 0.933f, 0.804f, ColorFamily.Pastel)] // #F4EECD near-white cream
         public void Classify_KnownColors(float r, float g, float b, ColorFamily expected)
         {
             Assert.AreEqual(expected, ColorFamilyClassifier.Classify(r, g, b));

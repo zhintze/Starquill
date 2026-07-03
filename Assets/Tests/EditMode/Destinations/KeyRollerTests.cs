@@ -37,5 +37,17 @@ namespace Starquill.Tests.Destinations
             }
             Assert.IsTrue(color && slot && cls);
         }
+
+        [Test]
+        public void Roll_NeverMintsPastelKeys()
+        {
+            var rng = new System.Random(11);
+            for (int i = 0; i < 2000; i++)
+            {
+                var key = KeyRoller.Roll(rng);
+                if (key.ColorFamily.HasValue)
+                    Assert.AreNotEqual(Starquill.Core.ColorFamily.Pastel, key.ColorFamily.Value);
+            }
+        }
     }
 }

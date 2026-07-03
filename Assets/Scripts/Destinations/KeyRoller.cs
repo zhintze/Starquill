@@ -8,13 +8,22 @@ namespace Starquill.Destinations
     /// constants until the balance pass proves they need to be knobs.
     public static class KeyRoller
     {
+        /// Pastel is the unsorted pale pool, not a key promise: never minted.
+        private static readonly ColorFamily[] MintableFamilies =
+        {
+            ColorFamily.Red, ColorFamily.Orange, ColorFamily.Brown,
+            ColorFamily.Yellow, ColorFamily.Green, ColorFamily.Blue,
+            ColorFamily.Purple, ColorFamily.Neutral, ColorFamily.White,
+            ColorFamily.Black
+        };
+
         public static KeyInstance Roll(Random rng)
         {
             var key = new KeyInstance();
 
             double kind = rng.NextDouble();
             if (kind < 0.40)
-                key.ColorFamily = (ColorFamily)rng.Next(Enum.GetValues(typeof(ColorFamily)).Length);
+                key.ColorFamily = MintableFamilies[rng.Next(MintableFamilies.Length)];
             else if (kind < 0.70)
                 key.Slot = (KeySlot)rng.Next(Enum.GetValues(typeof(KeySlot)).Length);
             else
