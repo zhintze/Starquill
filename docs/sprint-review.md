@@ -513,3 +513,27 @@ Design: `docs/plans/2026-07-01-mobile-ui-redesign-design.md` · Plan: `...-plan.
 - `Starquill.Services`: IAdService (MockAdService in editor, UnityAdsService rewarded impl with placeholder game id for ship) + IIapService (mock; real Unity Purchasing 5.x wiring = Sprint 12 device task). Placements: offline2x, chestDouble. removeAdsOwned persisted, gates Sprint 12 interstitials
 - Shop screen (nav 4, placeholder replaced): BOOSTS / CHEST / PREMIUM sections, live countdowns, affordability states
 - Design/plan: `docs/plans/2026-07-01-sprint11-shop-offline-{design,plan}.md`
+
+---
+
+## Balance Pass + Reward Mailbox
+
+**Date:** 2026-07-02 | **Status:** Implemented, sim-tuned, play-verified
+
+- Structural wall diagnosed (`docs/balance-analysis.md` + `tools/balance_sim.py`): enemy HP exponential vs linear player power; fixed by activating the dormant Training ladder as the exponential power channel (per-character, 50g × 1.25^L, ×1.05 dmg/level, catch-up below roster frontier)
+- CHA gold bonus wired (+2%/pt), gear stat budgets scale ×(1 + Q×0.015), boosts repriced as minutes-of-income, ScoreItem includes ability potency
+- Sim-tuned wall: ~Q75 at ~2 weeks casual play; grid search in `tools/balance_sim.py`
+- Reward mailbox replaces the overflow-to-gold stopgap: full-inventory rewards persist in SaveData, surface on the Loot screen, collect as space frees
+- Interstitial at quest completion, gated by removeAdsOwned
+
+## Destinations Sprint D1: Keys + Dungeons
+
+**Date:** 2026-07-02 | **Status:** Implemented via subagent-driven two-stage reviews; play-mode smoke verified; Test Runner green (user-confirmed)
+
+- Design finalized same day (`docs/plans/2026-07-02-destinations-design.md`, all 10 open decisions PM-resolved); Encounters cut as a mode, its waves-over-par bonus retained in dungeons
+- `Starquill.Destinations` assembly: KeyInstance (color/type/class modifiers + difficulty), KeyPouch (soft cap 30), KeyFusion (different kinds combine, same variant upgrades, cross-variant invalid; cost = base × questLevel × D²), KeyRoller, deterministic DungeonGenerator + DungeonRun
+- Targeted loot plumbing: DropModifiers, forced stat pairs, palette color-family filtering, legendary-weight mult, slot bias: every drop inside a dungeon carries the key's promise
+- GameManager: key drops per kill + quest-tier key rewards, StartDungeon/EndDungeon lifecycle (pause/quit banks the run), DungeonRewardRoller, save round-trip
+- UI: key pouch on the Quests screen, KeyDetailSheet, KeyFusionSheet (live gold gate), DungeonHudDisplay, DungeonCompletionSheet; smoke run surfaced and fixed a BottomSheet z-order bug affecting all stacked sheets
+- Color family iteration (PM-directed, same day): 8 → 11 families (White/Black split from Neutral; perceptual warm band: Brown = dark/muted 15-70°; saturated darks keep hue; Pastel = unsorted pale pool, not mintable). `tools/color_pools.py`: local interactive review server; manual overrides in `color_family_overrides.json` applied by ColorManager over the classifier (see `tools/README.md`)
+- Docs baseline re-established: completed plan docs archived to `docs/plans/archive/`, implemented-systems + roadmap refreshed

@@ -1,100 +1,54 @@
 # Starquill MVP Roadmap
 
-**Last updated:** 2026-07-01
-**Baseline:** Sprints 1-8 + equipment stat redesign complete (see `docs/sprint-review.md`). All 262 EditMode tests pass. Current-state reference: `docs/implemented-systems.md`.
+**Last updated:** 2026-07-02
+**Baseline:** Sprints 1-11, the balance pass, and Destinations Sprint D1 are complete (last confirmed Test Runner: 344 green 2026-07-01, D1 batch green 2026-07-02; ~460 test methods on disk). History: `docs/sprint-review.md`. Current state: `docs/implemented-systems.md`. Completed design/plan docs are archived in `docs/plans/archive/`.
 
 Each sprint follows spec-driven development: design doc → implementation plan → task-by-task execution with tests → review. Plan docs live in `docs/plans/` with the `YYYY-MM-DD-<topic>-design.md` / `-plan.md` naming convention.
 
 ---
 
-## Sprint 8.5: Equipment & Loot UI Readability — IMPLEMENTED 2026-07-01, extended into the Mobile UI Redesign (UiTheme/UiFactory design system, ItemCard v2, bottom-sheet flow, app-wide mobile sizing — see `2026-07-01-mobile-ui-redesign-design.md`). Explore/Loot/Party visually verified in play mode; final Test Runner pass + ClearSave play-test pending.
+## Completed (2026-07-01 → 2026-07-02)
 
-**Why first:** the stat pair + AwakenedAbility redesign passes all tests but cannot be verified in gameplay — the current item displays don't legibly present the new model. Every later sprint (quest rewards, shop) renders items through these same components, so fixing them first prevents rework.
+| Sprint | Delivered |
+|---|---|
+| 8.5 + Mobile UI Redesign | Equipment/loot readability, then the app-wide design system: UiTheme/UiFactory, ItemCard v2, BottomSheet flow, mobile sizing |
+| 9: Quest Backend | Deterministic zone-ladder quest generation, QuestLog state machine, tier rewards with rarity floors |
+| 10: Quests UI | Discovery banner, offer/completion sheets, path indicator bar, sectioned Quests screen with Destinations slot |
+| 11: Shop + Offline + XP + Ads | Timed boosts, 4h chest, offline claim sheet, character XP live, rewarded-ad placements + Remove Ads (mock backends) |
+| Balance pass | Training ladder as the exponential player-power channel, CHA gold, gear budget scaling, boost repricing; sim-tuned (`tools/balance_sim.py`, `docs/balance-analysis.md`) |
+| Reward mailbox | Full-inventory rewards persist in a saved mailbox: never lost, never converted |
+| Destinations D1 | Keys (color/type/class, fusion, selling), key-targeted timed dungeon rushes, pouch/fusion UI, run HUD + completion sheet; color families iterated to 11 with the Pastel pool + `tools/color_pools.py` manual override pipeline |
 
-**Goal:** a player can look at any item and immediately understand what it is, what it does, and whether it's an upgrade.
-
-**Scope:**
-- Equipment card redesign: rarity color treatment, primary stat emphasized over secondary, ability name + level shown, slot/type identification at a glance
-- `ItemDetailPanel` redesign: full stat pair breakdown, ability description with current potency, ability XP progress bar, gold level-up button with cost (wired to existing `GameManager.LevelUpAbility`)
-- Upgrade comparison: equipped-vs-candidate stat deltas surfaced on cards and in the detail panel (`ItemComparer` already provides scoring)
-- Loot drop toast/feed readability on the explore screen
-
-**Exit criteria:** play-test confirms stat pairs, ability rolls, ability XP gain, and gold level-up all behave per the redesign plan — the gameplay half of the original Task 9.
-
----
-
-## Sprint 9: Quest System Backend — IMPLEMENTED 2026-07-01 (Test Runner pass pending)
-
-**Goal:** quests as structured multi-wave challenges discovered during exploration, pure logic with test coverage, no UI.
-
-**Scope:**
-- Quest generation from `QuestZoneDefinition` (data model already exists, currently unconsumed)
-- Quest discovery roll during exploration (`questDiscoveryRate = 0.03` knob already in EconomyConfig)
-- Quest state machine: Discovered → Accepted → InProgress (wave N of M) → BossWave → Completed / Retreated
-- Curated rewards: gold payout + guaranteed loot rolls at quest rarity floor; retreat penalty (`questRetreatGoldPenalty = 0.50`)
-- GameManager integration: quest mode vs explore mode wave spawning, quest events for UI
-- Save/load: active quest state, discovered-but-unaccepted quests
-- Full EditMode test coverage on generation, state transitions, and reward math
+Details per sprint: `docs/sprint-review.md` and `docs/plans/archive/`.
 
 ---
 
-## Sprint 10: Quests Screen UI — IMPLEMENTED 2026-07-01 (Test Runner pass pending)
-
-**Goal:** the player-facing quest loop.
-
-**Scope:**
-- Quest discovery popup on the explore screen (accept / dismiss)
-- Quests screen: available and active quest list, quest detail (zone, waves, rewards preview)
-- In-quest explore screen state: wave progress indicator (x of M), boss wave presentation, retreat button
-- Completion flow: reward reveal, return to exploring
-- Quest retry affordance after retreat
-
----
-
-## Sprint 11: Shop Screen + Offline Earnings — IMPLEMENTED 2026-07-01 (Test Runner pass pending)
-
-**Goal:** the economy's spend-and-return loop.
-
-**Scope:**
-- Shop screen: purchasable timed boosts (Auto-Fire Verbs, Verb Speed-Up per design doc §Boosts), boost timers persisted in save
-- Timed exploration chest (4-hour cycle)
-- Offline earnings: elapsed-time calculation on resume (`OfflineGold()` formula already implemented), claim modal
-- Boost effects wired into the combat tick and verb systems
-- **Character XP wiring (PM ruling 2026-07-01):** grant character XP per kill/quest so the existing level-up + stat allocation system goes live (UI and data already built, currently dormant)
-- **Rewarded ads (PM ruling 2026-07-01: ads ship in MVP):** 2x offline earnings and chest-double rewarded placements land with these surfaces; Remove Ads IAP via installed com.unity.purchasing 5.4.0; interstitials-at-quest-complete deferred to Sprint 12 polish
-
-**Note:** `com.unity.purchasing` 5.4.0 is installed and unused. Whether real IAP/rewarded ads ship in MVP is an open decision (below); this sprint builds the shop against gold only.
-
----
-
-## Full UI Pass 2 (scheduled after Sprints 9-11 land)
-
-The 2026-07-01 mobile UI redesign established the design system and fixed density/readability, but it was executed while Quests, Shop, and offline earnings didn't exist. Once those are functional, a second full UI pass is needed: unify the new screens onto UiTheme/UiFactory, revisit information architecture with real content, art-direct the placeholder surfaces (buttons, frames, backgrounds are flat color blocks), and re-run the heuristic evaluation across the complete app. Track alongside Sprint 12 polish.
-
-## Sprint 12: Polish + MVP Ship
+## Sprint 12: Polish + MVP Ship — NEXT
 
 **Goal:** shippable Android build.
 
 **Scope:**
-- First-time-user tutorial (tap verbs, equip loot, accept a quest)
+- First-time-user tutorial (tap verbs, equip loot, accept a quest); also owns the unlock-gating scheme (Destinations currently gates on first Zone Boss as a placeholder — design D10)
 - Animation/juice pass: verb activation, loot drops, quest completion, screen transitions
-- Balance pass across EconomyConfig knobs via play-testing
-- Bug sweep and performance check on device
-- Android build validation, icon/splash, store metadata prep
+- **Full UI Pass 2:** unify the newest screens onto UiTheme/UiFactory, revisit IA with real content, art-direct the flat placeholder surfaces, re-run heuristics across the complete app
+- Final balance pass across EconomyConfig knobs via play-testing; destinations knobs (key drop rate, fusion cost, dungeon par) are untuned guesses — grow a destinations branch in `tools/balance_sim.py`; known exploit to close or accept: backgrounding right after StartDungeon banks base rolls at 0 waves
+- **Real monetization backends (device work):** Unity Ads game id + 3 dashboard placements, Google Play account, real Unity Purchasing 5.x wiring for Remove Ads, store metadata. Interstitials-at-quest-complete already implemented and gated by removeAdsOwned
+- Bug sweep and performance check on device; Android build validation, icon/splash
 
 ---
 
-## Open Decisions (flagged, not blocking Sprints 8.5-10)
+## Open Decisions
 
 | Decision | Options | Current lean |
 |---|---|---|
-| ~~Character level-up~~ | RESOLVED 2026-07-01: in MVP — XP wiring added to Sprint 11 scope (system was half-built: UI/data existed with no XP source) | — |
-| ~~Monetization~~ | RESOLVED 2026-07-01: rewarded ads ship in MVP — wiring added to Sprint 11 scope, interstitials in Sprint 12 | — |
 | Cloud save / analytics / Remote Config | Sprint 12 or post-MVP | Post-MVP |
-| ~~Full-inventory quest rewards~~ | RESOLVED 2026-07-02: reward mailbox — overflow rewards persist in a saved mailbox, surfaced on the Loot screen, collected as space frees | — |
+| Pastel pool promotion | Keep as excluded pool vs promote sub-tints (Ivory, Sage, ...) to mintable keys | Review in `tools/color_pools.py` during D3 content work |
+
+Resolved decisions (character level-up in MVP, rewarded ads in MVP, reward mailbox, all 10 Destinations design decisions) are recorded in `docs/sprint-review.md` and the design docs.
 
 ## Post-MVP Backlog (existing designs)
 
-- Destinations (`docs/plans/2026-07-02-destinations-design.md`): **Sprint D1 (keys + dungeons) SHIPPED 2026-07-02** — key drops/fusion/selling, key-targeted timed dungeon rushes, pouch + fusion UI, run HUD + completion sheet. Remaining: Sprint D2 (Locations: fragment consumer, procedural one-time visits, dialogue trees), Sprint D3 (content + balance-sim branch + key art)
-- Prestige with Stellar Ink (design doc §Prestige; `prestigeMultiplier` stubbed at 1.0 throughout)
+- Destinations Sprints D2-D3 (`docs/plans/2026-07-02-destinations-design.md`): D2 Locations — fragment consumer, procedurally generated one-time visits, dialogue-tree finales (recruit/loot/boost/quest/boss/gold outcomes); D3 — more location parts, key art, destinations balance-sim branch
+- Prestige with Stellar Ink (master design §Prestige; `prestigeMultiplier` stubbed at 1.0 throughout)
+- Verb drops/collection (`docs/verb-stat-system-design-doc.md`; verbs currently come with the character)
 - Additional species, quest zones, seasonal events, social features

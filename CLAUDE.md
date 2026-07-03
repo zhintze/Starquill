@@ -11,7 +11,8 @@ The original Godot open-world RPG is archived in `godot-archive/` and is not par
 ## Key Documents
 
 - `docs/implemented-systems.md`: authoritative reference for what is built and how it works
-- `docs/sprint-review.md`: historical sprint log (Sprints 1-8 + equipment stat redesign)
+- `docs/sprint-review.md`: historical sprint log (Sprints 1-11, balance pass, Destinations D1)
+- `docs/roadmap.md`: remaining MVP work (Sprint 12) + post-MVP backlog
 - `docs/plans/`: dated design and implementation plan docs, one pair per sprint
 - `docs/plans/2026-02-12-idle-rpg-clicker-design.md`: original master design (equipment/affix sections superseded; see banner in that file)
 
@@ -27,7 +28,7 @@ UI (references Managers and below)
 Rules:
 - Equipment references Display (ColorManager); Characters references Equipment + Display (factory chain)
 - If a type is needed by both Equipment and Managers, put it in Equipment (lower in the chain). Example: `SerializedEquipment` lives in the Equipment namespace to avoid a circular dependency.
-- Tests live in `Assets/Tests/EditMode/` under `EditModeTests.asmdef` (~262 NUnit tests in 34 files)
+- Tests live in `Assets/Tests/EditMode/` under `EditModeTests.asmdef` (~460 test methods in 59 files; count from Test Runner, not estimates)
 
 ### Core Flow
 

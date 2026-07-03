@@ -1,7 +1,7 @@
 # Starquill: Implemented Systems Reference
 
-**Last updated:** 2026-07-01
-**Status:** Authoritative. This document describes what is actually built on branch `unity-idle-clicker` as of the equipment stat redesign (verified: all 262 EditMode tests pass). Where it conflicts with `docs/plans/2026-02-12-idle-rpg-clicker-design.md`, this document wins.
+**Last updated:** 2026-07-02
+**Status:** Authoritative. This document describes what is actually built on branch `unity-idle-clicker` through Sprint 11, the balance pass, and Destinations Sprint D1 (last confirmed Test Runner pass: 344 green 2026-07-01; ~460 test methods on disk since, D1 batch confirmed green 2026-07-02). Where it conflicts with `docs/plans/2026-02-12-idle-rpg-clicker-design.md`, this document wins.
 
 ---
 
@@ -9,7 +9,7 @@
 
 Unity 6 (6000.3.8f1) mobile idle RPG clicker, portrait 1080x1920, IL2CPP. A party of 4 paper-doll characters auto-battles enemy waves. The player taps Verbs (pooled party abilities) to exploit a dual-triangle advantage system. Loot drops feed a collection/equip loop that visibly changes characters.
 
-**Assemblies:** `Core → Data → Combat / Characters / Equipment / Exploration / Display → Managers`, with `UI` on top. Tests in `EditModeTests` (34 files, ~262 tests). The empty `Starquill.Economy` assembly was removed 2026-07-01; economy code lives in Data (`EconomyConfig`) and Equipment (`SellCalculator`, `PityTracker`).
+**Assemblies:** `Core → Data → Combat / Characters / Equipment / Exploration / Display / Quests / Destinations → Managers`, with `UI` and `Services` alongside. Tests in `EditModeTests` (59 files, ~460 test methods). The empty `Starquill.Economy` assembly was removed 2026-07-01; economy code lives in Data (`EconomyConfig`) and Equipment (`SellCalculator`, `PityTracker`).
 
 ---
 
@@ -105,7 +105,7 @@ Paper doll rendering: `DisplayBuilder` 4-stage pipeline (species parts → equip
 
 ## 7b. Quests (`Assets/Scripts/Quests/`, added Sprint 9)
 
-`QuestZoneTable` (loads `quest_zones.json`, 2 zones with dominant stat types + dialogue) → deterministic `QuestGenerator` (tier ladder 1-3 N / 4 E / 5-7 N / 8 E / 9-10 H / 11 Boss; typed waves, HP ramp, mini-boss/boss waves) → `QuestLog` state machine (Idle/Offered/Active/Retreated, guarded transitions, retreat = half-gold penalty, boss completion advances zone). GameManager orchestrates discovery offers, quest-wave spawning, rewards (tier gold multiplier + rarity-floor loot rolls; full-inventory overflow converts to gold as a STOPGAP — flagged in roadmap open decisions, not intended behavior), questLevel progression (+1, boss +2), and save persistence (specs regenerate on load).
+`QuestZoneTable` (loads `quest_zones.json`, 2 zones with dominant stat types + dialogue) → deterministic `QuestGenerator` (tier ladder 1-3 N / 4 E / 5-7 N / 8 E / 9-10 H / 11 Boss; typed waves, HP ramp, mini-boss/boss waves) → `QuestLog` state machine (Idle/Offered/Active/Retreated, guarded transitions, retreat = half-gold penalty, boss completion advances zone). GameManager orchestrates discovery offers, quest-wave spawning, rewards (tier gold multiplier + rarity-floor loot rolls + key payouts; full-inventory overflow goes to the reward mailbox, never lost), questLevel progression (+1, boss +2), and save persistence (specs regenerate on load).
 
 ## 7c. Destinations (`Assets/Scripts/Destinations/`, added Sprint D1)
 
@@ -122,17 +122,20 @@ Keys + dungeons per `docs/plans/2026-07-02-destinations-design.md` (Locations ar
 - Player actions: `OnVerbTapped(slot)`, `SellItem`, `EquipItemFromInventory`, `AutoEquipCharacter`, `LevelUpAbility`, `BuildPartyFromRoster`, `StartDungeon(key)`, `FuseKeys(a,b)` (atomic: validates rules + gold before consuming), `SellKey`
 - Save on pause/quit via `SaveManager`/`SaveData` (local JSON: roster, equipment, inventory, gold, quest level, pity counters)
 
-## 9. UI (`Assets/Scripts/UI/`, 27 files)
+## 9. UI (`Assets/Scripts/UI/`, 47 files)
 
-- **Explore screen:** `ExploreSceneController` (event subscriber, DeferredInitialSync coroutine for Start() ordering), `TopBarDisplay`, `VerbBarDisplay` + `VerbCardAnimator`, `EnemyDisplayController`, `DamageNumberSpawner`, `GoldCounterAnimator`, `PartyPortraitStrip`, parallax background
-- **Party screen:** `PartyScreenController`, `RosterGridDisplay`, `CharacterFocusDisplay`, `EquipmentSlotsDisplay`, `EquipmentDrawer` (3-column equipment card layout), `ActionLoadoutDisplay`
-- **Loot screen:** `LootScreenController`, `ItemDetailPanel`, `ItemDisplayData`
-- **Infrastructure:** `ScreenManager` + `BottomNavDisplay` (screen switching), `NumberFormatter` (big-number notation), `StatTypeColors`, `SafeAreaAdapter`
-- Canvas + TextMeshPro, CanvasScaler 1080x1920 match height
+Design system: `UiTheme` tokens (type floor 28px, touch >= 120px) + `UiFactory` primitives (Banner, LadderRow, ProgressBar, Image-based pips/chips — no Unicode glyphs in TMP) + `BottomSheet` (own Canvas, stacked sheets sort above open ones) + `ItemCardBuilder` v2, established in the 2026-07-01 mobile UI redesign.
 
-**Known deficiency:** equipment/loot/item displays are poorly designed for player readability. Stat pairs and awakened abilities cannot be meaningfully verified in gameplay through the current UI. A readability redesign is a roadmap item.
+- **Explore screen:** `ExploreSceneController`, `TopBarDisplay`, path indicator bar (travel/quest dual mode), `VerbBarDisplay` + `VerbCardAnimator`, `EnemyDisplayController`, `DamageNumberSpawner`, `GoldCounterAnimator`, `PartyPortraitStrip`, `LootToastFeed`, `QuestBannerDisplay`, `DungeonHudDisplay`, parallax background
+- **Sheets:** `QuestOfferSheet`, `QuestCompletionSheet`, `DungeonCompletionSheet`, `ItemDetailSheet`, `KeyDetailSheet`, `KeyFusionSheet`, offline-earnings Welcome-back sheet
+- **Party screen:** `PartyScreenController` (stat column + Train button left, doll center, portrait strip right), `RosterGridDisplay`, `CharacterFocusDisplay`, `EquipmentSlotsDisplay`, `EquipmentDrawer`, `ActionLoadoutDisplay`
+- **Loot screen:** `LootScreenController` (sort tabs, mailbox notice card), `ItemDisplayData`, `ComparisonData`, `ItemIconFraming`
+- **Quests screen:** `QuestsScreenController` (QUEST section: current-quest card + zone ladder; DESTINATIONS section: key pouch + fragment bar + Locations tease), `QuestPresenter`, `KeyPresenter` (pure presenters, unit-tested)
+- **Shop screen:** `ShopScreenController` + `ShopPresenter` (BOOSTS / CHEST / PREMIUM)
+- **Infrastructure:** `ScreenManager` + `BottomNavDisplay`, `NumberFormatter`, `StatTypeColors`, `SafeAreaAdapter`
+- Canvas + TextMeshPro, CanvasScaler 1080x1920 match height. Surfaces are still flat placeholder blocks: art direction lands in Full UI Pass 2 (Sprint 12).
 
-## 10. Editor Tooling (`Assets/Editor/`)
+## 10. Editor & Local Tooling (`Assets/Editor/`, `tools/`)
 
 - `tools/color_pools.py`: local review server for key color families — shows every "main" palette color per pool, supports selecting swatches and moving them between pools (including new workshop pools), saves to `Assets/Resources/Data/color_family_overrides.json` which `ColorManager` applies over the classifier at load. Its classifier port must stay in sync with `ColorFamily.cs` (both files carry the note). Workshop pool names outside the enum exclude those colors from key drop pools.
 - `SetupGameManager` (Tools menu): creates config assets + GameManager + EventSystem fix
@@ -142,18 +145,26 @@ Keys + dungeons per `docs/plans/2026-07-02-destinations-design.md` (Locations ar
 
 ---
 
-## 11. Not Yet Implemented (MVP remainder)
+## 11. Not Yet Implemented
+
+**MVP remainder (Sprint 12):**
 
 | System | Notes |
 |---|---|
-| Quests screen UI | accept / retreat / complete flow |
-| Shop screen + boosts | purchasable boosts, timed chest |
-| Offline earnings claim | `OfflineGold()` formula exists; no claim flow/modal |
-| Equipment/loot UI readability | current displays block gameplay verification of the stat redesign |
-| Character level-up / stat allocation | not started |
-| Monetization (ads/IAP) | `com.unity.purchasing` 5.4.0 + `com.unity.ads` installed, unused (4.x purchasing produced package errors; upgraded) |
+| Tutorial / FTUE | tap verbs, equip loot, accept a quest |
+| Animation/juice pass | verb activation, loot drops, quest completion, transitions |
+| Full UI Pass 2 | art-direct the flat placeholder surfaces; unify newest screens; re-run heuristics |
+| Final balance pass | play-test-driven knob tuning (`tools/balance_sim.py`); destinations knobs are untuned guesses |
+| Real ad/IAP backends | services are mocked: needs Unity Ads game id + 3 placements, Google Play + Purchasing 5.x device wiring, store metadata |
+| Bug sweep + Android device build | performance check, icon/splash |
+
+**Post-MVP:**
+
+| System | Notes |
+|---|---|
+| Destinations Sprints D2-D3 | Locations (fragment consumer, procedural one-time visits, dialogue trees) + content/key art (`docs/plans/2026-07-02-destinations-design.md` §4, §8) |
+| Prestige | `prestigeMultiplier` stubbed at 1.0 throughout |
+| Verb drops/collection | design exists (`docs/verb-stat-system-design-doc.md`); verbs currently come with the character |
 | Cloud save / analytics / Remote Config | not started |
-| Destinations: Locations (fragment consumer) + dialogue trees | Sprint D2 (`docs/plans/2026-07-02-destinations-design.md` §4); keys + dungeons shipped in Sprint D1 (§7c) |
-| Prestige | post-MVP (`prestigeMultiplier` stubbed at 1.0 throughout) |
 
 The remaining-work roadmap lives in `docs/roadmap.md`.
