@@ -134,6 +134,7 @@ Keys + dungeons per `docs/plans/2026-07-02-destinations-design.md` (Locations ar
 
 ## 10. Editor Tooling (`Assets/Editor/`)
 
+- `tools/color_pools.py`: local review server for key color families — shows every "main" palette color per pool, supports selecting swatches and moving them between pools (including new workshop pools), saves to `Assets/Resources/Data/color_family_overrides.json` which `ColorManager` applies over the classifier at load. Its classifier port must stay in sync with `ColorFamily.cs` (both files carry the note). Workshop pool names outside the enum exclude those colors from key drop pools.
 - `SetupGameManager` (Tools menu): creates config assets + GameManager + EventSystem fix
 - `ExploreSceneBuilder` (Tools menu): full scene rebuild; always save scene after
 - `ClearSave`: wipes local save

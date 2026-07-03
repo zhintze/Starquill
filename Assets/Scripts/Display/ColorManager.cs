@@ -8,6 +8,7 @@ namespace Starquill.Display
     {
         private Dictionary<string, Color[]> palettes = new();
         private readonly Dictionary<string, Dictionary<ColorFamily, Color[]>> familyIndex = new();
+        private readonly Dictionary<string, string> familyOverrides = new();
         private static readonly Color[] FallbackPalette = { Color.white };
 
         public void LoadFromJson(string json)
@@ -31,6 +32,28 @@ namespace Starquill.Display
                 LoadFromJson(textAsset.text);
             else
                 Debug.LogWarning($"ColorManager: Could not load {resourcePath}");
+
+            LoadOverridesFromResources();
+        }
+
+        /// Manual family overrides authored via tools/color_pools.py:
+        /// flat JSON { "HEX": "FamilyName", ... }. A name that is not a
+        /// ColorFamily member (a workshop pool awaiting promotion) excludes
+        /// the color from every key's drop pool; the color stays in the
+        /// palette for unfiltered rolls.
+        public void LoadOverridesFromJson(string json)
+        {
+            familyOverrides.Clear();
+            familyIndex.Clear();
+            foreach (var kvp in ParseStringMapJson(json))
+                familyOverrides[kvp.Key.ToUpperInvariant()] = kvp.Value;
+        }
+
+        public void LoadOverridesFromResources(string resourcePath = "Data/color_family_overrides")
+        {
+            var textAsset = Resources.Load<TextAsset>(resourcePath);
+            if (textAsset != null)
+                LoadOverridesFromJson(textAsset.text);
         }
 
         public Color[] GetPalette(string name)
@@ -69,18 +92,35 @@ namespace Starquill.Display
             return GetRandomColor(paletteName, rng); // family empty in this palette
         }
 
-        private static Dictionary<ColorFamily, Color[]> BuildFamilyIndex(Color[] palette)
+        private Dictionary<ColorFamily, Color[]> BuildFamilyIndex(Color[] palette)
         {
             var lists = new Dictionary<ColorFamily, List<Color>>();
             foreach (var c in palette)
             {
-                var f = ColorFamilyClassifier.Classify(c.r, c.g, c.b);
+                ColorFamily f;
+                if (familyOverrides.TryGetValue(ColorToHex(c), out var name))
+                {
+                    // Workshop pools (names outside the enum) drop the color
+                    // from every family until the pool is promoted in code.
+                    if (!System.Enum.TryParse(name, true, out f)) continue;
+                }
+                else
+                {
+                    f = ColorFamilyClassifier.Classify(c.r, c.g, c.b);
+                }
                 if (!lists.TryGetValue(f, out var list)) { list = new List<Color>(); lists[f] = list; }
                 list.Add(c);
             }
             var result = new Dictionary<ColorFamily, Color[]>();
             foreach (var kvp in lists) result[kvp.Key] = kvp.Value.ToArray();
             return result;
+        }
+
+        public static string ColorToHex(Color c)
+        {
+            return $"{Mathf.RoundToInt(c.r * 255f):X2}" +
+                   $"{Mathf.RoundToInt(c.g * 255f):X2}" +
+                   $"{Mathf.RoundToInt(c.b * 255f):X2}";
         }
 
         public Color[] ResolveColorField(string[] field)
@@ -119,6 +159,37 @@ namespace Starquill.Display
                 if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
                     return false;
             return true;
+        }
+
+        /// Flat { "key": "value", ... } parser, same hand-rolled style as
+        /// ParsePaletteJson (no nesting, no escapes: hex keys + pool names).
+        private static Dictionary<string, string> ParseStringMapJson(string json)
+        {
+            var result = new Dictionary<string, string>();
+            if (string.IsNullOrEmpty(json)) return result;
+            json = json.Trim();
+            if (!json.StartsWith("{") || json.Length < 2) return result;
+
+            json = json.Substring(1, json.Length - 2);
+            int i = 0;
+            while (i < json.Length)
+            {
+                int keyStart = json.IndexOf('"', i);
+                if (keyStart < 0) break;
+                int keyEnd = json.IndexOf('"', keyStart + 1);
+                if (keyEnd < 0) break;
+                string key = json.Substring(keyStart + 1, keyEnd - keyStart - 1);
+
+                int colon = json.IndexOf(':', keyEnd);
+                if (colon < 0) break;
+                int valStart = json.IndexOf('"', colon);
+                if (valStart < 0) break;
+                int valEnd = json.IndexOf('"', valStart + 1);
+                if (valEnd < 0) break;
+                result[key] = json.Substring(valStart + 1, valEnd - valStart - 1);
+                i = valEnd + 1;
+            }
+            return result;
         }
 
         private static Dictionary<string, string[]> ParsePaletteJson(string json)
