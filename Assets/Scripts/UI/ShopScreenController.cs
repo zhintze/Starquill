@@ -38,6 +38,7 @@ namespace Starquill.UI
             if (gm != null)
             {
                 gm.OnBoostsChanged += Refresh;
+                gm.OnTavernChanged += () => { if (visible) Refresh(); };
                 gm.OnGoldChanged += _ => { if (visible) Refresh(); };
             }
         }
@@ -75,6 +76,9 @@ namespace Starquill.UI
                 "Drawn Verbs fire on their own after 2 seconds.", now);
             BoostCard(gm, BoostType.VerbSpeedUp, "Verb Speed-Up",
                 "Cooldowns halved; new Verbs drawn twice as fast.", now);
+
+            SectionHeader("TAVERN");
+            TavernCard(gm, now);
 
             SectionHeader("CHEST");
             ChestCard(gm, now);
@@ -138,6 +142,64 @@ namespace Starquill.UI
                 () => gm.BuyBoost(type));
             handle.SetEnabled(ShopPresenter.BoostBuyEnabled(cost, gm.gold, active),
                 active ? null : $"Need {NumberFormatter.FormatCompact(cost)}g");
+        }
+
+        /// Six recruit rows on a 6-hour rotation. Purchased rows stay
+        /// visible (dimmed, "Recruited") until the slot rolls over.
+        private void TavernCard(GameManager gm, double now)
+        {
+            var card = Card(out _);
+
+            var tavern = gm.Tavern;
+            CaptionLine(card.transform,
+                TavernPresenter.CountdownText(gm.TavernSlotEndsAt - now));
+
+            if (tavern == null || tavern.Recruits.Count == 0)
+            {
+                CaptionLine(card.transform, "The tavern is empty right now.");
+                return;
+            }
+
+            for (int i = 0; i < tavern.Recruits.Count; i++)
+            {
+                int index = i;
+                bool purchased = tavern.Purchased[i];
+
+                var row = new GameObject($"Recruit_{i}", typeof(RectTransform), typeof(Image), typeof(Button));
+                row.transform.SetParent(card.transform, false);
+                var le = row.AddComponent<LayoutElement>();
+                le.preferredHeight = UiTheme.TouchMin;
+                le.flexibleHeight = 0;
+                row.GetComponent<Image>().color = purchased
+                    ? new Color(0.16f, 0.16f, 0.2f)
+                    : new Color(0.3f, 0.3f, 0.38f);
+
+                var btn = row.GetComponent<Button>();
+                btn.interactable = !purchased;
+                if (!purchased)
+                    btn.onClick.AddListener(() => TavernRecruitSheet.Show(transform.root, index));
+
+                var title = UiFactory.Text(row.transform,
+                    TavernPresenter.RowTitle(tavern.Recruits[i]), UiFactory.TextStyle.Body);
+                title.color = purchased ? UiTheme.TextDim : UiTheme.TextPrimary;
+                var titleRT = title.rectTransform;
+                titleRT.anchorMin = new Vector2(0, 0);
+                titleRT.anchorMax = new Vector2(0.68f, 1);
+                titleRT.offsetMin = new Vector2(UiTheme.Space2, 0);
+                titleRT.offsetMax = Vector2.zero;
+                title.textWrappingMode = TextWrappingModes.NoWrap;
+                title.overflowMode = TextOverflowModes.Ellipsis;
+
+                var price = UiFactory.Text(row.transform,
+                    purchased ? "Recruited" : TavernPresenter.PriceText(tavern.Prices[i]),
+                    UiFactory.TextStyle.Body, TextAlignmentOptions.MidlineRight);
+                price.color = purchased ? UiTheme.TextDim : UiTheme.BestGold;
+                var priceRT = price.rectTransform;
+                priceRT.anchorMin = new Vector2(0.68f, 0);
+                priceRT.anchorMax = new Vector2(1, 1);
+                priceRT.offsetMin = Vector2.zero;
+                priceRT.offsetMax = new Vector2(-UiTheme.Space2, 0);
+            }
         }
 
         private void ChestCard(GameManager gm, double now)
