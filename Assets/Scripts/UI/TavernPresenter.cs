@@ -56,5 +56,16 @@ namespace Starquill.UI
         {
             return $"RECRUIT · {NumberFormatter.FormatCompact(price)}";
         }
+
+        /// Why a recruit attempt was refused, in the order RecruitFromTavern
+        /// checks: bad/purchased slot, then gold, then roster capacity.
+        public static string RecruitFailReason(TavernStock tavern, int index, double gold)
+        {
+            if (tavern == null || index < 0 || index >= tavern.Recruits.Count)
+                return "No longer available";
+            if (tavern.Purchased[index]) return "Already recruited";
+            if (gold < tavern.Prices[index]) return "Not enough gold";
+            return "Roster is full";
+        }
     }
 }

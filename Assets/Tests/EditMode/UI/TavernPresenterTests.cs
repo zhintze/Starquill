@@ -68,5 +68,31 @@ namespace Starquill.Tests.EditMode.UI
         {
             Assert.AreEqual("RECRUIT · 2.5Kg", TavernPresenter.RecruitLabel(2500));
         }
+
+        private static TavernStock Stock(bool purchased, double price)
+        {
+            return new TavernStock
+            {
+                Recruits = new System.Collections.Generic.List<CharacterInstance>
+                    { Recruit("Bram", "dwarf", 3) },
+                Prices = new[] { price },
+                Purchased = new[] { purchased }
+            };
+        }
+
+        [Test]
+        public void RecruitFailReason_ChecksInPurchaseOrder()
+        {
+            Assert.AreEqual("No longer available",
+                TavernPresenter.RecruitFailReason(null, 0, 999));
+            Assert.AreEqual("No longer available",
+                TavernPresenter.RecruitFailReason(Stock(false, 100), 3, 999));
+            Assert.AreEqual("Already recruited",
+                TavernPresenter.RecruitFailReason(Stock(true, 100), 0, 999));
+            Assert.AreEqual("Not enough gold",
+                TavernPresenter.RecruitFailReason(Stock(false, 100), 0, 50));
+            Assert.AreEqual("Roster is full",
+                TavernPresenter.RecruitFailReason(Stock(false, 100), 0, 999));
+        }
     }
 }

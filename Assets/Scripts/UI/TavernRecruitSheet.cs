@@ -20,6 +20,17 @@ namespace Starquill.UI
             sheet = BottomSheet.Show(canvasRoot,
                 content => Fill(content, index, () => sheet),
                 heightFraction: 0.7f);
+
+            // Stock can change under an open sheet (rotation, purchase from
+            // another path); the index would then describe a different
+            // character. Close rather than act on stale data.
+            var gm = GameManager.Instance;
+            if (gm != null && sheet != null)
+            {
+                System.Action onTavernChanged = () => { if (sheet != null) sheet.Close(); };
+                gm.OnTavernChanged += onTavernChanged;
+                sheet.OnClosed += () => gm.OnTavernChanged -= onTavernChanged;
+            }
             return sheet;
         }
 
@@ -128,8 +139,10 @@ namespace Starquill.UI
                 TavernPresenter.RecruitLabel(price), UiFactory.ButtonKind.Primary, () =>
             {
                 var g = GameManager.Instance;
-                if (g != null && g.RecruitFromTavern(index)) getSheet()?.Close();
-                else reason.text = "Roster is full";
+                if (g == null) return;
+                if (g.RecruitFromTavern(index)) getSheet()?.Close();
+                else reason.text = TavernPresenter.RecruitFailReason(
+                    g.Tavern, index, g.gold);
             });
             if (purchased)
                 handle.SetEnabled(false, "Recruited");

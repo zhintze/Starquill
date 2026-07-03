@@ -12,6 +12,7 @@ namespace Starquill.UI
         private RectTransform panelRT;
         private float panelHeight;
         private Coroutine slideCoroutine;
+        private bool closing;
 
         public Transform Content { get; private set; }
         public event Action OnClosed;
@@ -125,8 +126,12 @@ namespace Starquill.UI
             slideCoroutine = null;
         }
 
+        /// Idempotent: multiple close paths (scrim, Back, callers reacting
+        /// to the same event) must not stack slide-out coroutines.
         public void Close()
         {
+            if (closing) return;
+            closing = true;
             if (slideCoroutine != null) StopCoroutine(slideCoroutine);
             StartCoroutine(SlideOutAndDestroy());
         }
