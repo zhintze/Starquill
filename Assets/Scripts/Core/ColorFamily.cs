@@ -9,23 +9,29 @@ namespace Starquill.Core
     }
 
     /// Pure RGB -> family bucketing over the "main" palette (design D1,
-    /// revised to 10 buckets: Black = near-black incl. dark tinted shades,
-    /// White = whites/silvers, Neutral = true grays). Ranges are starting
-    /// values; tune during the balance pass, keeping Classify total.
+    /// revised to 10 buckets; warm band and Black retuned 2026-07-02 so each
+    /// family reads as one look: Black = truly dark or dark-and-drab
+    /// (saturated darks keep their hue), Brown = dark OR muted warm across
+    /// the whole 15-70 degree band (tans, olives, siennas), Orange/Yellow =
+    /// only the vivid light warms. Ranges are starting values; tune during
+    /// the balance pass, keeping Classify total.
     public static class ColorFamilyClassifier
     {
         public static ColorFamily Classify(float r, float g, float b)
         {
             RgbToHsv(r, g, b, out float h, out float s, out float v);
 
-            if (v < 0.20f) return ColorFamily.Black;
+            if (v < 0.12f || (v < 0.20f && s < 0.55f)) return ColorFamily.Black;
             if (s < 0.15f)
                 return v >= 0.75f ? ColorFamily.White : ColorFamily.Neutral;
 
             float deg = h * 360f;
             if (deg < 15f || deg >= 345f) return ColorFamily.Red;
-            if (deg < 45f) return v < 0.55f ? ColorFamily.Brown : ColorFamily.Orange;
-            if (deg < 70f) return ColorFamily.Yellow;
+            if (deg < 70f)
+            {
+                if (v < 0.65f || (s < 0.45f && v < 0.85f)) return ColorFamily.Brown;
+                return deg < 45f ? ColorFamily.Orange : ColorFamily.Yellow;
+            }
             if (deg < 170f) return ColorFamily.Green;
             if (deg < 260f) return ColorFamily.Blue;
             return ColorFamily.Purple;
